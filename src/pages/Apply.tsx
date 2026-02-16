@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,9 +56,10 @@ function getRecommendation(answers: string[]): string {
 }
 
 export default function Apply() {
+  const location = useLocation();
   const [step, setStep] = useState(1);
   const [selectedPassport, setSelectedPassport] = useState("TR");
-  const [destination, setDestination] = useState("");
+  const [destination, setDestination] = useState(location.state?.destination || "");
   const [visaType, setVisaType] = useState("");
   const [selectedPlan, setSelectedPlan] = useState("");
 
@@ -247,8 +248,8 @@ export default function Apply() {
                         key={plan.id}
                         onClick={() => setSelectedPlan(plan.id)}
                         className={`w-full text-left p-5 rounded-xl border-2 transition-all ${isSelected
-                            ? "border-[#00D69E] bg-[#00D69E]/5"
-                            : "border-border hover:border-[#00D69E]/30"
+                          ? "border-[#00D69E] bg-[#00D69E]/5"
+                          : "border-border hover:border-[#00D69E]/30"
                           }`}
                       >
                         <div className="flex items-center justify-between">

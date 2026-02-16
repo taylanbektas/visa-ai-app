@@ -70,12 +70,12 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`text-base font-semibold transition-colors hover:text-[#00D69E] ${location.pathname === link.to ? "text-[#00D69E]" : "text-foreground/80"
+                className={`text-lg font-semibold transition-colors hover:text-[#00D69E] ${location.pathname === link.to ? "text-[#00D69E]" : "text-foreground/80"
                   }`}
               >
                 {t(link.labelKey)}
@@ -86,7 +86,7 @@ export function Navbar() {
             <div className="relative" ref={helpRef}>
               <button
                 onClick={() => { setHelpOpen(!helpOpen); setLangOpen(false); }}
-                className="flex items-center gap-1 text-base font-semibold text-foreground/80 hover:text-[#00D69E] transition-colors"
+                className="flex items-center gap-1 text-lg font-semibold text-foreground/80 hover:text-[#00D69E] transition-colors"
               >
                 {t("nav.help")} <ChevronDown size={14} className={`transition-transform ${helpOpen ? "rotate-180" : ""}`} />
               </button>
@@ -114,6 +114,15 @@ export function Navbar() {
                           key={item.label}
                           to={item.to!}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:bg-secondary hover:text-[#00D69E] transition-colors"
+                          onClick={() => {
+                            setHelpOpen(false);
+                            if (item.to?.includes("#")) {
+                              const [path, hash] = item.to.split("#");
+                              if (window.location.pathname === path) {
+                                document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+                              }
+                            }
+                          }}
                         >
                           <item.icon size={16} /> {item.label}
                         </Link>
@@ -162,13 +171,13 @@ export function Navbar() {
 
             {/* Auth */}
             <Link to="/login">
-              <Button variant="outline" className="font-bold px-5 h-10 text-sm rounded-full border-foreground/20 text-foreground hover:bg-foreground/5">
-                <LogIn size={16} className="mr-1.5" /> {t("nav.login")}
+              <Button className="font-bold px-6 h-11 text-base rounded-full bg-navy-dark text-white hover:bg-navy-light transition-colors">
+                <LogIn size={18} className="mr-2" /> {t("nav.login")}
               </Button>
             </Link>
 
             <Link to="/apply">
-              <Button className="btn-gradient text-white font-bold px-6 h-10 text-sm rounded-full shadow-md">
+              <Button className="btn-gradient text-white font-bold px-6 h-11 text-base rounded-full shadow-md">
                 {t("nav.apply")}
               </Button>
             </Link>

@@ -10,7 +10,7 @@ import {
   Search,
 } from "lucide-react";
 
-const categories = ["Tümü", "Schengen", "ABD", "İngiltere", "Seyahat İpuçları", "Belge Rehberleri"];
+const categories = ["Tümü", "Schengen", "ABD", "İngiltere", "Modern Vize", "Eğitim", "Seyahat İpuçları", "Belge Rehberleri"];
 
 const articles = [
   {
@@ -61,6 +61,22 @@ const articles = [
     readTime: "7 dk okuma",
     image: "/images/articles/cover-letter.png",
   },
+  {
+    id: "digital-nomad",
+    title: "Dijital Göçebe Vizesi: Dünyayı Gezerek Çalışın",
+    excerpt: "Uzaktan çalışanlar için Portekiz, İspanya ve diğer ülkelerin sunduğu vize fırsatları ve başvuru şartları.",
+    category: "Modern Vize",
+    readTime: "9 dk okuma",
+    image: "/images/articles/digital-nomad.png",
+  },
+  {
+    id: "student-visa",
+    title: "Avrupa ve Amerika'da Öğrenci Vizesi Rehberi",
+    excerpt: "Okul kabulü, bloke hesap, gerekli belgeler ve çalışma izni hakkında kapsamlı rehber.",
+    category: "Eğitim",
+    readTime: "11 dk okuma",
+    image: "/images/articles/student-visa.png",
+  },
 ];
 
 export default function Learn() {
@@ -105,8 +121,8 @@ export default function Learn() {
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-all ${activeCategory === cat
-                    ? "btn-gradient text-white shadow-md"
-                    : "bg-white border border-border text-muted-foreground hover:border-[#00D69E]/40 hover:text-[#00D69E]"
+                  ? "btn-gradient text-white shadow-md"
+                  : "bg-white border border-border text-muted-foreground hover:border-[#00D69E]/40 hover:text-[#00D69E]"
                   }`}
               >
                 {cat}

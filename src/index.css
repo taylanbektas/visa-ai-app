@@ -138,14 +138,16 @@
   }
 
   .btn-gradient {
-    background: linear-gradient(135deg, #00E6A8 0%, #00D69E 50%, #00B386 100%);
-    transition: all 0.3s ease;
+    /* Using the mint/green palette: #00D69E (Mint), #00B386 (Darker Mint), #00E6A8 (Lighter Mint) */
+    background: linear-gradient(45deg, #009e74 0%, #00d69e 50%, #00e6a8 100%);
+    background-size: 200% auto;
+    transition: all 0.5s ease;
   }
 
   .btn-gradient:hover {
-    background: linear-gradient(135deg, #00D69E 0%, #00B386 50%, #009E6B 100%);
-    box-shadow: 0 8px 25px rgba(0, 214, 158, 0.3);
-    transform: translateY(-1px);
+    background-position: right center;
+    box-shadow: 0 10px 25px rgba(41, 128, 185, 0.3);
+    transform: translateY(-2px);
   }
 
   .btn-gradient-navy {

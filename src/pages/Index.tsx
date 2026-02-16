@@ -28,10 +28,11 @@ import {
   X,
   Check,
 } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 /* ── Animated hero word ─────────────────────────────────── */
 const heroWords = ["kolay", "hızlı", "güvenli", "akıllı"];
-const longestWord = "güvenli"; // used to size the container
+const longestWord = "smartest"; // used to size the container - using longest EN word to be safe
 
 /* ── Passport options — ordered by target audience ─────── */
 const passportOptions = [
@@ -121,6 +122,7 @@ export default function Index() {
   const [selectedDestination, setSelectedDestination] = useState("");
   const sizerRef = useRef<HTMLSpanElement>(null);
   const [wordWidth, setWordWidth] = useState<number | undefined>(undefined);
+  const { t } = useLanguage();
 
   // Measure the widest word once on mount
   useEffect(() => {
@@ -149,36 +151,34 @@ export default function Index() {
 
       {/* ━━━ HERO ━━━ */}
       <section className="relative pt-28 pb-16 md:pt-40 md:pb-28 section-gradient-light">
-        <div className="container mx-auto px-4 md:px-6 max-w-3xl text-center">
+        <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           {/* Hidden sizer — measures widest word to prevent layout shifts */}
           <span ref={sizerRef} className="text-5xl sm:text-6xl md:text-7xl font-extrabold invisible absolute" aria-hidden="true" style={{ lineHeight: 1.15 }}>
             {longestWord}
           </span>
 
           <motion.h1
-            className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-navy-dark mb-6"
-            style={{ lineHeight: 1.15 }}
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-navy-dark tracking-tight mb-6 leading-tight flex flex-wrap justify-center gap-x-3 md:gap-x-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
           >
-            Vize almanın en{" "}
-            <span style={{ whiteSpace: "nowrap" }}>
-              <span className="inline-block text-left align-bottom" style={{ width: wordWidth ? `${wordWidth}px` : "auto" }}>
-                <AnimatePresence mode="wait">
-                  <motion.span
-                    key={heroWords[wordIndex]}
-                    className="text-gradient-mint inline-block"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    transition={{ duration: 0.35 }}
-                  >
-                    {heroWords[wordIndex]}
-                  </motion.span>
-                </AnimatePresence>
-              </span>{" "}
-              yolu
+            <span>{t("hero.title.prefix")}</span>
+            <span className="inline-flex min-w-[120px] justify-center">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={heroWords[wordIndex]}
+                  className="text-gradient-mint"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -15 }}
+                  transition={{ duration: 0.35 }}
+                >
+                  {t(`hero.word.${wordIndex}`)}
+                </motion.span>
+              </AnimatePresence>
             </span>
+            <span>{t("hero.title.suffix")}</span>
           </motion.h1>
 
           <motion.p
@@ -186,9 +186,8 @@ export default function Index() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-          >
-            Hedef ülkenizi seçin, <strong className="text-foreground">30 saniyede</strong> vize gereksinimlerini öğrenin.
-          </motion.p>
+            dangerouslySetInnerHTML={{ __html: t("hero.subtitle") }}
+          />
 
           {/* Visa Checker Widget */}
           <motion.div
@@ -200,9 +199,9 @@ export default function Index() {
             <div className="flex flex-col sm:flex-row gap-3 items-stretch">
               {/* Passport */}
               <div className="flex-1">
-                <label className="text-sm font-extrabold text-foreground mb-2 block text-left uppercase tracking-wide">Pasaportunuz</label>
+                <label className="text-sm font-extrabold text-foreground mb-2 block text-left uppercase tracking-wide">{t("checker.passport")}</label>
                 <Select onValueChange={setSelectedPassport} value={selectedPassport}>
-                  <SelectTrigger className="h-14 text-base font-medium">
+                  <SelectTrigger className="h-16 text-lg font-medium">
                     <SelectValue>
                       <span className="flex items-center gap-2">
                         <span className="text-xl">{currentPassport.flag}</span>
@@ -224,10 +223,10 @@ export default function Index() {
 
               {/* Destination */}
               <div className="flex-1">
-                <label className="text-sm font-extrabold text-foreground mb-2 block text-left uppercase tracking-wide">Nereye Gidiyorsunuz?</label>
+                <label className="text-sm font-extrabold text-foreground mb-2 block text-left uppercase tracking-wide">{t("checker.destination")}</label>
                 <Select onValueChange={setSelectedDestination} value={selectedDestination}>
-                  <SelectTrigger className="h-14 text-base">
-                    <SelectValue placeholder="Ülke seçin" />
+                  <SelectTrigger className="h-16 text-lg">
+                    <SelectValue placeholder={t("checker.placeholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     {destinations.map((country) => (
@@ -240,10 +239,10 @@ export default function Index() {
               {/* CTA Button — visual anchor */}
               <div className="flex items-end">
                 <Button
-                  className="w-full sm:w-auto btn-gradient text-white font-bold h-14 px-8 rounded-xl text-base"
+                  className="w-full sm:w-auto btn-gradient text-white font-bold h-16 px-10 rounded-xl text-lg"
                   disabled={!selectedDestination}
                 >
-                  Kontrol Et <ArrowRight size={18} className="ml-1.5" />
+                  {t("checker.button")} <ArrowRight size={18} className="ml-1.5" />
                 </Button>
               </div>
             </div>
@@ -263,13 +262,22 @@ export default function Index() {
                       <div className="w-16 h-16 rounded-full bg-[#00D69E]/10 flex items-center justify-center mx-auto mb-4">
                         <CheckCircle size={32} className="text-[#00D69E]" />
                       </div>
-                      <h3 className="text-2xl font-extrabold text-navy-dark mb-2">Vize Gerekmiyor! 🎉</h3>
-                      <p className="text-lg text-muted-foreground mb-2">
-                        <strong className="text-foreground">{currentPassport.label}</strong> pasaportuyla{" "}<strong className="text-foreground">{selectedDestination}</strong>{" "}için vize gerekmiyor.
-                      </p>
-                      {visaResult && visaResult.type.includes("K-ETA") && (
-                        <p className="text-base text-muted-foreground mt-2">
-                          Sadece <strong className="text-foreground">K-ETA</strong> (online ön kayıt) gereklidir. İşlem süresi: {visaResult.duration}, Ücret: {visaResult.fee}
+                      <h3 className="text-2xl font-extrabold text-navy-dark mb-2">{t("checker.visaFree")}</h3>
+
+                      {visaResult && visaResult.type.includes("K-ETA") ? (
+                        <div className="mt-4">
+                          <p className="text-lg text-muted-foreground mb-4">
+                            {visaResult.type} gereklidir.
+                          </p>
+                          <Link to="/apply">
+                            <Button className="btn-gradient text-white font-bold h-14 px-8 rounded-xl text-base">
+                              {t("visa.evisa_starter")} <ArrowRight size={18} className="ml-2" />
+                            </Button>
+                          </Link>
+                        </div>
+                      ) : (
+                        <p className="text-lg text-muted-foreground mb-2">
+                          <strong className="text-foreground">{currentPassport.label}</strong> {t("checker.visaFreeDesc")} <strong className="text-foreground">{selectedDestination}</strong> {t("checker.visaFreeFor")}
                         </p>
                       )}
                     </div>
@@ -300,9 +308,9 @@ export default function Index() {
                           ))}
                         </div>
                       </div>
-                      <Link to="/apply" className="block mt-6">
+                      <Link to="/apply" state={{ destination: selectedDestination }} className="block mt-6">
                         <Button className="w-full btn-gradient text-white font-bold h-14 text-lg rounded-xl">
-                          Profesyonel Destek Al <ArrowRight size={18} className="ml-2" />
+                          {t("visa.get_visa")} <ArrowRight size={18} className="ml-2" />
                         </Button>
                       </Link>
                     </>
@@ -314,14 +322,14 @@ export default function Index() {
 
           {/* Trust Row */}
           <motion.div
-            className="flex flex-wrap justify-center gap-6 md:gap-10 mt-10 text-base text-muted-foreground"
+            className="flex flex-wrap justify-center gap-6 md:gap-10 mt-10 text-lg text-muted-foreground"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            <div className="flex items-center gap-2"><Users size={20} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">3.200+</strong> Başarılı Başvuru</span></div>
-            <div className="flex items-center gap-2"><Shield size={20} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">%96</strong> Onay Oranı</span></div>
-            <div className="flex items-center gap-2"><Clock size={20} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">24/7</strong> Destek</span></div>
+            <div className="flex items-center gap-2"><Users size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">3.200+</strong> {t("trust.applications")}</span></div>
+            <div className="flex items-center gap-2"><Shield size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">%96</strong> {t("trust.approval")}</span></div>
+            <div className="flex items-center gap-2"><Clock size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">24/7</strong> {t("trust.support")}</span></div>
           </motion.div>
         </div>
       </section>
@@ -332,10 +340,10 @@ export default function Index() {
       <section className="py-20 md:py-28 section-gradient-light">
         <div className="container mx-auto px-4 md:px-6 max-w-5xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-4">
-            Neden <span className="text-gradient-mint">VisaPath</span>?
+            {t("comparison.title")} <span className="text-gradient-mint">VisaPath</span>?
           </h2>
           <p className="text-center text-muted-foreground text-xl mb-14 max-w-lg mx-auto">
-            <strong className="text-foreground">3.200+ başvuru</strong>, <strong className="text-foreground">%96 onay oranı</strong> — profesyonel desteğin farkını görün.
+            {t("comparison.subtitle").replace("3.200+ başvuru", "3.200+ " + t("trust.applications")).replace("%96 onay oranı", "%96 " + t("trust.approval"))}
           </p>
 
           <div className="grid md:grid-cols-2 gap-6 md:gap-8">
@@ -343,7 +351,7 @@ export default function Index() {
             <div className="rounded-2xl border border-border bg-secondary/30 p-8 md:p-10">
               <h3 className="text-xl font-bold text-muted-foreground mb-7 flex items-center gap-2">
                 <X size={22} className="text-muted-foreground/60" />
-                Kendin Yap
+                {t("comparison.diy")}
               </h3>
               <ul className="space-y-5">
                 {[
@@ -368,7 +376,7 @@ export default function Index() {
               </div>
               <h3 className="text-2xl font-extrabold text-[#00B386] mb-7 flex items-center gap-2">
                 <CheckCircle size={24} className="text-[#00D69E]" />
-                VisaPath ile
+                {t("comparison.withVP")}
               </h3>
               <ul className="space-y-5">
                 {[
@@ -400,10 +408,10 @@ export default function Index() {
       <section className="py-20 md:py-28 bg-white">
         <div className="container mx-auto px-4 md:px-6 max-w-3xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-4">
-            Nasıl Çalışır?
+            {t("steps.title")}
           </h2>
           <p className="text-center text-muted-foreground text-xl mb-14 max-w-md mx-auto">
-            <strong className="text-foreground">3 basit adımda</strong> vize başvurunuzu tamamlayın.
+            {t("steps.subtitle")}
           </p>
 
           <div className="space-y-10">
@@ -435,11 +443,11 @@ export default function Index() {
                 viewport={{ once: true }}
               >
                 <div className="w-16 h-16 rounded-2xl btn-gradient flex items-center justify-center shrink-0 shadow-md">
-                  <span className="text-xl font-extrabold text-white">{item.step}</span>
+                  <span className="text-2xl font-extrabold text-white">{item.step}</span>
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-xl text-navy-dark mb-2">{item.title}</h3>
-                  <p className="text-base text-muted-foreground leading-relaxed">{item.desc}</p>
+                  <h3 className="font-extrabold text-xl text-navy-dark mb-2">{t(`steps.${parseInt(item.step) - 1}.title`)}</h3>
+                  <p className="text-base text-muted-foreground leading-relaxed">{t(`steps.${parseInt(item.step) - 1}.desc`)}</p>
                 </div>
               </motion.div>
             ))}
@@ -452,10 +460,10 @@ export default function Index() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
-              { value: "3.200+", label: "Başarılı Başvuru" },
-              { value: "%96", label: "Onay Oranı" },
-              { value: "7+", label: "Yıl Deneyim" },
-              { value: "24/7", label: "Müşteri Desteği" },
+              { value: "3.200+", label: t("stats.applications") },
+              { value: "%96", label: t("stats.approval") },
+              { value: "7+", label: t("stats.experience") },
+              { value: "24/7", label: t("stats.support") },
             ].map((stat) => (
               <div key={stat.label}>
                 <p className="text-4xl md:text-5xl font-extrabold text-gradient-mint">{stat.value}</p>
@@ -470,21 +478,21 @@ export default function Index() {
       <section className="py-20 md:py-28 bg-white">
         <div className="container mx-auto px-4 md:px-6 max-w-4xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-14">
-            Müşterilerimiz Ne Diyor?
+            {t("testimonials.title")}
           </h2>
 
           <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
-              <div key={t.name} className="bg-white border border-border rounded-2xl p-8 card-hover">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="bg-white border border-border rounded-2xl p-8 card-hover">
                 <div className="flex gap-0.5 mb-4">
-                  {Array.from({ length: t.rating }).map((_, i) => (
-                    <Star key={i} size={20} className="fill-[#facc15] text-[#facc15]" />
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Star key={j} size={20} className="fill-[#facc15] text-[#facc15]" />
                   ))}
                 </div>
-                <p className="text-base text-foreground/80 leading-relaxed mb-5">"{t.text}"</p>
+                <p className="text-base text-foreground/80 leading-relaxed mb-5">"{t(`testimonials.${i}.text`)}"</p>
                 <div>
-                  <p className="text-base font-extrabold text-navy-dark">{t.name}</p>
-                  <p className="text-sm text-muted-foreground">{t.city}</p>
+                  <p className="text-base font-extrabold text-navy-dark">{t(`testimonials.${i}.name`)}</p>
+                  <p className="text-sm text-muted-foreground">{t(`testimonials.${i}.city`)}</p>
                 </div>
               </div>
             ))}
@@ -496,17 +504,17 @@ export default function Index() {
       <section className="py-20 md:py-28 section-gradient-light" id="sss">
         <div className="container mx-auto px-4 md:px-6 max-w-2xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-14">
-            Sıkça Sorulan Sorular
+            {t("faq.title")}
           </h2>
 
           <Accordion type="single" collapsible className="space-y-3">
-            {faqs.map((faq, i) => (
+            {[0, 1, 2, 3, 4].map((i) => (
               <AccordionItem key={i} value={`faq-${i}`} className="bg-white border border-border rounded-xl px-6">
                 <AccordionTrigger className="text-base font-semibold text-left py-5 [&[data-state=open]]:text-[#00D69E]">
-                  {faq.q}
+                  {t(`faq.${i}.q`)}
                 </AccordionTrigger>
                 <AccordionContent className="text-base text-muted-foreground leading-relaxed pb-5">
-                  {faq.a}
+                  {t(`faq.${i}.a`)}
                 </AccordionContent>
               </AccordionItem>
             ))}
@@ -518,20 +526,20 @@ export default function Index() {
       <section className="py-20 md:py-24 bg-gradient-navy">
         <div className="container mx-auto px-4 md:px-6 text-center max-w-2xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-5">
-            Hayalinizdeki Seyahate <span className="text-gradient-mint">Bir Adım</span> Kaldı
+            {t("cta.title")} <span className="text-gradient-mint">{t("cta.highlight")}</span> {t("cta.titleSuffix")}
           </h2>
           <p className="text-white/70 mb-10 text-xl">
-            Başvurunuzu bugün başlatın, uzman ekibimiz sizin için çalışsın.
+            {t("cta.subtitle")}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/apply">
               <Button className="btn-gradient text-white font-bold px-10 h-16 text-xl rounded-full shadow-lg">
-                Hemen Başvurun <ArrowRight size={22} className="ml-2" />
+                {t("cta.button")} <ArrowRight size={22} className="ml-2" />
               </Button>
             </Link>
             <Link to="/pricing">
-              <Button variant="outline" className="border-2 border-white/30 text-white hover:bg-white/10 font-bold px-8 h-16 text-xl rounded-full">
-                Fiyatları Gör
+              <Button variant="outline" className="border-2 border-white/50 text-white hover:bg-white hover:text-navy-dark font-bold px-8 h-16 text-xl rounded-full transition-colors">
+                {t("cta.check_price")}
               </Button>
             </Link>
           </div>

@@ -19,43 +19,69 @@ const articleContent: Record<string, { title: string; category: string; readTime
     category: "Schengen",
     readTime: "12 dk okuma",
     toc: ["Schengen Alanı Nedir?", "26 Schengen Ülkesi", "Vize Türleri", "Gerekli Belgeler", "Mali Gereksinimler", "İşlem Süresi", "Randevu Alma", "Yaygın Ret Sebepleri"],
-    content: `## Schengen Alanı Nedir?
-
+    content: `## Schengen Alanı Nedir? 🇪🇺
+    
 Schengen Alanı, karşılıklı sınırlarındaki tüm pasaport ve sınır kontrollerini resmi olarak kaldırmış 26 Avrupa ülkesinden oluşan bir bölgedir. Türk vatandaşları için bu, tek bir Schengen vizesinin herhangi bir 180 günlük süre içinde 90 güne kadar tüm 26 üye ülkede serbest seyahat etmenize olanak tanıdığı anlamına gelir.
 
 Schengen vizesi dünya genelinde en çok talep edilen vizelerden biridir ve başvuru sürecini iyice anlamak, onay şansınızı önemli ölçüde artırabilir.
 
-## 26 Schengen Ülkesi
+## 26 Schengen Ülkesi 🗺️
 
-Schengen Alanı şu ülkeleri kapsar: Avusturya, Belçika, Çekya, Danimarka, Estonya, Finlandiya, Fransa, Almanya, Yunanistan, Macaristan, İzlanda, İtalya, Letonya, Lihtenştayn, Litvanya, Lüksemburg, Malta, Hollanda, Norveç, Polonya, Portekiz, Slovakya, Slovenya, İspanya, İsveç ve İsviçre.
+Schengen Alanı şu ülkeleri kapsar: 
+🇦🇹 Avusturya, 🇧🇪 Belçika, 🇨🇿 Çekya, 🇩🇰 Danimarka, 🇪🇪 Estonya, 🇫🇮 Finlandiya, 🇫🇷 Fransa, 🇩🇪 Almanya, 🇬🇷 Yunanistan, 🇭🇺 Macaristan, 🇮🇸 İzlanda, 🇮🇹 İtalya, 🇱🇻 Letonya, 🇱🇮 Lihtenştayn, 🇱🇹 Litvanya, 🇱🇺 Lüksemburg, 🇲🇹 Malta, 🇳🇱 Hollanda, 🇳🇴 Norveç, 🇵🇱 Polonya, 🇵🇹 Portekiz, 🇸🇰 Slovakya, 🇸🇮 Slovenya, 🇪🇸 İspanya, 🇸🇪 İsveç ve 🇨🇭 İsviçre.
 
-Başvuru yaparken, en çok zaman geçirmeyi planladığınız ülkenin konsolosluğuna veya birden fazla ülkede eşit zaman geçirecekseniz ilk giriş ülkesinin konsolosluğuna başvurmanız gerekir.
+**Önemli:** Başvuru yaparken, en çok zaman geçirmeyi planladığınız ülkenin konsolosluğuna veya birden fazla ülkede eşit zaman geçirecekseniz ilk giriş ülkesinin konsolosluğuna başvurmanız gerekir.
 
-## Vize Türleri
+## Vize Türleri 📋
 
-Türk vatandaşları için en yaygın Schengen vizesi Tip C (kısa süreli) vizedir. Bu, turist ziyaretleri, iş gezileri, aile ziyaretleri ve kültürel etkinlikleri kapsar. 180 günlük bir süre içinde 90 güne kadar kalışlar için geçerlidir. Sık seyahat edenler için çoklu giriş vizeleri de mevcuttur ve genellikle başarılı tek girişli başvuru geçmişinden sonra verilir.
+Türk vatandaşları için en yaygın Schengen vizesi **Tip C (Kısa Süreli)** vizedir. 
 
-## Gerekli Belgeler
+*   **Turistik:** Tatil ve gezi amaçlı.
+*   **Ticari:** İş toplantıları ve fuarlar için.
+*   **Aile Ziyareti:** AB'de yaşayan akrabaları ziyaret için.
+*   **Kültürel/Sportif:** Etkinliklere katılım için.
 
-Başvurunuz şunları içermelidir: doldurulmuş başvuru formu, en az iki boş sayfası olan ve planlanan kalışınızdan 3 ay sonrasına kadar geçerli pasaport, iki adet güncel biyometrik fotoğraf (35x45mm), minimum €30.000 kapsamlı seyahat sağlık sigortası, konaklama kanıtı (otel rezervasyonları, davet mektubu), uçuş planı (gidiş-dönüş rezervasyonu) ve mali durum kanıtı.
+Bu vize, 180 günlük bir süre içinde **maksimum 90 gün** kalış hakkı tanır. Sık seyahat edenler için 1 yıldan 5 yıla kadar geçerli **Çok Girişli (Multi)** vizeler mevcuttur.
 
-## Mali Gereksinimler
+## Gerekli Belgeler 🗂️
 
-Türk vatandaşları için konsolosluklar genellikle son 3-6 aydaki banka hesap özetlerini minimum bakiye gösterecek şekilde ister. Genel bir kılavuz olarak, planlanan kalış süreniz boyunca günlük yaklaşık €50-100 tutarını kanıtlamanız gerekir. Düzenli bir gelir akışı, yakın zamanda yatırılan büyük bir tutardan daha önemlidir — konsolosluklar tutarlı finansal istikrar arar.
+Başvurunuz şunları içermelidir:
+1.  **Başvuru Formu:** Eksiksiz doldurulmuş ve imzalanmış.
+2.  **Pasaport:** En az iki boş sayfası olan ve dönüş tarihinden itibaren en az 3 ay geçerli.
+3.  **Biyometrik Fotoğraf:** 2 adet, 35x45mm, beyaz fonlu.
+4.  **Seyahat Sağlık Sigortası:** Minimum €30.000 teminatlı, tüm Schengen bölgesinde geçerli.
+5.  **Konaklama Kanıtı:** Otel rezervasyonu veya davetiye.
+6.  **Ulaşım:** Gidiş-dönüş uçak bileti rezervasyonu.
+7.  **Mali Durum:** Son 3 aylık banka dökümü (kaşeli/imzalı), maaş bordroları.
+8.  **Mesleki Belgeler:** İşveren yazısı, SGK dökümü, vergi levhası vb.
 
-Banka hesap özetleriniz, çalışıyorsanız düzenli maaş ödemelerini veya serbest meslek sahibiyseniz iş gelirini göstermelidir. Başvurunuzdan hemen önce büyük nakit yatırımlar yapmaktan kaçının, çünkü bu şüphe uyandırır.
+## Mali Gereksinimler 💰
 
-## İşlem Süresi
+Konsolosluklar, seyahat masraflarınızı karşılayabileceğinizi kanıtlamanızı ister.
+*   **Günlük Tutar:** Gideceğiniz ülkeye göre değişmekle birlikte, ortalama günlük **€50 - €100** arası bir bakiye göstermeniz beklenir.
+*   **Banka Hareketleri:** Aniden yatırılan büyük meblağlar şüphe çeker. Düzenli gelir akışı önemlidir.
 
-Standart işlem, randevunuzdan itibaren 10-15 iş günü sürer. Yoğun seyahat sezonunda (Mayıs-Ağustos) işlem daha uzun sürebilir. Planlanan seyahat tarihinizden en az 6 hafta önce başvurmanız ve en erken 6 ay öncesinden başvurmanız önerilir.
+## İşlem Süresi ⏳
 
-## Randevu Alma
+Standart işlem süresi **15 takvim günüdür**. Ancak yoğun dönemlerde (Yaz ayları, bayramlar) bu süre 45 güne kadar uzayabilir. Seyahatinizden en az **1.5 ay önce** başvurmanızı öneririz.
 
-Türkiye'deki çoğu Schengen konsolosluğu randevu servis sağlayıcısı olarak VFS Global veya iDATA kullanır. Randevular bu platformlar aracılığıyla online olarak alınabilir. Yoğun sezonda randevu slotları hızla dolar — belgeleriniz hazır olur olmaz randevu almanızı öneriyoruz.
+## Randevu Alma 📅
 
-## Yaygın Ret Sebepleri
+Randevular, ülkelerin yetkili aracı kurumları (VFS Global, iDATA, Kosmos vb.) üzerinden alınır. 
+*   **Almanya/İtalya:** iDATA
+*   **Fransa/Hollanda:** VFS Global
+*   **Yunanistan:** Kosmos (bazı bölgeler)
 
-Türk başvuru sahipleri için en sık karşılaşılan Schengen vizesi ret sebepleri: yetersiz mali kanıt, belirsiz seyahat amacı, Türkiye'ye güçlü bağ eksikliği (istihdam, mülk, aile), eksik belgeler, önceki vize ihlalleri ve yetersiz seyahat sigortası kapsamıdır. VisaPath gibi profesyonel bir vize danışmanlığı ile çalışmak bu yaygın tuzaklardan kaçınmanıza yardımcı olabilir.`,
+⚠️ **Uyarı:** Randevu slotları çok hızlı dolmaktadır. Planlamanızı buna göre yapın.
+
+## Yaygın Ret Sebepleri ❌
+
+1.  **Mali Yetersizlik:** Bankada yeterli bakiye olmaması veya kaynağının belirsiz olması.
+2.  **Geri Dönüş Şüphesi:** Türkiye'ye bağlayıcı (iş, eş, tapu vb.) unsurların yetersiz görülmesi.
+3.  **Belge Eksikliği:** Sigorta, otel vb. belgelerin kurallara uymaması.
+4.  **Yanlış Beyan:** Otel rezervasyonunun sahte olması veya iptal edilmesi.
+
+VisaPath ile başvurarak belgelerinizin eksiksiz ve doğru olduğundan emin olabilir, ret riskini en aza indirebilirsiniz.`,
     related: ["rejection-reasons", "biometric-photo", "cover-letter"],
   },
   "us-tourist-visa": {
@@ -252,6 +278,83 @@ Başvurumun olumlu değerlendirilmesini saygıyla arz ederim. Tüm destekleyici 
 Saygılarımla,
 [Adınız]`,
     related: ["schengen-guide", "rejection-reasons", "biometric-photo"],
+  },
+  "digital-nomad": {
+    title: "Dijital Göçebe Vizesi: Dünyayı Gezerek Çalışın",
+    category: "Modern Vize",
+    readTime: "9 dk okuma",
+    toc: ["Dijital Göçebe Vizesi Nedir?", "Popüler Ülkeler", "Başvuru Şartları", "Vergi Avantajları", "Nasıl Başvurulur?"],
+    content: `## Dijital Göçebe Vizesi Nedir? 💻
+
+Dijital Göçebe Vizesi (Digital Nomad Visa), uzaktan çalışan profesyonellerin yasal olarak yabancı bir ülkede yaşamasına ve çalışmasına olanak tanıyan bir oturum iznidir. Turist vizesinden farklı olarak daha uzun süre (genellikle 1 yıl ve üzeri) kalış hakkı tanır.
+
+## Popüler Ülkeler 🌍
+
+Türk vatandaşları için popüler seçenekler:
+*   **🇵🇹 Portekiz (D8):** En popüler seçeneklerden. Aylık ~€3.040 gelir şartı var. 5 yıl sonra vatandaşlık yolu açık.
+*   **🇪🇸 İspanya:** Yeni başlayan program. Aylık ~€2.500 gelir gerektiriyor. Vergi avantajları mevcut.
+*   **🇬🇷 Yunanistan:** %50 vergi indirimi sunuyor. Aylık €3.500 kazanç göstermek gerekli.
+*   **🇭🇺 Macaristan (White Card):** Aylık €2.000 gelir yeterli. Bütçe dostu bir seçenek.
+
+## Başvuru Şartları 📝
+
+Genel olarak aranan şartlar:
+1.  **Uzaktan Çalışma:** Şirketinizin veya müşterilerinizin ülke dışında olduğunu kanıtlamalısınız.
+2.  **Minimum Gelir:** Her ülke aylık belirli bir kazanç eşiği belirlemiştir (Genelde €2.000 - €3.500 arası).
+3.  **Temiz Sabıka Kaydı:** Geçmişte suç kaydınızın olmaması gerekir.
+4.  **Sağlık Sigortası:** Kapsamlı özel sağlık sigortası.
+
+## Vergi Avantajları 💸
+
+Birçok ülke dijital göçebeleri çekmek için özel vergi rejimleri sunar. Örneğin İspanya'da "Beckham Yasası" ile %24 sabit vergi ödeyebilirsiniz. Portekiz'de NHR statüsü ile 10 yıl boyunca dış gelirlerinizden muaf olabilirsiniz.
+
+## Nasıl Başvurulur? 🚀
+
+Başvurular genellikle ilgili ülkenin konsoloslukları üzerinden yapılır. Süreç:
+1.  Belgelerin toplanması ve çevirisi.
+2.  Konsolosluk randevusu.
+3.  Vize onayı ile ülkeye giriş.
+4.  Oturum kartı başvurusu (ülkeye vardıktan sonra).
+
+VisaPath, Portekiz ve İspanya başvurularınızda size uçtan uca danışmanlık sağlar.`,
+    related: ["schengen-guide"],
+  },
+  "student-visa": {
+    title: "Avrupa ve Amerika'da Öğrenci Vizesi Rehberi",
+    category: "Eğitim",
+    readTime: "11 dk okuma",
+    toc: ["Vize Türleri", "Okul Kabulü", "Bloke Hesap", "Gerekli Belgeler", "Çalışma İzni"],
+    content: `## Vize Türleri 🎓
+
+Eğitim vizeleri genellikle ikiye ayrılır:
+*   **Dil Okulu Vizesi:** Kısa süreli dil eğitimi için. Çalışma izni genellikle vermez.
+*   **Akademik Vize:** Lisans, Yüksek Lisans veya Doktora için. Genellikle yarı zamanlı çalışma izni sağlar.
+
+## Okul Kabulü 🏫
+
+Vize başvurusunun ilk adımı bir okuldan kabul almaktır.
+*   **Şartlı Kabul:** Dil yeterliliği sağlandıktan sonra bölüme başlama.
+*   **Kesin Kabul:** Doğrudan programa başlama.
+Kabul mektubunuz (Letter of Acceptance) vize dosyanızın en önemli parçasıdır.
+
+## Bloke Hesap (Blocked Account) 💶
+
+Özellikle **Almanya** başvurularında zorunludur. Almanya'da yaşam masraflarınızı karşılayabileceğinizi kanıtlamak için, yıllık yaklaşık **€11.208** (2024 rakamı) tutarı bir Alman bankasında bloke hesaba yatırmanız gerekir. Bu para size aylık taksitler halinde geri ödenir.
+
+## Gerekli Belgeler 📂
+
+1.  **Kabul Mektubu:** Okuldan alınan resmi yazı.
+2.  **Mali Yeterlilik:** Bloke hesap, burs yazısı veya garantör belgesi.
+3.  **Motivasyon Mektubu:** Neden bu okulu ve ülkeyi seçtiğinizi anlatan detaylı yazı.
+4.  **Dil Sertifikası:** TOEFL, IELTS, Goethe veya TestDaF sonucu.
+5.  **Diploma ve Transkript:** Önceki eğitim belgeleriniz.
+
+## Çalışma İzni 💼
+
+Çoğu ülke öğrencilere haftada **20 saate kadar** (yarı zamanlı) çalışma izni verir. Bu, yaşam masraflarınızı karşılamanıza yardımcı olabilir. Tatil dönemlerinde genellikle tam zamanlı çalışabilirsiniz.
+
+VisaPath ile öğrenci vizesi başvurularınızda motivasyon mektubu yazımından bloke hesap açılışına kadar destek alabilirsiniz.`,
+    related: ["schengen-guide", "us-tourist-visa"],
   },
 };
 

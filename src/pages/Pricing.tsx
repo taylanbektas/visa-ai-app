@@ -22,6 +22,7 @@ import {
   Phone,
   Ban,
 } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 /* ── Quiz ──────────────────────────────────────────────── */
 const questions = [
@@ -126,6 +127,7 @@ export default function Pricing() {
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [recommendation, setRecommendation] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const handleAnswer = (value: string) => {
     const newAnswers = [...answers, value];
@@ -242,16 +244,18 @@ export default function Pricing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
               >
-                {plan.popular && !isRecommended && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 btn-gradient text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1 shadow-md">
-                    <Star size={12} className="fill-white" /> En Popüler
-                  </div>
-                )}
-                {isRecommended && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-navy-dark text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
-                    Size Önerildi
-                  </div>
-                )}
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 flex items-center gap-2 w-max max-w-[90%] justify-center z-10">
+                  {plan.popular && (
+                    <div className="btn-gradient text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-md whitespace-nowrap">
+                      <Star size={12} className="fill-white" /> En Popüler
+                    </div>
+                  )}
+                  {isRecommended && (
+                    <div className="bg-navy-dark text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md whitespace-nowrap">
+                      Size Önerildi
+                    </div>
+                  )}
+                </div>
 
                 <div className="mb-6">
                   <h3 className="text-xl font-extrabold text-navy-dark">{plan.name}</h3>
@@ -304,7 +308,7 @@ export default function Pricing() {
                   <span className="text-lg">✈️</span>
                   <span className="font-extrabold text-navy-dark">VisaPath</span>
                 </div>
-                <span className="text-xs font-semibold text-[#00D69E]">Modern & Güvenilir</span>
+                <span className="text-sm font-bold text-[#00D69E]">{t("roi.modern_trust")}</span>
               </div>
               <div className="p-5 text-center border-l border-border">
                 <span className="font-bold text-muted-foreground">Geleneksel Ajanslar</span>
@@ -343,9 +347,9 @@ export default function Pricing() {
             </div>
             {compareFeatures.map((row, i) => (
               <div key={i} className={`grid grid-cols-4 ${i < compareFeatures.length - 1 ? "border-b border-border/50" : ""}`}>
-                <div className="p-4 text-[15px] font-medium">{row.feature}</div>
+                <div className="p-5 text-base font-medium">{row.feature}</div>
                 {(["starter", "pro", "elite"] as const).map((plan) => (
-                  <div key={plan} className="p-4 text-center border-l border-border/50">
+                  <div key={plan} className="p-5 text-center border-l border-border/50 flex items-center justify-center">
                     {typeof row[plan] === "boolean" ? (
                       row[plan] ? (
                         <CheckCircle size={18} className="text-[#00D69E] mx-auto" />
