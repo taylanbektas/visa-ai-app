@@ -59,7 +59,7 @@ export function Navbar() {
         }`}
     >
       <div className="container mx-auto px-4 md:px-6">
-        <div className="flex items-center justify-between h-18">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5">
             <span className="text-3xl">✈️</span>
@@ -70,12 +70,12 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-7">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`text-base font-semibold transition-colors hover:text-[#00D69E] ${location.pathname === link.to ? "text-[#00D69E]" : "text-foreground/80"
+                className={`text-lg font-semibold transition-colors hover:text-[#F77737] ${location.pathname === link.to ? "text-[#F77737]" : "text-foreground/80"
                   }`}
               >
                 {t(link.labelKey)}
@@ -86,9 +86,9 @@ export function Navbar() {
             <div className="relative" ref={helpRef}>
               <button
                 onClick={() => { setHelpOpen(!helpOpen); setLangOpen(false); }}
-                className="flex items-center gap-1 text-base font-semibold text-foreground/80 hover:text-[#00D69E] transition-colors"
+                className="flex items-center gap-1 text-lg font-semibold text-foreground/80 hover:text-[#F77737] transition-colors"
               >
-                {t("nav.help")} <ChevronDown size={14} className={`transition-transform ${helpOpen ? "rotate-180" : ""}`} />
+                {t("nav.help")} <ChevronDown size={15} className={`transition-transform ${helpOpen ? "rotate-180" : ""}`} />
               </button>
               <AnimatePresence>
                 {helpOpen && (
@@ -105,7 +105,7 @@ export function Navbar() {
                           href={item.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:bg-secondary hover:text-[#00D69E] transition-colors"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:bg-secondary hover:text-[#F77737] transition-colors"
                         >
                           <item.icon size={16} /> {item.label}
                         </a>
@@ -113,7 +113,7 @@ export function Navbar() {
                         <Link
                           key={item.label}
                           to={item.to!}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:bg-secondary hover:text-[#00D69E] transition-colors"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:bg-secondary hover:text-[#F77737] transition-colors"
                         >
                           <item.icon size={16} /> {item.label}
                         </Link>
@@ -149,7 +149,7 @@ export function Navbar() {
                           setLocale(lang.code as Locale);
                           setLangOpen(false);
                         }}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-secondary ${locale === lang.code ? "text-[#00D69E] font-semibold" : "text-foreground/80"
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-secondary ${locale === lang.code ? "text-[#F77737] font-semibold" : "text-foreground/80"
                           }`}
                       >
                         <span className="text-lg">{lang.flag}</span> {lang.label}
@@ -162,13 +162,13 @@ export function Navbar() {
 
             {/* Auth */}
             <Link to="/login">
-              <Button variant="outline" className="font-bold px-5 h-10 text-sm rounded-full border-foreground/20 text-foreground hover:bg-foreground/5">
+              <Button className="btn-gradient-dark text-white font-bold px-6 h-11 text-base rounded-full shadow-md">
                 <LogIn size={16} className="mr-1.5" /> {t("nav.login")}
               </Button>
             </Link>
 
             <Link to="/apply">
-              <Button className="btn-gradient text-white font-bold px-6 h-10 text-sm rounded-full shadow-md">
+              <Button className="btn-gradient text-white font-bold px-6 h-11 text-base rounded-full shadow-md">
                 {t("nav.apply")}
               </Button>
             </Link>
