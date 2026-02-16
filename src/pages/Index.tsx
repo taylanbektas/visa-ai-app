@@ -1,5 +1,6 @@
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
@@ -8,196 +9,437 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   CheckCircle,
-  FileText,
-  Search,
-  Send,
   Star,
-  Globe,
-  Plane,
   Shield,
+  Clock,
+  Users,
+  Globe,
+  FileText,
   ArrowRight,
+  Zap,
+  X,
+  Check,
 } from "lucide-react";
-import heroBg from "@/assets/hero-bg.jpg";
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.5 },
+/* ── Animated hero word ─────────────────────────────────── */
+const heroWords = ["kolay", "hızlı", "güvenli", "akıllı"];
+const longestWord = "güvenli"; // used to size the container
+
+/* ── Passport options — ordered by target audience ─────── */
+const passportOptions = [
+  { code: "TR", label: "Türkiye", flag: "🇹🇷" },
+  { code: "DE", label: "Almanya", flag: "🇩🇪" },
+  { code: "NL", label: "Hollanda", flag: "🇳🇱" },
+  { code: "FR", label: "Fransa", flag: "🇫🇷" },
+  { code: "GB", label: "İngiltere", flag: "🇬🇧" },
+  { code: "US", label: "ABD", flag: "🇺🇸" },
+  { code: "RU", label: "Rusya", flag: "🇷🇺" },
+  { code: "AZ", label: "Azerbaycan", flag: "🇦🇿" },
+  { code: "IR", label: "İran", flag: "🇮🇷" },
+  { code: "UZ", label: "Özbekistan", flag: "🇺🇿" },
+  { code: "TM", label: "Türkmenistan", flag: "🇹🇲" },
+  { code: "KG", label: "Kırgızistan", flag: "🇰🇬" },
+  { code: "EG", label: "Mısır", flag: "🇪🇬" },
+  { code: "IQ", label: "Irak", flag: "🇮🇶" },
+  { code: "SY", label: "Suriye", flag: "🇸🇾" },
+  { code: "AF", label: "Afganistan", flag: "🇦🇫" },
+];
+
+/* ── Destination list ────────────────────────────────────── */
+const destinations = [
+  "Almanya", "Fransa", "İtalya", "İspanya", "Hollanda", "Belçika",
+  "Avusturya", "İsviçre", "Portekiz", "Yunanistan",
+  "ABD", "İngiltere", "Kanada", "Japonya", "Güney Kore",
+];
+
+/* ── Visa-free map: passport → visa-free destinations ──── */
+const visaFreeMap: Record<string, string[]> = {
+  // EU/EEA passports → free in Schengen + UK
+  DE: ["Almanya", "Fransa", "İtalya", "İspanya", "Hollanda", "Belçika", "Avusturya", "İsviçre", "Portekiz", "Yunanistan", "İngiltere", "Japonya", "Güney Kore", "Kanada", "ABD"],
+  FR: ["Almanya", "Fransa", "İtalya", "İspanya", "Hollanda", "Belçika", "Avusturya", "İsviçre", "Portekiz", "Yunanistan", "İngiltere", "Japonya", "Güney Kore", "Kanada", "ABD"],
+  NL: ["Almanya", "Fransa", "İtalya", "İspanya", "Hollanda", "Belçika", "Avusturya", "İsviçre", "Portekiz", "Yunanistan", "İngiltere", "Japonya", "Güney Kore", "Kanada", "ABD"],
+  GB: ["Almanya", "Fransa", "İtalya", "İspanya", "Hollanda", "Belçika", "Avusturya", "İsviçre", "Portekiz", "Yunanistan", "Japonya", "Güney Kore", "Kanada", "ABD"],
+  US: ["Almanya", "Fransa", "İtalya", "İspanya", "Hollanda", "Belçika", "Avusturya", "İsviçre", "Portekiz", "Yunanistan", "İngiltere", "Japonya", "Güney Kore", "Kanada", "ABD"],
+  // Turkish passport → limited visa-free
+  TR: ["Güney Kore", "Japonya"],
+  // Azerbaijani
+  AZ: ["Güney Kore"],
+  // Russian
+  RU: ["Güney Kore"],
+  // Other passports → generally visa required everywhere
+  SY: [], IQ: [], IR: [], AF: [], UZ: [], TM: [], KG: [], EG: [],
 };
 
-const stats = [
-  { value: "2,400+", label: "Visas Approved" },
-  { value: "98.6%", label: "Success Rate" },
-  { value: "150+", label: "Countries Covered" },
-  { value: "4.9★", label: "Client Rating" },
-];
+/* ── Visa data by destination ─────────────────────────── */
+const visaData: Record<string, { type: string; docs: string[]; duration: string; fee: string }> = {
+  "Almanya": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Otel rezervasyonu", "Uçak bileti"], duration: "10-15 iş günü", fee: "€90" },
+  "Fransa": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Konaklama belgesi", "Uçak bileti"], duration: "10-15 iş günü", fee: "€90" },
+  "İtalya": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Otel rezervasyonu"], duration: "10-15 iş günü", fee: "€90" },
+  "İspanya": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Konaklama belgesi"], duration: "10-15 iş günü", fee: "€90" },
+  "Hollanda": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Davet mektubu veya otel"], duration: "10-15 iş günü", fee: "€90" },
+  "Belçika": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Otel / davet"], duration: "10-15 iş günü", fee: "€90" },
+  "Avusturya": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Otel rezervasyonu"], duration: "10-15 iş günü", fee: "€90" },
+  "İsviçre": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Otel / davet"], duration: "10-15 iş günü", fee: "€90" },
+  "Portekiz": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Konaklama"], duration: "10-15 iş günü", fee: "€90" },
+  "Yunanistan": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Otel"], duration: "10-15 iş günü", fee: "€90" },
+  "ABD": { type: "B1/B2 Turist Vizesi", docs: ["Pasaport", "DS-160 Formu", "Banka hesap özeti", "İş/Okul belgesi", "Fotoğraf"], duration: "Mülakata bağlı (30-90 gün)", fee: "$185" },
+  "İngiltere": { type: "Standard Visitor Visa", docs: ["Pasaport", "Banka hesap özeti", "Konaklama belgesi", "Seyahat planı"], duration: "15-20 iş günü", fee: "£115" },
+  "Kanada": { type: "Visitor Visa (TRV)", docs: ["Pasaport", "Banka hesap özeti", "Seyahat geçmişi", "Davet mektubu (varsa)"], duration: "20-30 iş günü", fee: "CAD $100" },
+  "Japonya": { type: "Tourist Visa", docs: ["Pasaport", "Başvuru formu", "Fotoğraf", "Uçak bileti", "Otel"], duration: "5-7 iş günü", fee: "Ücretsiz" },
+  "Güney Kore": { type: "K-ETA veya Vizesiz", docs: ["Pasaport", "K-ETA başvurusu (online)"], duration: "1-3 gün", fee: "₩10,000 (~€7)" },
+};
 
-const steps = [
-  {
-    icon: Search,
-    title: "Check Requirements",
-    desc: "Use our visa checker to instantly see what you need for your destination.",
-  },
-  {
-    icon: FileText,
-    title: "Apply Online",
-    desc: "Fill out a guided application form and upload your documents securely.",
-  },
-  {
-    icon: Send,
-    title: "Track & Receive",
-    desc: "Monitor your application in real-time and get your visa delivered.",
-  },
-];
-
-const visaTypes = [
-  { country: "Schengen", flag: "🇪🇺", desc: "26 European countries", color: "from-blue-500/10 to-blue-600/5" },
-  { country: "United States", flag: "🇺🇸", desc: "B1/B2 Tourist & Business", color: "from-red-500/10 to-blue-500/5" },
-  { country: "United Kingdom", flag: "🇬🇧", desc: "Standard Visitor Visa", color: "from-red-500/10 to-red-600/5" },
-  { country: "Canada", flag: "🇨🇦", desc: "Visitor Visa & eTA", color: "from-red-500/10 to-white/5" },
-  { country: "UAE", flag: "🇦🇪", desc: "Tourist & Business Visa", color: "from-green-500/10 to-green-600/5" },
-  { country: "Australia", flag: "🇦🇺", desc: "ETA & Visitor Visa", color: "from-blue-500/10 to-yellow-500/5" },
-];
-
+/* ── Testimonials ────────────────────────────────────────── */
 const testimonials = [
-  {
-    name: "Ayşe Karagöz",
-    country: "Turkey → France",
-    type: "Schengen Visa",
-    text: "I was dreading the Schengen application process, but VisaPath made it incredibly smooth. My advisor caught a mistake in my bank statements that would have caused a rejection. Got my visa in 12 days!",
-    rating: 5,
-  },
-  {
-    name: "Mehmet Yilmaz",
-    country: "Turkey → United States",
-    type: "B1/B2 Visa",
-    text: "The interview preparation alone was worth the Concierge plan. My advisor walked me through likely questions and helped craft my answers. Approved on my first attempt after a previous refusal.",
-    rating: 5,
-  },
-  {
-    name: "Elena Petrov",
-    country: "Bulgaria → UK",
-    type: "Standard Visitor Visa",
-    text: "Applied through VisaPath's Navigator plan. The document review was thorough, and the real-time tracking kept me stress-free. Highly recommend for anyone applying for a UK visa.",
-    rating: 5,
-  },
+  { name: "Ayşe K.", city: "İstanbul", text: "İlk kez Schengen vizesi aldım, her şey çok kolaydı. Belgelerimi kontrol ettiler ve 12 günde vizem geldi.", rating: 5 },
+  { name: "Mehmet Y.", city: "Ankara", text: "ABD vize mülakatına hazırlanmamda çok yardımcı oldular. Pro paket gerçekten karşılığını veriyor.", rating: 5 },
+  { name: "Elif D.", city: "İzmir", text: "Daha önce kendi başıma başvurdum reddedildim. VisaPath ile ikinci başvurumda onaylandı!", rating: 5 },
 ];
 
+
+
+/* ── FAQ ─────────────────────────────────────────────────── */
 const faqs = [
-  {
-    q: "How does VisaPath work?",
-    a: "VisaPath is a fully online visa consultancy service. You start by checking visa requirements for your destination, then complete a guided application with our expert support. We review your documents, help you prepare for interviews if needed, and track your application from submission to decision.",
-  },
-  {
-    q: "Is VisaPath a government agency?",
-    a: "No. VisaPath is an independent visa consultancy service. We are not affiliated with any government or embassy. We help you prepare and submit your visa applications correctly, increasing your chances of approval.",
-  },
-  {
-    q: "What's included in each plan?",
-    a: "Our Pathfinder plan ($49) gives you a guided application and document checklist. Navigator ($129) adds expert document review and tracking. Concierge ($249) includes a dedicated advisor, cover letter, and full rejection support. See our pricing page for details.",
-  },
-  {
-    q: "What if my visa gets rejected?",
-    a: "With our Concierge plan, you get full rejection support including re-application assistance at no extra cost. For other plans, we offer a discounted re-application service. Our 98.6% success rate means rejections are rare.",
-  },
-  {
-    q: "How long does the visa process take?",
-    a: "Processing times vary by country. Schengen visas typically take 10-15 business days, US visas depend on interview availability, and UK visas take 3-6 weeks. We provide estimated timelines in our visa checker tool.",
-  },
-  {
-    q: "Do you handle embassy appointments?",
-    a: "Yes! With our Navigator and Concierge plans, we assist with embassy appointment scheduling. For countries that require biometric enrollment, we guide you through the entire process including appointment booking.",
-  },
-  {
-    q: "Can I track my application status?",
-    a: "Absolutely. Navigator and Concierge plan users get access to a real-time tracking dashboard where you can monitor every stage of your application. Pathfinder users receive email updates at key milestones.",
-  },
-  {
-    q: "What payment methods do you accept?",
-    a: "We accept all major credit and debit cards through Stripe's secure payment processing. All transactions are encrypted and PCI-DSS compliant. We also offer installment options for the Concierge plan.",
-  },
+  { q: "VisaPath gerçekten gerekli mi, kendi başıma yapamaz mıyım?", a: "Tabii ki kendiniz de başvurabilirsiniz. Ancak vize başvurularında en küçük bir eksik belge veya hata, ret ya da gecikme sebebi olabilir. VisaPath olarak uzman ekibimiz belgelerinizi kontrol eder, başvurunuzu optimize eder ve %98 onay oranıyla güvenle başvurmanızı sağlar." },
+  { q: "Hangi ülkelere vize başvurusu yapabilirsiniz?", a: "Schengen ülkeleri (Almanya, Fransa, İtalya, İspanya, Hollanda vb.), ABD, İngiltere, Kanada ve daha birçok ülke için hizmet veriyoruz." },
+  { q: "Başvuru süreci ne kadar sürer?", a: "Starter planımızla kendi hızınızda ilerlersiniz. Pro ve Elite planlarında belgelerinizi 24-48 saat içinde inceler, başvurunuzu hazırlarız. Konsolosluk işlem süreleri ülkeden ülkeye değişir." },
+  { q: "Vize reddedilirse ne olur?", a: "Elite planımızda %100 para iade garantisi sunuyoruz. Pro ve Starter planlarında yeniden başvuru için indirimli destek sağlıyoruz." },
+  { q: "Ödeme nasıl yapılır?", a: "Kredi kartı, banka kartı ve havale ile ödeme yapabilirsiniz. Tüm ödemeler SSL şifreleme ile güvence altındadır." },
 ];
 
 export default function Index() {
+  const [wordIndex, setWordIndex] = useState(0);
+  const [selectedPassport, setSelectedPassport] = useState("TR");
+  const [selectedDestination, setSelectedDestination] = useState("");
+  const sizerRef = useRef<HTMLSpanElement>(null);
+  const [wordWidth, setWordWidth] = useState<number | undefined>(undefined);
+
+  // Measure the widest word once on mount
+  useEffect(() => {
+    if (sizerRef.current) {
+      setWordWidth(sizerRef.current.offsetWidth);
+    }
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setWordIndex((prev) => (prev + 1) % heroWords.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const currentPassport = passportOptions.find((p) => p.code === selectedPassport)!;
+
+  // Determine visa status
+  const isVisaFree = selectedDestination
+    ? (visaFreeMap[selectedPassport] || []).includes(selectedDestination)
+    : false;
+  const visaResult = selectedDestination ? visaData[selectedDestination] : null;
+
   return (
     <div className="min-h-screen">
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-navy min-h-[90vh] flex items-center">
-        <div
-          className="absolute inset-0 opacity-30"
-          style={{
-            backgroundImage: `url(${heroBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-navy-dark/60 to-navy/90" />
 
-        <div className="container mx-auto px-4 md:px-6 relative z-10 py-32">
-          <motion.div
-            className="max-w-3xl"
-            initial={{ opacity: 0, y: 30 }}
+      {/* ━━━ HERO ━━━ */}
+      <section className="relative pt-28 pb-16 md:pt-40 md:pb-28 section-gradient-light">
+        <div className="container mx-auto px-4 md:px-6 max-w-3xl text-center">
+          {/* Hidden sizer — measures widest word to prevent layout shifts */}
+          <span ref={sizerRef} className="text-5xl sm:text-6xl md:text-7xl font-extrabold invisible absolute" aria-hidden="true" style={{ lineHeight: 1.15 }}>
+            {longestWord}
+          </span>
+
+          <motion.h1
+            className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-navy-dark mb-6"
+            style={{ lineHeight: 1.15 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20 mb-6">
-              <Globe size={14} className="text-gold" />
-              <span className="text-xs font-medium text-gold-light">
-                Trusted by 2,400+ travelers worldwide
-              </span>
+            Vize almanın en{" "}
+            <span style={{ whiteSpace: "nowrap" }}>
+              <span className="inline-block text-left align-bottom" style={{ width: wordWidth ? `${wordWidth}px` : "auto" }}>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={heroWords[wordIndex]}
+                    className="text-gradient-mint inline-block"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.35 }}
+                  >
+                    {heroWords[wordIndex]}
+                  </motion.span>
+                </AnimatePresence>
+              </span>{" "}
+              yolu
+            </span>
+          </motion.h1>
+
+          <motion.p
+            className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-xl mx-auto leading-relaxed"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            Hedef ülkenizi seçin, <strong className="text-foreground">30 saniyede</strong> vize gereksinimlerini öğrenin.
+          </motion.p>
+
+          {/* Visa Checker Widget */}
+          <motion.div
+            className="bg-white rounded-2xl shadow-xl border border-border/40 p-6 md:p-8 max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+              {/* Passport */}
+              <div className="flex-1">
+                <label className="text-sm font-extrabold text-foreground mb-2 block text-left uppercase tracking-wide">Pasaportunuz</label>
+                <Select onValueChange={setSelectedPassport} value={selectedPassport}>
+                  <SelectTrigger className="h-14 text-base font-medium">
+                    <SelectValue>
+                      <span className="flex items-center gap-2">
+                        <span className="text-xl">{currentPassport.flag}</span>
+                        <span>{currentPassport.label}</span>
+                      </span>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {passportOptions.map((p) => (
+                      <SelectItem key={p.code} value={p.code}>
+                        <span className="flex items-center gap-2">
+                          <span>{p.flag}</span> {p.label}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Destination */}
+              <div className="flex-1">
+                <label className="text-sm font-extrabold text-foreground mb-2 block text-left uppercase tracking-wide">Nereye Gidiyorsunuz?</label>
+                <Select onValueChange={setSelectedDestination} value={selectedDestination}>
+                  <SelectTrigger className="h-14 text-base">
+                    <SelectValue placeholder="Ülke seçin" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {destinations.map((country) => (
+                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* CTA Button — visual anchor */}
+              <div className="flex items-end">
+                <Button
+                  className="w-full sm:w-auto btn-gradient text-white font-bold h-14 px-8 rounded-xl text-base"
+                  disabled={!selectedDestination}
+                >
+                  Kontrol Et <ArrowRight size={18} className="ml-1.5" />
+                </Button>
+              </div>
             </div>
 
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-primary-foreground leading-tight mb-6">
-              Your Visa,{" "}
-              <span className="text-gradient-gold">Handled.</span>
-            </h1>
-
-            <p className="text-lg md:text-xl text-primary-foreground/70 mb-8 max-w-xl leading-relaxed">
-              From Istanbul to the world — fully online, no agency middlemen. Expert guidance for every visa type, every destination.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/apply">
-                <Button
-                  size="lg"
-                  className="bg-accent text-accent-foreground hover:bg-gold-dark text-base px-8 h-12"
+            {/* Inline Result — shows automatically on destination select */}
+            <AnimatePresence>
+              {selectedDestination && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-6 pt-6 border-t border-border"
                 >
-                  Start Your Application
-                  <ArrowRight size={18} className="ml-2" />
-                </Button>
-              </Link>
-              <Link to="/visa-checker">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 text-base px-8 h-12"
-                >
-                  Check Visa Requirements
-                </Button>
-              </Link>
+                  {isVisaFree ? (
+                    /* ── Visa-free ── */
+                    <div className="text-center py-4">
+                      <div className="w-16 h-16 rounded-full bg-[#00D69E]/10 flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle size={32} className="text-[#00D69E]" />
+                      </div>
+                      <h3 className="text-2xl font-extrabold text-navy-dark mb-2">Vize Gerekmiyor! 🎉</h3>
+                      <p className="text-lg text-muted-foreground mb-2">
+                        <strong className="text-foreground">{currentPassport.label}</strong> pasaportuyla{" "}<strong className="text-foreground">{selectedDestination}</strong>{" "}için vize gerekmiyor.
+                      </p>
+                      {visaResult && visaResult.type.includes("K-ETA") && (
+                        <p className="text-base text-muted-foreground mt-2">
+                          Sadece <strong className="text-foreground">K-ETA</strong> (online ön kayıt) gereklidir. İşlem süresi: {visaResult.duration}, Ücret: {visaResult.fee}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    /* ── Visa required ── */
+                    <>
+                      <div className="grid sm:grid-cols-3 gap-4 text-left">
+                        <div>
+                          <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">Vize Türü</p>
+                          <p className="font-bold text-base">{visaResult?.type}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">Tahmini Süre</p>
+                          <p className="font-bold text-base">{visaResult?.duration}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">Konsolosluk Ücreti</p>
+                          <p className="font-bold text-base">{visaResult?.fee}</p>
+                        </div>
+                      </div>
+                      <div className="mt-5">
+                        <p className="text-xs font-bold text-muted-foreground mb-2.5 uppercase tracking-wide">Gerekli Belgeler</p>
+                        <div className="flex flex-wrap gap-2">
+                          {visaResult?.docs.map((doc) => (
+                            <span key={doc} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#00D69E]/10 text-[#00B386] text-sm font-semibold">
+                              <FileText size={13} /> {doc}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <Link to="/apply" className="block mt-6">
+                        <Button className="w-full btn-gradient text-white font-bold h-14 text-lg rounded-xl">
+                          Profesyonel Destek Al <ArrowRight size={18} className="ml-2" />
+                        </Button>
+                      </Link>
+                    </>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          {/* Trust Row */}
+          <motion.div
+            className="flex flex-wrap justify-center gap-6 md:gap-10 mt-10 text-base text-muted-foreground"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            <div className="flex items-center gap-2"><Users size={20} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">3.200+</strong> Başarılı Başvuru</span></div>
+            <div className="flex items-center gap-2"><Shield size={20} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">%96</strong> Onay Oranı</span></div>
+            <div className="flex items-center gap-2"><Clock size={20} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">24/7</strong> Destek</span></div>
+          </motion.div>
+        </div>
+      </section>
+
+
+
+      {/* ━━━ COMPARISON — left muted, right green & bigger ━━━ */}
+      <section className="py-20 md:py-28 section-gradient-light">
+        <div className="container mx-auto px-4 md:px-6 max-w-5xl">
+          <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-4">
+            Neden <span className="text-gradient-mint">VisaPath</span>?
+          </h2>
+          <p className="text-center text-muted-foreground text-xl mb-14 max-w-lg mx-auto">
+            <strong className="text-foreground">3.200+ başvuru</strong>, <strong className="text-foreground">%96 onay oranı</strong> — profesyonel desteğin farkını görün.
+          </p>
+
+          <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+            {/* DIY — muted, grey, compact */}
+            <div className="rounded-2xl border border-border bg-secondary/30 p-8 md:p-10">
+              <h3 className="text-xl font-bold text-muted-foreground mb-7 flex items-center gap-2">
+                <X size={22} className="text-muted-foreground/60" />
+                Kendin Yap
+              </h3>
+              <ul className="space-y-5">
+                {[
+                  "Uzun ve karmaşık resmi formlar",
+                  "Tek bir hata ret veya gecikme sebebi",
+                  "Takıldığınızda destek yok",
+                  "Hangi belge gerekli, bulmak zor",
+                  "Randevu almak saatler sürebilir",
+                ].map((item) => (
+                  <li key={item} className="flex items-start gap-3 text-base text-muted-foreground">
+                    <X size={20} className="text-muted-foreground/40 mt-0.5 shrink-0" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </motion.div>
+
+            {/* VisaPath — green, bigger, bold, prominent */}
+            <div className="rounded-2xl border-2 border-[#00D69E]/40 p-8 md:p-10 relative" style={{ background: "linear-gradient(135deg, rgba(0,214,158,0.04) 0%, rgba(0,179,134,0.08) 100%)" }}>
+              <div className="absolute -top-3.5 right-5 btn-gradient text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
+                ÖNERİLEN
+              </div>
+              <h3 className="text-2xl font-extrabold text-[#00B386] mb-7 flex items-center gap-2">
+                <CheckCircle size={24} className="text-[#00D69E]" />
+                VisaPath ile
+              </h3>
+              <ul className="space-y-5">
+                {[
+                  { text: "Basit ve anlaşılır başvuru süreci", bold: "Basit ve anlaşılır" },
+                  { text: "Uzmanlar her belgeyi kontrol eder", bold: "Uzmanlar" },
+                  { text: "7/24 WhatsApp, e-posta ve telefon desteği", bold: "7/24" },
+                  { text: "Gerekli belge listesi otomatik oluşturulur", bold: "otomatik" },
+                  { text: "Randevu desteği ve takip hizmeti", bold: "Randevu desteği" },
+                ].map((item) => (
+                  <li key={item.text} className="flex items-start gap-3 text-lg text-foreground">
+                    <CheckCircle size={22} className="text-[#00D69E] mt-0.5 shrink-0" />
+                    <span>
+                      {item.text.split(item.bold).map((part, i, arr) => (
+                        <span key={i}>
+                          {part}
+                          {i < arr.length - 1 && <strong className="font-extrabold">{item.bold}</strong>}
+                        </span>
+                      ))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Trust Bar */}
-      <section className="border-b bg-card">
-        <div className="container mx-auto px-4 md:px-6 py-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {stats.map((stat, i) => (
+      {/* ━━━ 3 STEPS ━━━ */}
+      <section className="py-20 md:py-28 bg-white">
+        <div className="container mx-auto px-4 md:px-6 max-w-3xl">
+          <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-4">
+            Nasıl Çalışır?
+          </h2>
+          <p className="text-center text-muted-foreground text-xl mb-14 max-w-md mx-auto">
+            <strong className="text-foreground">3 basit adımda</strong> vize başvurunuzu tamamlayın.
+          </p>
+
+          <div className="space-y-10">
+            {[
+              {
+                step: "01",
+                title: "Vize gereksinimini kontrol edin",
+                desc: "Pasaportunuzu ve hedef ülkenizi girin, gerekli belgeleri anında görün.",
+                icon: Globe,
+              },
+              {
+                step: "02",
+                title: "Üye olun ve planınızı seçin",
+                desc: "Hesabınızı oluşturun, size uygun paketi seçin. 5 dakikadan az sürer.",
+                icon: FileText,
+              },
+              {
+                step: "03",
+                title: "Gerisini bize bırakın",
+                desc: "Uzman ekibimiz belgelerinizi kontrol eder, başvurunuzu takip eder ve sonuçlanana kadar yanınızda olur.",
+                icon: Zap,
+              },
+            ].map((item) => (
               <motion.div
-                key={stat.label}
-                className="text-center"
-                {...fadeInUp}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
+                key={item.step}
+                className="flex gap-6 items-start"
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
               >
-                <div className="text-2xl md:text-3xl font-bold text-foreground">
-                  {stat.value}
+                <div className="w-16 h-16 rounded-2xl btn-gradient flex items-center justify-center shrink-0 shadow-md">
+                  <span className="text-xl font-extrabold text-white">{item.step}</span>
                 </div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  {stat.label}
+                <div>
+                  <h3 className="font-extrabold text-xl text-navy-dark mb-2">{item.title}</h3>
+                  <p className="text-base text-muted-foreground leading-relaxed">{item.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -205,192 +447,94 @@ export default function Index() {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-20 md:py-28">
+      {/* ━━━ STATS ━━━ */}
+      <section className="py-16 md:py-20 bg-gradient-navy">
         <div className="container mx-auto px-4 md:px-6">
-          <motion.div className="text-center mb-16" {...fadeInUp}>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              How It Works
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              Three simple steps to your visa approval
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {steps.map((step, i) => (
-              <motion.div
-                key={step.title}
-                className="relative text-center"
-                {...fadeInUp}
-                transition={{ delay: i * 0.15, duration: 0.5 }}
-              >
-                <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
-                  <step.icon size={28} className="text-accent" />
-                </div>
-                <div className="absolute -top-2 -right-2 md:right-auto md:left-[calc(50%+24px)] w-6 h-6 rounded-full bg-accent text-accent-foreground text-xs font-bold flex items-center justify-center">
-                  {i + 1}
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {step.desc}
-                </p>
-              </motion.div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { value: "3.200+", label: "Başarılı Başvuru" },
+              { value: "%96", label: "Onay Oranı" },
+              { value: "7+", label: "Yıl Deneyim" },
+              { value: "24/7", label: "Müşteri Desteği" },
+            ].map((stat) => (
+              <div key={stat.label}>
+                <p className="text-4xl md:text-5xl font-extrabold text-gradient-mint">{stat.value}</p>
+                <p className="text-base text-white/70 mt-2 font-medium">{stat.label}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Visa Types */}
-      <section className="py-20 md:py-28 bg-muted/50">
-        <div className="container mx-auto px-4 md:px-6">
-          <motion.div className="text-center mb-16" {...fadeInUp}>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Popular Visa Types
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              Expert guidance for the world's most popular destinations
-            </p>
-          </motion.div>
+      {/* ━━━ TESTIMONIALS ━━━ */}
+      <section className="py-20 md:py-28 bg-white">
+        <div className="container mx-auto px-4 md:px-6 max-w-4xl">
+          <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-14">
+            Müşterilerimiz Ne Diyor?
+          </h2>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
-            {visaTypes.map((visa, i) => (
-              <motion.div
-                key={visa.country}
-                {...fadeInUp}
-                transition={{ delay: i * 0.08, duration: 0.5 }}
-              >
-                <Link
-                  to="/visa-checker"
-                  className={`block p-6 rounded-xl bg-card border card-hover bg-gradient-to-br ${visa.color}`}
-                >
-                  <span className="text-3xl mb-3 block">{visa.flag}</span>
-                  <h3 className="font-semibold mb-1">{visa.country}</h3>
-                  <p className="text-xs text-muted-foreground">{visa.desc}</p>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-20 md:py-28">
-        <div className="container mx-auto px-4 md:px-6">
-          <motion.div className="text-center mb-16" {...fadeInUp}>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              What Our Clients Say
-            </h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              Real stories from real travelers
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {testimonials.map((t, i) => (
-              <motion.div
-                key={t.name}
-                className="bg-card border rounded-xl p-6 card-hover"
-                {...fadeInUp}
-                transition={{ delay: i * 0.1, duration: 0.5 }}
-              >
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: t.rating }).map((_, j) => (
-                    <Star
-                      key={j}
-                      size={16}
-                      className="fill-accent text-accent"
-                    />
+          <div className="grid md:grid-cols-3 gap-6">
+            {testimonials.map((t) => (
+              <div key={t.name} className="bg-white border border-border rounded-2xl p-8 card-hover">
+                <div className="flex gap-0.5 mb-4">
+                  {Array.from({ length: t.rating }).map((_, i) => (
+                    <Star key={i} size={20} className="fill-[#facc15] text-[#facc15]" />
                   ))}
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                  "{t.text}"
-                </p>
-                <div className="border-t pt-4">
-                  <p className="font-semibold text-sm">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t.country} · {t.type}
-                  </p>
+                <p className="text-base text-foreground/80 leading-relaxed mb-5">"{t.text}"</p>
+                <div>
+                  <p className="text-base font-extrabold text-navy-dark">{t.name}</p>
+                  <p className="text-sm text-muted-foreground">{t.city}</p>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section className="py-20 md:py-28 bg-muted/50">
-        <div className="container mx-auto px-4 md:px-6 max-w-3xl">
-          <motion.div className="text-center mb-16" {...fadeInUp}>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Frequently Asked Questions
-            </h2>
-          </motion.div>
+      {/* ━━━ FAQs ━━━ */}
+      <section className="py-20 md:py-28 section-gradient-light" id="sss">
+        <div className="container mx-auto px-4 md:px-6 max-w-2xl">
+          <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-14">
+            Sıkça Sorulan Sorular
+          </h2>
 
-          <motion.div {...fadeInUp}>
-            <Accordion type="single" collapsible className="space-y-3">
-              {faqs.map((faq, i) => (
-                <AccordionItem
-                  key={i}
-                  value={`faq-${i}`}
-                  className="bg-card border rounded-xl px-6"
-                >
-                  <AccordionTrigger className="text-left text-sm font-medium hover:no-underline">
-                    {faq.q}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm text-muted-foreground leading-relaxed">
-                    {faq.a}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </motion.div>
+          <Accordion type="single" collapsible className="space-y-3">
+            {faqs.map((faq, i) => (
+              <AccordionItem key={i} value={`faq-${i}`} className="bg-white border border-border rounded-xl px-6">
+                <AccordionTrigger className="text-base font-semibold text-left py-5 [&[data-state=open]]:text-[#00D69E]">
+                  {faq.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-base text-muted-foreground leading-relaxed pb-5">
+                  {faq.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-20 md:py-28 bg-gradient-navy relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: `url(${heroBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        />
-        <div className="container mx-auto px-4 md:px-6 relative z-10 text-center">
-          <motion.div {...fadeInUp}>
-            <Plane size={40} className="text-gold mx-auto mb-6" />
-            <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-              Ready to Start Your Journey?
-            </h2>
-            <p className="text-primary-foreground/70 text-lg mb-8 max-w-md mx-auto">
-              Join thousands of travelers who trusted VisaPath for their visa applications.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/apply">
-                <Button
-                  size="lg"
-                  className="bg-accent text-accent-foreground hover:bg-gold-dark px-8 h-12"
-                >
-                  Start Your Application
-                  <ArrowRight size={18} className="ml-2" />
-                </Button>
-              </Link>
-              <Link to="/visa-checker">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 px-8 h-12"
-                >
-                  Check Requirements First
-                </Button>
-              </Link>
-            </div>
-            <div className="flex items-center justify-center gap-2 mt-6 text-sm text-primary-foreground/50">
-              <Shield size={14} />
-              <span>Secure payments · No hidden fees · Cancel anytime</span>
-            </div>
-          </motion.div>
+      {/* ━━━ CTA BANNER ━━━ */}
+      <section className="py-20 md:py-24 bg-gradient-navy">
+        <div className="container mx-auto px-4 md:px-6 text-center max-w-2xl">
+          <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-5">
+            Hayalinizdeki Seyahate <span className="text-gradient-mint">Bir Adım</span> Kaldı
+          </h2>
+          <p className="text-white/70 mb-10 text-xl">
+            Başvurunuzu bugün başlatın, uzman ekibimiz sizin için çalışsın.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/apply">
+              <Button className="btn-gradient text-white font-bold px-10 h-16 text-xl rounded-full shadow-lg">
+                Hemen Başvurun <ArrowRight size={22} className="ml-2" />
+              </Button>
+            </Link>
+            <Link to="/pricing">
+              <Button variant="outline" className="border-2 border-white/30 text-white hover:bg-white/10 font-bold px-8 h-16 text-xl rounded-full">
+                Fiyatları Gör
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
     </div>

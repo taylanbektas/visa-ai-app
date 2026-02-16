@@ -7,106 +7,107 @@ import {
   Clock,
   BookOpen,
   ArrowRight,
-  Tag,
+  Search,
 } from "lucide-react";
 
-const categories = ["All", "Schengen", "USA", "UK", "Travel Tips", "Document Guides", "FAQs"];
+const categories = ["Tümü", "Schengen", "ABD", "İngiltere", "Seyahat İpuçları", "Belge Rehberleri"];
 
 const articles = [
   {
     id: "schengen-guide",
-    title: "The Complete Schengen Visa Guide for Turkish Citizens",
-    excerpt: "Everything you need to know about applying for a Schengen visa — from required documents to common rejection reasons.",
+    title: "Türk Vatandaşları İçin Eksiksiz Schengen Vize Rehberi",
+    excerpt: "Schengen vizesi başvurusu hakkında bilmeniz gereken her şey — gerekli belgelerden yaygın ret sebeplerine kadar.",
     category: "Schengen",
-    readTime: "12 min read",
-    image: "🇪🇺",
+    readTime: "12 dk okuma",
+    image: "/images/articles/schengen-guide.png",
   },
   {
     id: "us-tourist-visa",
-    title: "How to Apply for a US Tourist Visa (B-1/B-2) — Step by Step",
-    excerpt: "A comprehensive guide covering the DS-160 form, interview preparation, and common refusal reasons under INA 214(b).",
-    category: "USA",
-    readTime: "15 min read",
-    image: "🇺🇸",
+    title: "ABD Turist Vizesi (B-1/B-2) Başvurusu — Adım Adım",
+    excerpt: "DS-160 formu, mülakat hazırlığı ve INA 214(b) kapsamında yaygın ret sebeplerine dair kapsamlı rehber.",
+    category: "ABD",
+    readTime: "15 dk okuma",
+    image: "/images/articles/us-tourist-visa.png",
   },
   {
     id: "uk-visitor-visa",
-    title: "UK Standard Visitor Visa: Everything You Need to Know",
-    excerpt: "Online application via UKVI, biometric enrollment, document requirements, and processing times explained.",
-    category: "UK",
-    readTime: "10 min read",
-    image: "🇬🇧",
+    title: "İngiltere Standart Ziyaretçi Vizesi: Bilmeniz Gereken Her Şey",
+    excerpt: "UKVI üzerinden online başvuru, biyometrik kayıt, belge gereksinimleri ve işlem süreleri detaylı anlatımı.",
+    category: "İngiltere",
+    readTime: "10 dk okuma",
+    image: "/images/articles/uk-visitor-visa.png",
   },
   {
     id: "rejection-reasons",
-    title: "Why Visa Applications Get Rejected (And How to Avoid It)",
-    excerpt: "The top 7 rejection reasons with real examples and actionable fixes to strengthen your application.",
-    category: "Travel Tips",
-    readTime: "8 min read",
-    image: "⚠️",
+    title: "Vize Başvuruları Neden Reddedilir? (Ve Nasıl Önlenir)",
+    excerpt: "Gerçek örneklerle en sık karşılaşılan 7 ret sebebi ve başvurunuzu güçlendirecek pratik çözümler.",
+    category: "Seyahat İpuçları",
+    readTime: "8 dk okuma",
+    image: "/images/articles/rejection-reasons.png",
   },
   {
     id: "biometric-photo",
-    title: "Biometric Photo Requirements — The Complete Checklist",
-    excerpt: "ICAO standards, background specs, expression rules, and size requirements per country all in one place.",
-    category: "Document Guides",
-    readTime: "6 min read",
-    image: "📸",
+    title: "Biyometrik Fotoğraf Gereksinimleri — Eksiksiz Kontrol Listesi",
+    excerpt: "ICAO standartları, arka plan özellikleri, yüz ifadesi kuralları ve ülkelere göre boyut gereksinimleri.",
+    category: "Belge Rehberleri",
+    readTime: "6 dk okuma",
+    image: "/images/articles/biometric-photo.png",
   },
   {
     id: "cover-letter",
-    title: "How to Write a Visa Cover Letter That Gets Approved",
-    excerpt: "Structure, tone, what to include and avoid, with a ready-to-use sample letter template.",
-    category: "Document Guides",
-    readTime: "7 min read",
-    image: "✍️",
+    title: "Onay Alan Bir Vize Niyet Mektubu Nasıl Yazılır?",
+    excerpt: "Yapı, ton, neler dahil edilmeli ve nelerden kaçınılmalı — kullanıma hazır örnek mektup şablonuyla birlikte.",
+    category: "Belge Rehberleri",
+    readTime: "7 dk okuma",
+    image: "/images/articles/cover-letter.png",
   },
 ];
 
 export default function Learn() {
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCategory, setActiveCategory] = useState("Tümü");
   const [search, setSearch] = useState("");
 
   const filtered = articles.filter((a) => {
-    const matchCategory = activeCategory === "All" || a.category === activeCategory;
+    const matchCategory = activeCategory === "Tümü" || a.category === activeCategory;
     const matchSearch = a.title.toLowerCase().includes(search.toLowerCase());
     return matchCategory && matchSearch;
   });
 
   return (
-    <div className="min-h-screen pt-24 pb-20">
+    <div className="min-h-screen pt-24 pb-20 section-gradient-light">
       <div className="container mx-auto px-4 md:px-6">
         <motion.div
-          className="text-center mb-12 max-w-2xl mx-auto"
+          className="text-center mb-14 max-w-2xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
-            <BookOpen size={24} className="text-accent" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">Knowledge Base</h1>
-          <p className="text-muted-foreground text-lg">
-            Expert guides and tips to help you navigate the visa process with confidence.
+          <h1 className="text-3xl md:text-5xl font-extrabold text-navy-dark mb-4">
+            Bilgi <span className="text-gradient-mint">Bankası</span>
+          </h1>
+          <p className="text-muted-foreground text-lg md:text-xl">
+            Vize sürecini güvenle yönetmenize yardımcı olacak <strong className="text-foreground">uzman rehberler</strong> ve ipuçları.
           </p>
         </motion.div>
 
-        <div className="max-w-4xl mx-auto mb-8">
-          <Input
-            placeholder="Search articles..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="mb-4"
-          />
+        <div className="max-w-4xl mx-auto mb-10">
+          <div className="relative mb-5">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Makale ara..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-11 h-14 text-base bg-white border-border"
+            />
+          </div>
           <div className="flex flex-wrap gap-2">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  activeCategory === cat
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
+                className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-all ${activeCategory === cat
+                    ? "btn-gradient text-white shadow-md"
+                    : "bg-white border border-border text-muted-foreground hover:border-[#00D69E]/40 hover:text-[#00D69E]"
+                  }`}
               >
                 {cat}
               </button>
@@ -114,7 +115,7 @@ export default function Learn() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
           {filtered.map((article, i) => (
             <motion.div
               key={article.id}
@@ -124,27 +125,39 @@ export default function Learn() {
             >
               <Link
                 to={`/learn/${article.id}`}
-                className="block bg-card border rounded-xl p-6 card-hover h-full"
+                className="block bg-white border border-border rounded-2xl overflow-hidden card-hover h-full group"
               >
-                <span className="text-3xl mb-4 block">{article.image}</span>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-[10px] px-2 py-0.5 bg-muted rounded-full font-medium text-muted-foreground">
-                    {article.category}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Clock size={10} /> {article.readTime}
-                  </span>
+                {/* Image */}
+                <div className="h-48 overflow-hidden">
+                  <img
+                    src={article.image}
+                    alt={article.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                 </div>
-                <h3 className="font-semibold text-sm mb-2 leading-snug">{article.title}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{article.excerpt}</p>
+
+                <div className="p-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs px-3 py-1 bg-secondary rounded-full font-semibold text-muted-foreground">
+                      {article.category}
+                    </span>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock size={12} /> {article.readTime}
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-base md:text-lg mb-2 leading-snug text-navy-dark group-hover:text-[#00D69E] transition-colors">
+                    {article.title}
+                  </h3>
+                  <p className="text-sm md:text-base text-muted-foreground leading-relaxed">{article.excerpt}</p>
+                </div>
               </Link>
             </motion.div>
           ))}
         </div>
 
         {filtered.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground">
-            No articles found matching your criteria.
+          <div className="text-center py-16 text-muted-foreground text-lg">
+            Arama kriterlerinize uygun makale bulunamadı.
           </div>
         )}
       </div>

@@ -11,11 +11,11 @@ import {
 } from "lucide-react";
 
 const mockStages = [
-  { label: "Application Received", date: "Feb 10, 2026", status: "completed" },
-  { label: "Documents Under Review", date: "Feb 12, 2026", status: "in-progress" },
-  { label: "Submitted to Embassy", date: "", status: "pending" },
-  { label: "Decision Expected By Mar 1, 2026", date: "", status: "pending" },
-  { label: "Visa Decision", date: "", status: "pending" },
+  { label: "Başvuru Alındı", date: "10 Şubat 2026", status: "completed" },
+  { label: "Belgeler İnceleniyor", date: "12 Şubat 2026", status: "in-progress" },
+  { label: "Elçiliğe Gönderildi", date: "", status: "pending" },
+  { label: "Karar Beklenen Tarih: 1 Mart 2026", date: "", status: "pending" },
+  { label: "Vize Kararı", date: "", status: "pending" },
 ];
 
 export default function Track() {
@@ -34,8 +34,8 @@ export default function Track() {
           <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
             <Search size={24} className="text-accent" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">Track Your Application</h1>
-          <p className="text-muted-foreground">Enter your email and reference ID to view your application status.</p>
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">Başvuru Takip</h1>
+          <p className="text-muted-foreground">Başvuru durumunuzu görmek için e-posta ve referans numaranızı girin.</p>
         </motion.div>
 
         {!tracked ? (
@@ -47,19 +47,19 @@ export default function Track() {
           >
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Email Address</label>
-                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" type="email" />
+                <label className="text-sm font-medium mb-1.5 block">E-posta Adresi</label>
+                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ornek@email.com" type="email" />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Reference ID</label>
-                <Input value={refId} onChange={(e) => setRefId(e.target.value)} placeholder="e.g. VP-A1B2" />
+                <label className="text-sm font-medium mb-1.5 block">Referans Numarası</label>
+                <Input value={refId} onChange={(e) => setRefId(e.target.value)} placeholder="ör. VP-A1B2" />
               </div>
               <Button
                 className="w-full bg-accent text-accent-foreground hover:bg-gold-dark h-11"
                 onClick={() => setTracked(true)}
                 disabled={!email || !refId}
               >
-                Track Application
+                Başvuruyu Takip Et
               </Button>
             </div>
           </motion.div>
@@ -72,10 +72,10 @@ export default function Track() {
             <div className="bg-card border rounded-xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="font-semibold">Application #{refId || "VP-X1Y2"}</h2>
-                  <p className="text-sm text-muted-foreground">Turkey → France · Schengen Tourist Visa</p>
+                  <h2 className="font-semibold">Başvuru #{refId || "VP-X1Y2"}</h2>
+                  <p className="text-sm text-muted-foreground">Türkiye → Fransa · Schengen Turist Vizesi</p>
                 </div>
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-gold/10 text-gold-dark">In Review</span>
+                <span className="px-3 py-1 rounded-full text-xs font-medium bg-gold/10 text-gold-dark">İnceleniyor</span>
               </div>
 
               <div className="space-y-0">
@@ -107,14 +107,14 @@ export default function Track() {
             </div>
 
             <div className="bg-card border rounded-xl p-6">
-              <h3 className="font-semibold mb-3 text-sm">Your Advisor</h3>
+              <h3 className="font-semibold mb-3 text-sm">Danışmanınız</h3>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
                   <User size={18} className="text-accent" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Sarah Johnson</p>
-                  <p className="text-xs text-muted-foreground">Senior Visa Advisor · Navigator Plan</p>
+                  <p className="text-sm font-medium">Zeynep Kaya</p>
+                  <p className="text-xs text-muted-foreground">Kıdemli Vize Danışmanı · Rehber Planı</p>
                 </div>
               </div>
             </div>

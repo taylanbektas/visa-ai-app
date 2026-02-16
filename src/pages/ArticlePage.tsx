@@ -3,244 +3,254 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight, Clock, BookOpen } from "lucide-react";
 
+/* ── Article images ─────────────────────────────────────── */
+const articleImages: Record<string, string> = {
+  "schengen-guide": "/images/articles/schengen-guide.png",
+  "us-tourist-visa": "/images/articles/us-tourist-visa.png",
+  "uk-visitor-visa": "/images/articles/uk-visitor-visa.png",
+  "rejection-reasons": "/images/articles/rejection-reasons.png",
+  "biometric-photo": "/images/articles/biometric-photo.png",
+  "cover-letter": "/images/articles/cover-letter.png",
+};
+
 const articleContent: Record<string, { title: string; category: string; readTime: string; toc: string[]; content: string; related: string[] }> = {
   "schengen-guide": {
-    title: "The Complete Schengen Visa Guide for Turkish Citizens",
+    title: "Türk Vatandaşları İçin Eksiksiz Schengen Vize Rehberi",
     category: "Schengen",
-    readTime: "12 min read",
-    toc: ["What is the Schengen Area?", "The 26 Schengen Countries", "Visa Types", "Required Documents", "Financial Requirements", "Processing Time", "Appointment Booking", "Common Rejection Reasons"],
-    content: `## What is the Schengen Area?
+    readTime: "12 dk okuma",
+    toc: ["Schengen Alanı Nedir?", "26 Schengen Ülkesi", "Vize Türleri", "Gerekli Belgeler", "Mali Gereksinimler", "İşlem Süresi", "Randevu Alma", "Yaygın Ret Sebepleri"],
+    content: `## Schengen Alanı Nedir?
 
-The Schengen Area is a zone comprising 26 European countries that have officially abolished all passport and border controls at their mutual borders. For Turkish citizens, this means that a single Schengen visa allows you to travel freely across all 26 member states for up to 90 days within any 180-day period.
+Schengen Alanı, karşılıklı sınırlarındaki tüm pasaport ve sınır kontrollerini resmi olarak kaldırmış 26 Avrupa ülkesinden oluşan bir bölgedir. Türk vatandaşları için bu, tek bir Schengen vizesinin herhangi bir 180 günlük süre içinde 90 güne kadar tüm 26 üye ülkede serbest seyahat etmenize olanak tanıdığı anlamına gelir.
 
-The Schengen visa is one of the most sought-after visas globally, and understanding the application process thoroughly can significantly improve your chances of approval.
+Schengen vizesi dünya genelinde en çok talep edilen vizelerden biridir ve başvuru sürecini iyice anlamak, onay şansınızı önemli ölçüde artırabilir.
 
-## The 26 Schengen Countries
+## 26 Schengen Ülkesi
 
-The Schengen Area includes: Austria, Belgium, Czech Republic, Denmark, Estonia, Finland, France, Germany, Greece, Hungary, Iceland, Italy, Latvia, Liechtenstein, Lithuania, Luxembourg, Malta, Netherlands, Norway, Poland, Portugal, Slovakia, Slovenia, Spain, Sweden, and Switzerland.
+Schengen Alanı şu ülkeleri kapsar: Avusturya, Belçika, Çekya, Danimarka, Estonya, Finlandiya, Fransa, Almanya, Yunanistan, Macaristan, İzlanda, İtalya, Letonya, Lihtenştayn, Litvanya, Lüksemburg, Malta, Hollanda, Norveç, Polonya, Portekiz, Slovakya, Slovenya, İspanya, İsveç ve İsviçre.
 
-When applying, you should submit your application to the consulate of the country where you plan to spend the most time, or the country of first entry if you plan equal time across multiple destinations.
+Başvuru yaparken, en çok zaman geçirmeyi planladığınız ülkenin konsolosluğuna veya birden fazla ülkede eşit zaman geçirecekseniz ilk giriş ülkesinin konsolosluğuna başvurmanız gerekir.
 
-## Visa Types
+## Vize Türleri
 
-The most common Schengen visa for Turkish citizens is the Type C (short-stay) visa. This covers tourist visits, business trips, family visits, and cultural events. It is valid for stays of up to 90 days within a 180-day period. Multiple-entry visas are also available for frequent travelers, typically granted after a history of successful single-entry applications.
+Türk vatandaşları için en yaygın Schengen vizesi Tip C (kısa süreli) vizedir. Bu, turist ziyaretleri, iş gezileri, aile ziyaretleri ve kültürel etkinlikleri kapsar. 180 günlük bir süre içinde 90 güne kadar kalışlar için geçerlidir. Sık seyahat edenler için çoklu giriş vizeleri de mevcuttur ve genellikle başarılı tek girişli başvuru geçmişinden sonra verilir.
 
-## Required Documents
+## Gerekli Belgeler
 
-Your application must include: a completed application form, passport with at least two blank pages and validity extending 3 months beyond your planned stay, two recent biometric photographs (35x45mm), travel medical insurance with minimum €30,000 coverage, proof of accommodation (hotel bookings, invitation letter), flight itinerary (round-trip reservation), and proof of financial means.
+Başvurunuz şunları içermelidir: doldurulmuş başvuru formu, en az iki boş sayfası olan ve planlanan kalışınızdan 3 ay sonrasına kadar geçerli pasaport, iki adet güncel biyometrik fotoğraf (35x45mm), minimum €30.000 kapsamlı seyahat sağlık sigortası, konaklama kanıtı (otel rezervasyonları, davet mektubu), uçuş planı (gidiş-dönüş rezervasyonu) ve mali durum kanıtı.
 
-## Financial Requirements
+## Mali Gereksinimler
 
-For Turkish citizens, consulates typically require bank statements from the last 3-6 months showing a minimum balance. As a general guideline, you should demonstrate approximately €50-100 per day of your planned stay. A steady income flow is more important than a large lump sum deposited recently — consulates look for consistent financial stability.
+Türk vatandaşları için konsolosluklar genellikle son 3-6 aydaki banka hesap özetlerini minimum bakiye gösterecek şekilde ister. Genel bir kılavuz olarak, planlanan kalış süreniz boyunca günlük yaklaşık €50-100 tutarını kanıtlamanız gerekir. Düzenli bir gelir akışı, yakın zamanda yatırılan büyük bir tutardan daha önemlidir — konsolosluklar tutarlı finansal istikrar arar.
 
-Your bank statements should show regular salary deposits if employed, or business income if self-employed. Avoid making large cash deposits just before your application as this raises red flags.
+Banka hesap özetleriniz, çalışıyorsanız düzenli maaş ödemelerini veya serbest meslek sahibiyseniz iş gelirini göstermelidir. Başvurunuzdan hemen önce büyük nakit yatırımlar yapmaktan kaçının, çünkü bu şüphe uyandırır.
 
-## Processing Time
+## İşlem Süresi
 
-Standard processing takes 10-15 business days from the date of your appointment. During peak travel season (May-August), processing may take longer. It's recommended to apply at least 6 weeks before your planned travel date, and no earlier than 6 months in advance.
+Standart işlem, randevunuzdan itibaren 10-15 iş günü sürer. Yoğun seyahat sezonunda (Mayıs-Ağustos) işlem daha uzun sürebilir. Planlanan seyahat tarihinizden en az 6 hafta önce başvurmanız ve en erken 6 ay öncesinden başvurmanız önerilir.
 
-## Appointment Booking
+## Randevu Alma
 
-Most Schengen consulates in Turkey use VFS Global or iDATA as their appointment service providers. Appointments can be booked online through these platforms. During peak season, appointment slots fill up quickly — we recommend booking as soon as you have your documents ready.
+Türkiye'deki çoğu Schengen konsolosluğu randevu servis sağlayıcısı olarak VFS Global veya iDATA kullanır. Randevular bu platformlar aracılığıyla online olarak alınabilir. Yoğun sezonda randevu slotları hızla dolar — belgeleriniz hazır olur olmaz randevu almanızı öneriyoruz.
 
-## Common Rejection Reasons
+## Yaygın Ret Sebepleri
 
-The most frequent reasons for Schengen visa rejection for Turkish applicants include: insufficient proof of financial means, unclear purpose of travel, lack of strong ties to Turkey (employment, property, family), incomplete documentation, previous visa violations, and inadequate travel insurance coverage. Working with a professional visa consultancy like VisaPath can help you avoid these common pitfalls.`,
+Türk başvuru sahipleri için en sık karşılaşılan Schengen vizesi ret sebepleri: yetersiz mali kanıt, belirsiz seyahat amacı, Türkiye'ye güçlü bağ eksikliği (istihdam, mülk, aile), eksik belgeler, önceki vize ihlalleri ve yetersiz seyahat sigortası kapsamıdır. VisaPath gibi profesyonel bir vize danışmanlığı ile çalışmak bu yaygın tuzaklardan kaçınmanıza yardımcı olabilir.`,
     related: ["rejection-reasons", "biometric-photo", "cover-letter"],
   },
   "us-tourist-visa": {
-    title: "How to Apply for a US Tourist Visa (B-1/B-2) — Step by Step",
-    category: "USA",
-    readTime: "15 min read",
-    toc: ["Overview", "DS-160 Form", "MRV Fee Payment", "Interview Preparation", "Required Documents", "Common Interview Questions", "Refusal Under INA 214(b)"],
-    content: `## Overview
+    title: "ABD Turist Vizesi (B-1/B-2) Başvurusu — Adım Adım",
+    category: "ABD",
+    readTime: "15 dk okuma",
+    toc: ["Genel Bakış", "DS-160 Formu", "MRV Ücreti Ödemesi", "Mülakat Hazırlığı", "Gerekli Belgeler", "Yaygın Mülakat Soruları", "INA 214(b) Kapsamında Ret"],
+    content: `## Genel Bakış
 
-The B-1/B-2 visa is the most common nonimmigrant visa for temporary visitors to the United States. The B-1 category covers business visitors, while B-2 covers tourists, medical treatment seekers, and those visiting family or friends. For most Turkish applicants, the B-2 tourist visa is the relevant category.
+B-1/B-2 vizesi, Amerika Birleşik Devletleri'ne geçici ziyaretçiler için en yaygın göçmen olmayan vizedir. B-1 kategorisi iş ziyaretçilerini, B-2 ise turistleri, tıbbi tedavi arayanları ve aile veya arkadaş ziyaret edenleri kapsar. Çoğu Türk başvuru sahibi için B-2 turist vizesi uygun kategoridir.
 
-The US visa process is unique because it requires an in-person interview at the US Embassy or Consulate. The interview is a critical component — even with perfect documentation, a poor interview performance can result in a visa denial.
+ABD vize süreci benzersizdir çünkü ABD Büyükelçiliği veya Konsolosluğu'nda yüz yüze mülakat gerektirir. Mülakat kritik bir bileşendir — mükemmel belgelerle bile zayıf bir mülakat performansı vize reddine neden olabilir.
 
-## DS-160 Form
+## DS-160 Formu
 
-The DS-160 is the online nonimmigrant visa application form. You must complete this before scheduling your interview. The form takes approximately 60-90 minutes to complete and covers your personal information, travel plans, work history, education, and security-related questions.
+DS-160, online göçmen olmayan vize başvuru formudur. Mülakatınızı planlamadan önce bunu tamamlamanız gerekir. Form yaklaşık 60-90 dakika sürer ve kişisel bilgilerinizi, seyahat planlarınızı, iş geçmişinizi, eğitiminizi ve güvenlikle ilgili soruları kapsar.
 
-Key tips for the DS-160: answer every question honestly and consistently, upload a photo that meets strict US requirements (2x2 inches, white background, taken within 6 months), and save your confirmation page — you'll need the barcode number for your interview.
+DS-160 için önemli ipuçları: her soruyu dürüstçe ve tutarlı bir şekilde cevaplayın, ABD gereksinimlerini karşılayan bir fotoğraf yükleyin (2x2 inç, beyaz arka plan, son 6 ay içinde çekilmiş) ve onay sayfanızı kaydedin — mülakatınız için barkod numarasına ihtiyacınız olacak.
 
-## MRV Fee Payment
+## MRV Ücreti Ödemesi
 
-The Machine Readable Visa (MRV) fee for a B-1/B-2 visa is currently $185. This fee is non-refundable regardless of whether your visa is approved or denied. Payment can be made at designated bank branches in Turkey or online through the US visa appointment scheduling system.
+B-1/B-2 vizesi için Makine Okunabilir Vize (MRV) ücreti şu anda $185'tır. Bu ücret, vizenizin onaylanıp onaylanmadığına bakılmaksızın iade edilmez. Ödeme Türkiye'deki belirlenmiş banka şubelerinde veya ABD vize randevu planlama sistemi aracılığıyla online olarak yapılabilir.
 
-## Interview Preparation
+## Mülakat Hazırlığı
 
-The consular interview typically lasts 2-5 minutes. The officer's primary concern is whether you have strong ties to Turkey that will compel you to return after your visit. Prepare to clearly articulate: the purpose of your trip, your travel dates, where you will stay, who is funding the trip, your employment situation, and your ties to Turkey.
+Konsolosluk mülakatı genellikle 2-5 dakika sürer. Memurun temel endişesi, ziyaretinizden sonra sizi geri dönmeye zorlayacak Türkiye'ye güçlü bağlarınız olup olmadığıdır. Şunları açıkça ifade etmeye hazırlanın: seyahatinizin amacı, seyahat tarihleriniz, nerede kalacağınız, geziyi kimin finanse ettiği, istihdam durumunuz ve Türkiye'ye bağlarınız.
 
-Dress professionally, arrive early, bring organized documents, and answer questions directly and concisely. Do not volunteer unnecessary information or bring memorized speeches.
+Profesyonel giyinin, erken gelin, düzenli belgeler getirin ve soruları doğrudan ve kısaca cevaplayın. Gereksiz bilgi vermeyin veya ezberlenmiş konuşmalar yapmayın.
 
-## Required Documents
+## Gerekli Belgeler
 
-While the consular officer may not ask to see all documents, you should bring: DS-160 confirmation page, passport, interview appointment letter, MRV fee receipt, recent photograph, proof of financial means (bank statements, tax returns), employment verification letter, property ownership documents, family ties documentation, and your travel itinerary.
+Konsolosluk memuru tüm belgeleri görmek istemeyebilir ancak şunları getirmelisiniz: DS-160 onay sayfası, pasaport, mülakat randevu mektubu, MRV ücreti makbuzu, güncel fotoğraf, mali kanıt (banka hesap özetleri, vergi beyannameleri), işveren doğrulama mektubu, mülk sahipliği belgeleri, aile bağları belgeleri ve seyahat planınız.
 
-## Common Interview Questions
+## Yaygın Mülakat Soruları
 
-Expect questions like: "What is the purpose of your visit?", "How long do you plan to stay?", "Who will you be visiting?", "What do you do for work?", "Have you traveled internationally before?", "Who is paying for the trip?", and "Do you have family in the US?"
+Şu sorular bekleyin: "Ziyaretinizin amacı nedir?", "Ne kadar kalmayı planlıyorsunuz?", "Kimi ziyaret edeceksiniz?", "İşiniz ne?", "Daha önce uluslararası seyahat ettiniz mi?", "Geziyi kim ödüyor?" ve "ABD'de aileniz var mı?"
 
-## Refusal Under INA 214(b)
+## INA 214(b) Kapsamında Ret
 
-Section 214(b) of the Immigration and Nationality Act presumes that every B visa applicant is an intending immigrant until they prove otherwise. This is the most common reason for visa denial. If refused, you will receive a letter explaining the refusal. You can reapply at any time, but you should address the reasons for refusal — typically by providing stronger evidence of ties to your home country.
+Göç ve Vatandaşlık Yasası'nın 214(b) bölümü, her B vizesi başvuru sahibinin aksini kanıtlayana kadar göçmek niyetinde olduğunu varsayar. Bu, vize reddi için en yaygın nedendir. Reddedilirseniz, ret nedenini açıklayan bir mektup alırsınız. İstediğiniz zaman yeniden başvurabilirsiniz, ancak ret nedenlerini ele almalısınız — tipik olarak memleketinize daha güçlü bağ kanıtları sunarak.
 
-Working with VisaPath's Concierge plan gives you access to interview coaching that significantly improves approval rates for US visa applications.`,
+VisaPath'in VIP Concierge planıyla çalışmak, ABD vize başvuruları için onay oranlarını önemli ölçüde artıran mülakat koçluğuna erişim sağlar.`,
     related: ["schengen-guide", "rejection-reasons", "cover-letter"],
   },
   "uk-visitor-visa": {
-    title: "UK Standard Visitor Visa: Everything You Need to Know",
-    category: "UK",
-    readTime: "10 min read",
-    toc: ["Overview", "Online Application", "Biometric Enrollment", "Required Documents", "Financial Requirements", "Processing Time"],
-    content: `## Overview
+    title: "İngiltere Standart Ziyaretçi Vizesi: Bilmeniz Gereken Her Şey",
+    category: "İngiltere",
+    readTime: "10 dk okuma",
+    toc: ["Genel Bakış", "Online Başvuru", "Biyometrik Kayıt", "Gerekli Belgeler", "Mali Gereksinimler", "İşlem Süresi"],
+    content: `## Genel Bakış
 
-The UK Standard Visitor Visa allows you to visit the United Kingdom for tourism, business meetings, medical treatment, or academic activities for up to 6 months. Turkish citizens require this visa before traveling to the UK. Unlike Schengen, the UK has its own separate visa system managed by UK Visas and Immigration (UKVI).
+İngiltere Standart Ziyaretçi Vizesi, turizm, iş toplantıları, tıbbi tedavi veya akademik faaliyetler için 6 aya kadar Birleşik Krallık'ı ziyaret etmenize olanak tanır. Türk vatandaşları İngiltere'ye seyahat etmeden önce bu vizeyi almalıdır. Schengen'den farklı olarak İngiltere, UK Visas and Immigration (UKVI) tarafından yönetilen kendi ayrı vize sistemine sahiptir.
 
-## Online Application
+## Online Başvuru
 
-The application process begins online at the official UKVI portal. You'll need to create an account, complete the application form, and pay the visa fee (currently £115 for a standard 6-month visa). The online form covers your personal details, travel history, financial situation, and purpose of visit.
+Başvuru süreci resmi UKVI portalında online olarak başlar. Bir hesap oluşturmanız, başvuru formunu doldurmanız ve vize ücretini ödemeniz gerekir (standart 6 aylık vize için şu anda £115). Online form kişisel bilgilerinizi, seyahat geçmişinizi, mali durumunuzu ve ziyaret amacınızı kapsar.
 
-After completing the online form, you'll book a biometric appointment at a Visa Application Centre (VAC) in Turkey. VFS Global operates the VACs in Istanbul, Ankara, Izmir, and other major cities.
+Online formu tamamladıktan sonra, Türkiye'deki bir Vize Başvuru Merkezi'nde (VAC) biyometrik randevu alırsınız. VFS Global İstanbul, Ankara, İzmir ve diğer büyük şehirlerdeki VAC'ları işletmektedir.
 
-## Biometric Enrollment
+## Biyometrik Kayıt
 
-At your VAC appointment, you'll submit your biometric data (fingerprints and a digital photograph). You'll also submit your passport and supporting documents. The appointment typically takes 15-30 minutes.
+VAC randevunuzda biyometrik verilerinizi (parmak izleri ve dijital fotoğraf) verirsiniz. Ayrıca pasaportunuzu ve destekleyici belgelerinizi de teslim edersiniz. Randevu genellikle 15-30 dakika sürer.
 
-## Required Documents
+## Gerekli Belgeler
 
-Key documents include: a valid passport, proof of financial means (bank statements for the last 6 months), employment or business documents, accommodation details, flight reservations, and a cover letter explaining your visit. If visiting family or friends, include an invitation letter with their immigration status details.
+Önemli belgeler: geçerli pasaport, mali kanıt (son 6 aydaki banka hesap özetleri), istihdam veya iş belgeleri, konaklama detayları, uçuş rezervasyonları ve ziyaretinizi açıklayan bir niyet mektubu. Aile veya arkadaş ziyaret ediyorsanız, göç durumu detayları ile birlikte davet mektubu dahil edin.
 
-## Financial Requirements
+## Mali Gereksinimler
 
-The UK does not specify a minimum bank balance, but you must demonstrate that you can comfortably fund your stay without working. Consular officers look for consistent income, savings that align with your stated plans, and evidence that you can maintain your lifestyle at home while funding travel.
+İngiltere minimum banka bakiyesi belirtmez, ancak çalışmadan kalışınızı rahatça finanse edebileceğinizi kanıtlamanız gerekir. Konsolosluk memurları tutarlı gelir, belirtilen planlarınızla uyumlu tasarruflar ve seyahati finanse ederken evinizde yaşam tarzınızı sürdürebileceğinize dair kanıt arar.
 
-## Processing Time
+## İşlem Süresi
 
-Standard processing takes 3-6 weeks. Priority services are available for an additional fee: Priority (5 working days) for £250 and Super Priority (next working day) for £500. We recommend applying at least 8 weeks before your planned travel.`,
+Standart işlem 3-6 hafta sürer. Ek ücret karşılığında öncelikli hizmetler mevcuttur: Öncelik (5 iş günü) £250 ve Süper Öncelik (ertesi iş günü) £500. Planlanan seyahatinizden en az 8 hafta önce başvurmanızı öneriyoruz.`,
     related: ["schengen-guide", "rejection-reasons", "biometric-photo"],
   },
   "rejection-reasons": {
-    title: "Why Visa Applications Get Rejected (And How to Avoid It)",
-    category: "Travel Tips",
-    readTime: "8 min read",
-    toc: ["Introduction", "Reason 1: Insufficient Financial Proof", "Reason 2: Weak Ties to Home Country", "Reason 3: Incomplete Documentation", "Reason 4: Inconsistent Information", "Reason 5: Previous Violations", "Reason 6: Inadequate Insurance", "Reason 7: Poor Interview Performance"],
-    content: `## Introduction
+    title: "Vize Başvuruları Neden Reddedilir? (Ve Nasıl Önlenir)",
+    category: "Seyahat İpuçları",
+    readTime: "8 dk okuma",
+    toc: ["Giriş", "Sebep 1: Yetersiz Mali Kanıt", "Sebep 2: Ülkeye Zayıf Bağlar", "Sebep 3: Eksik Belgeler", "Sebep 4: Tutarsız Bilgiler", "Sebep 5: Önceki İhlaller", "Sebep 6: Yetersiz Sigorta", "Sebep 7: Zayıf Mülakat Performansı"],
+    content: `## Giriş
 
-Visa rejections are more common than most applicants realize. Understanding the top reasons applications are denied — and knowing how to address each one — can dramatically improve your chances of success. Here are the seven most common rejection reasons and practical fixes for each.
+Vize retleri çoğu başvuru sahibinin düşündüğünden daha yaygındır. Başvuruların reddedilmesinin en önemli nedenlerini anlamak — ve her birine nasıl çözüm bulacağınızı bilmek — başarı şansınızı dramatik şekilde artırabilir. İşte en yaygın yedi ret nedeni ve her biri için pratik çözümler.
 
-## Reason 1: Insufficient Financial Proof
+## Sebep 1: Yetersiz Mali Kanıt
 
-This is the number one reason for visa rejection worldwide. Consulates want to see that you can comfortably afford your trip without financial strain. The fix: provide 3-6 months of bank statements showing regular income, maintain a balance that covers at least €50-100 per day of travel for Schengen, and avoid making large unexplained deposits before applying.
+Bu dünya çapında vize reddi için bir numaralı nedendir. Konsolosluklar, gezinizi mali zorluk yaşamadan rahatça karşılayabileceğinizi görmek ister. Çözüm: düzenli gelir gösteren 3-6 aylık banka hesap özetleri sunun, Schengen için günde en az €50-100 tutarını kapsayan bakiye tutun ve başvurmadan önce büyük açıklanmamış yatırımlar yapmaktan kaçının.
 
-## Reason 2: Weak Ties to Home Country
+## Sebep 2: Ülkeye Zayıf Bağlar
 
-Immigration officers need to believe you'll return home after your visit. The fix: provide employment contracts or business ownership documents, property deeds or long-term lease agreements, family documentation (marriage certificate, children's school enrollment), and any other evidence of ongoing commitments in your home country.
+Göç memurları ziyaretinizden sonra ülkenize döneceğinize inanmalıdır. Çözüm: iş sözleşmeleri veya işletme sahipliği belgeleri, tapu veya uzun vadeli kira sözleşmeleri, aile belgeleri (evlilik cüzdanı, çocukların okul kaydı) ve memleketinizdeki devam eden taahhütlerin diğer kanıtlarını sunun.
 
-## Reason 3: Incomplete Documentation
+## Sebep 3: Eksik Belgeler
 
-Missing even one required document can result in rejection. The fix: use a detailed document checklist (like the one VisaPath provides), ensure all documents are properly translated if required, make copies of everything, and organize documents in the order the consulate expects.
+Tek bir gerekli belgenin eksik olması bile reddedilmeye neden olabilir. Çözüm: ayrıntılı bir belge kontrol listesi kullanın (VisaPath'in sunduğu gibi), gerekiyorsa tüm belgelerin uygun şekilde tercüme edildiğinden emin olun, her şeyin kopyasını çıkarın ve belgeleri konsolosluğun beklediği sırayla düzenleyin.
 
-## Reason 4: Inconsistent Information
+## Sebep 4: Tutarsız Bilgiler
 
-Discrepancies between your application form and supporting documents raise red flags. The fix: cross-check all dates, amounts, and details across every document. Ensure your stated purpose of travel matches your itinerary, accommodation, and financial arrangements.
+Başvuru formunuz ile destekleyici belgeleriniz arasındaki tutarsızlıklar şüphe uyandırır. Çözüm: her belgedeki tüm tarihleri, tutarları ve ayrıntıları çapraz kontrol edin. Belirtilen seyahat amacınızın güzergahınız, konaklama ve mali düzenlemelerinizle eşleştiğinden emin olun.
 
-## Reason 5: Previous Immigration Violations
+## Sebep 5: Önceki Göç İhlalleri
 
-Overstaying a previous visa or violating visa conditions is taken very seriously. The fix: if you have past violations, address them honestly in your application. Provide evidence of changed circumstances and demonstrate that you now have stronger ties to your home country.
+Önceki bir vizeyi aşmak veya vize koşullarını ihlal etmek çok ciddiye alınır. Çözüm: geçmiş ihlalleriniz varsa, bunları başvurunuzda dürüstçe ele alın. Değişen koşulların kanıtını sunun ve artık ülkenize daha güçlü bağlarınız olduğunu gösterin.
 
-## Reason 6: Inadequate Travel Insurance
+## Sebep 6: Yetersiz Seyahat Sigortası
 
-Many countries require specific minimum coverage. For Schengen visas, insurance must cover at least €30,000 in medical expenses and repatriation. The fix: purchase comprehensive travel insurance from a recognized provider that meets the specific requirements of your destination country.
+Birçok ülke belirli minimum kapsam gerektirir. Schengen vizeleri için sigorta, tıbbi harcamalarda ve geri dönüşte en az €30.000'u kapsamalıdır. Çözüm: hedef ülkenizin özel gereksinimlerini karşılayan tanınmış bir sağlayıcıdan kapsamlı seyahat sigortası satın alın.
 
-## Reason 7: Poor Interview Performance
+## Sebep 7: Zayıf Mülakat Performansı
 
-For countries requiring interviews (like the US), your performance matters as much as your documents. The fix: practice your answers, be concise and confident, dress professionally, and never lie or exaggerate. If you're nervous, consider professional interview preparation services like those offered in VisaPath's Concierge plan.`,
+Mülakat gerektiren ülkelerde (ABD gibi), performansınız belgeleriniz kadar önemlidir. Çözüm: cevaplarınızı prova edin, kısa ve kendinden emin olun, profesyonel giyinin ve asla yalan söylemeyin veya abartmayın. Heyecanlanıyorsanız, VisaPath'in VIP Concierge planında sunulan profesyonel mülakat hazırlık hizmetlerini düşünün.`,
     related: ["schengen-guide", "us-tourist-visa", "cover-letter"],
   },
   "biometric-photo": {
-    title: "Biometric Photo Requirements — The Complete Checklist",
-    category: "Document Guides",
-    readTime: "6 min read",
-    toc: ["ICAO Standards", "Background Requirements", "Expression and Pose", "Size Specifications by Country", "Common Mistakes"],
-    content: `## ICAO Standards
+    title: "Biyometrik Fotoğraf Gereksinimleri — Eksiksiz Kontrol Listesi",
+    category: "Belge Rehberleri",
+    readTime: "6 dk okuma",
+    toc: ["ICAO Standartları", "Arka Plan Gereksinimleri", "Yüz İfadesi ve Poz", "Ülkelere Göre Boyut Gereksinimleri", "Yaygın Hatalar"],
+    content: `## ICAO Standartları
 
-The International Civil Aviation Organization (ICAO) sets global standards for biometric photographs used in travel documents. Most countries follow these standards, with some additional country-specific requirements. Understanding these standards ensures your photo won't be rejected.
+Uluslararası Sivil Havacılık Örgütü (ICAO), seyahat belgelerinde kullanılan biyometrik fotoğraflar için küresel standartlar belirler. Çoğu ülke bu standartları, bazı ek ülkeye özgü gereksinimlerle birlikte takip eder. Bu standartları anlamak fotoğrafınızın reddedilmemesini sağlar.
 
-Key ICAO requirements: the photo must be in color, taken against a plain light-colored background, with your face clearly visible from forehead to chin and both ears showing. The photo must be recent (taken within the last 6 months) and accurately represent your current appearance.
+Temel ICAO gereksinimleri: fotoğraf renkli olmalı, düz açık renkli bir arka plan önünde çekilmeli, yüzünüz alından çeneye ve her iki kulak da görünecek şekilde net olmalıdır. Fotoğraf güncel olmalı (son 6 ay içinde çekilmiş) ve mevcut görünümünüzü doğru bir şekilde temsil etmelidir.
 
-## Background Requirements
+## Arka Plan Gereksinimleri
 
-The background must be plain white or off-white for most countries. The US requires a plain white background specifically. Schengen countries accept light gray or light blue. The UK requires a plain cream or light gray background. Avoid patterned backgrounds, shadows on the background, or backgrounds that blend with your hair or clothing.
+Arka plan çoğu ülke için düz beyaz veya kırık beyaz olmalıdır. ABD özellikle düz beyaz arka plan gerektirir. Schengen ülkeleri açık gri veya açık mavi kabul eder. İngiltere düz krem veya açık gri arka plan gerektirir. Desenli arka planlardan, arka plandaki gölgelerden veya saçınız veya kıyafetinizle karışan arka planlardan kaçının.
 
-## Expression and Pose
+## Yüz İfadesi ve Poz
 
-Your expression must be neutral with your mouth closed. No smiling, frowning, or raised eyebrows. Look directly at the camera with both eyes open and clearly visible. Your head should be centered and not tilted. Remove glasses unless medically required (some countries no longer accept photos with glasses at all). Head coverings are only acceptable for religious purposes, and your face must still be fully visible.
+Yüz ifadeniz nötr olmalı, ağzınız kapalı. Gülümseme, kaş çatma veya kaş kaldırma yok. Doğrudan kameraya bakın, her iki göz açık ve net görünür. Başınız ortada ve eğik olmamalıdır. Tıbbi olarak gerekli olmadıkça gözlükleri çıkarın (bazı ülkeler gözlüklü fotoğrafları artık hiç kabul etmiyor). Baş örtüleri yalnızca dini amaçlarla kabul edilir ve yüzünüz yine de tamamen görünür olmalıdır.
 
-## Size Specifications by Country
+## Ülkelere Göre Boyut Gereksinimleri
 
-**Schengen / EU**: 35mm × 45mm. Face should occupy 70-80% of the frame. Head height 32-36mm from chin to crown.
+**Schengen / AB**: 35mm × 45mm. Yüz çerçevenin %70-80'ini kaplamalıdır. Çeneden tepeye baş yüksekliği 32-36mm.
 
-**United States**: 2 inches × 2 inches (51mm × 51mm). Head height must be between 1 inch and 1-3/8 inches (25-35mm) from chin to top of head.
+**Amerika Birleşik Devletleri**: 2 inç × 2 inç (51mm × 51mm). Çeneden başın üstüne baş yüksekliği 1 inç ile 1-3/8 inç (25-35mm) arasında olmalıdır.
 
-**United Kingdom**: 45mm × 35mm. Head height 29-34mm from chin to crown.
+**Birleşik Krallık**: 45mm × 35mm. Çeneden tepeye baş yüksekliği 29-34mm.
 
-**Canada**: 50mm × 70mm. Face height 31-36mm from chin to crown.
+**Kanada**: 50mm × 70mm. Çeneden tepeye yüz yüksekliği 31-36mm.
 
-**Australia**: 35mm × 45mm. Head height 32-36mm from chin to crown.
+**Avustralya**: 35mm × 45mm. Çeneden tepeye baş yüksekliği 32-36mm.
 
-## Common Mistakes
+## Yaygın Hatalar
 
-The most frequent photo rejection reasons include: incorrect dimensions, red-eye, shadows on face or background, photo too dark or overexposed, wearing glasses (increasingly rejected), head covering obscuring face, wrong background color, photo older than 6 months, and digital alterations or filters. Always use a professional photo service that understands visa requirements for your specific destination.`,
+En sık karşılaşılan fotoğraf ret nedenleri: yanlış boyutlar, kırmızı göz, yüzde veya arka planda gölgeler, çok karanlık veya aşırı pozlanmış fotoğraf, gözlük takma (giderek daha çok reddediliyor), yüzü kapatan baş örtüsü, yanlış arka plan rengi, 6 aydan eski fotoğraf ve dijital düzenleme veya filtreler. Her zaman hedefiniz için vize gereksinimlerini anlayan profesyonel bir fotoğraf hizmeti kullanın.`,
     related: ["schengen-guide", "uk-visitor-visa", "cover-letter"],
   },
   "cover-letter": {
-    title: "How to Write a Visa Cover Letter That Gets Approved",
-    category: "Document Guides",
-    readTime: "7 min read",
-    toc: ["Why a Cover Letter Matters", "Structure", "Tone and Language", "What to Include", "What to Avoid", "Sample Cover Letter"],
-    content: `## Why a Cover Letter Matters
+    title: "Onay Alan Bir Vize Niyet Mektubu Nasıl Yazılır?",
+    category: "Belge Rehberleri",
+    readTime: "7 dk okuma",
+    toc: ["Niyet Mektubu Neden Önemli", "Yapı", "Ton ve Dil", "Neler Dahil Edilmeli", "Nelerden Kaçınılmalı", "Örnek Niyet Mektubu"],
+    content: `## Niyet Mektubu Neden Önemli
 
-A visa cover letter is your opportunity to present your case directly to the consular officer. While not always mandatory, a well-written cover letter can significantly strengthen your application by clearly explaining your travel purpose, demonstrating your ties to your home country, and addressing any potential concerns proactively.
+Vize niyet mektubu, davanızı doğrudan konsolosluk memuruna sunma fırsatınızdır. Her zaman zorunlu olmasa da, iyi yazılmış bir niyet mektubu, seyahat amacınızı açıkça açıklayarak, memleketinize bağlarınızı göstererek ve olası endişeleri proaktif olarak ele alarak başvurunuzu önemli ölçüde güçlendirebilir.
 
-Think of it as a personal introduction that ties all your supporting documents together into a coherent narrative.
+Bunu tüm destekleyici belgelerinizi tutarlı bir anlatıya bağlayan kişisel bir tanıtım olarak düşünün.
 
-## Structure
+## Yapı
 
-Your cover letter should follow a clear, professional structure: start with your personal details and the visa you're applying for, then state your purpose of travel, provide details about your itinerary, explain your financial situation, highlight your ties to your home country, and close with a polite request for visa approval.
+Niyet mektubunuz açık, profesyonel bir yapı izlemelidir: kişisel bilgileriniz ve başvurduğunuz vize ile başlayın, ardından seyahat amacınızı belirtin, güzergahınız hakkında ayrıntılar verin, mali durumunuzu açıklayın, memleketinize bağlarınızı vurgulayın ve kibarca vize onayı talebiyle kapatın.
 
-Keep it to one page — consular officers review hundreds of applications and appreciate conciseness.
+Bir sayfada tutun — konsolosluk memurları yüzlerce başvuruyu inceler ve kısalığı takdir eder.
 
-## Tone and Language
+## Ton ve Dil
 
-Write in a professional but natural tone. Avoid being overly formal or using flowery language. Be direct, honest, and specific. Use proper grammar and spelling. If English isn't your first language, have it proofread by someone proficient in English.
+Profesyonel ama doğal bir tonda yazın. Aşırı resmi olmaktan veya süslü dil kullanmaktan kaçının. Doğrudan, dürüst ve spesifik olun. Doğru dilbilgisi ve yazım kullanın. İngilizce ana diliniz değilse, İngilizce'ye hakim biri tarafından okutun.
 
-## What to Include
+## Neler Dahil Edilmeli
 
-Essential elements: your full name and passport number, the specific visa type and duration you're applying for, your detailed travel itinerary with dates, who you're visiting or where you're staying, how you're funding the trip, your employment situation, family ties in your home country, and your commitment to returning before the visa expires.
+Temel unsurlar: tam adınız ve pasaport numaranız, başvurduğunuz özel vize türü ve süresi, tarihlerle birlikte ayrıntılı seyahat güzergahınız, kimi ziyaret ettiğiniz veya nerede kalacağınız, geziyi nasıl finanse ettiğiniz, istihdam durumunuz, memleketinizdeki aile bağları ve vizenin süresi dolmadan dönme taahhüdünüz.
 
-## What to Avoid
+## Nelerden Kaçınılmalı
 
-Never include false information, exaggerated claims about your wealth, emotional pleas, irrelevant personal stories, or criticism of your home country. Don't mention any intention to work, study, or extend your stay beyond what the visa permits. Avoid generic templates that don't reflect your actual situation.
+Asla yanlış bilgi, servetiniz hakkında abartılı iddialar, duygusal yalvarışlar, alakasız kişisel hikayeler veya memleketinize yönelik eleştiriler eklemeyin. Vizenin izin verdiğinin ötesinde çalışma, eğitim veya kalışınızı uzatma niyetinden bahsetmeyin. Gerçek durumunuzu yansıtmayan genel şablonlardan kaçının.
 
-## Sample Cover Letter
+## Örnek Niyet Mektubu
 
-Dear Visa Officer,
+Sayın Vize Memuru,
 
-I am writing to support my application for a Schengen Tourist Visa (Type C) to visit France from [dates]. My passport number is [number].
+[Ülke] ziyareti için Schengen Turist Vizesi (Tip C) başvurumu desteklemek amacıyla yazıyorum. Planlanan tarihlerim [tarihler] ve pasaport numaram [numara].
 
-I am employed as [position] at [company] in Istanbul, Turkey, where I have worked for [X] years. I earn a monthly salary of [amount], as documented in my attached bank statements and employment letter.
+İstanbul, Türkiye'de [şirket]'te [pozisyon] olarak çalışmaktayım ve burada [X] yıldır görev yapmaktayım. Ekli banka hesap özetlerimde ve iş yazımda belgelendiği üzere aylık [tutar] maaş almaktayım.
 
-The purpose of my visit is tourism. I plan to visit Paris, Lyon, and Nice over [X] days. I have booked accommodation at [hotel names] and have a round-trip flight reservation with [airline].
+Ziyaretimin amacı turizmdir. [X] gün boyunca Paris, Lyon ve Nice'i ziyaret etmeyi planlıyorum. Konaklama [otel isimleri]'nde ve gidiş-dönüş uçuş rezervasyonum [havayolu] ile yapılmıştır.
 
-I have strong ties to Turkey: I own [property], my family resides here, and I am committed to returning to my position at [company]. I have previously visited [countries] and have always complied with visa regulations.
+Türkiye'ye güçlü bağlarım var: [mülk] sahibiyim, ailem burada yaşıyor ve [şirketteki] pozisyonuma dönme taahhüdüm var. Daha önce [ülkeleri] ziyaret ettim ve her zaman vize düzenlemelerine uydum.
 
-I kindly request you to consider my application favorably. All supporting documents are enclosed.
+Başvurumun olumlu değerlendirilmesini saygıyla arz ederim. Tüm destekleyici belgeler ektedir.
 
-Sincerely,
-[Your Name]`,
+Saygılarımla,
+[Adınız]`,
     related: ["schengen-guide", "rejection-reasons", "biometric-photo"],
   },
 };
@@ -253,8 +263,8 @@ export default function ArticlePage() {
     return (
       <div className="min-h-screen pt-24 pb-20 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Article Not Found</h1>
-          <Link to="/learn"><Button variant="outline">Back to Knowledge Base</Button></Link>
+          <h1 className="text-2xl font-bold mb-2">Makale Bulunamadı</h1>
+          <Link to="/learn"><Button variant="outline">Bilgi Bankası'na Dön</Button></Link>
         </div>
       </div>
     );
@@ -264,15 +274,22 @@ export default function ArticlePage() {
     <div className="min-h-screen pt-24 pb-20">
       <div className="container mx-auto px-4 md:px-6">
         <div className="max-w-4xl mx-auto">
-          <Link to="/learn" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-8">
-            <ArrowLeft size={14} /> Back to Knowledge Base
+          <Link to="/learn" className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground mb-8">
+            <ArrowLeft size={14} /> Bilgi Bankası'na Dön
           </Link>
+
+          {/* Hero Image */}
+          {id && articleImages[id] && (
+            <div className="rounded-2xl overflow-hidden mb-8 border border-border">
+              <img src={articleImages[id]} alt={article.title} className="w-full h-48 md:h-64 object-cover" />
+            </div>
+          )}
 
           <div className="grid md:grid-cols-4 gap-8">
             {/* Sidebar TOC */}
             <aside className="hidden md:block">
               <div className="sticky top-24">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Contents</h4>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">İçindekiler</h4>
                 <nav className="space-y-2">
                   {article.toc.map((item) => (
                     <a key={item} href={`#${item.toLowerCase().replace(/\s+/g, "-")}`} className="block text-xs text-muted-foreground hover:text-foreground transition-colors">
@@ -290,32 +307,32 @@ export default function ArticlePage() {
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="flex items-center gap-3 mb-4">
-                <span className="text-xs px-2 py-0.5 bg-muted rounded-full font-medium text-muted-foreground">{article.category}</span>
-                <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock size={10} /> {article.readTime}</span>
+                <span className="text-xs px-3 py-1 bg-secondary rounded-full font-semibold text-muted-foreground">{article.category}</span>
+                <span className="text-sm text-muted-foreground flex items-center gap-1"><Clock size={12} /> {article.readTime}</span>
               </div>
 
-              <h1 className="text-2xl md:text-3xl font-bold mb-8 leading-tight">{article.title}</h1>
+              <h1 className="text-2xl md:text-4xl font-extrabold mb-8 leading-tight text-navy-dark">{article.title}</h1>
 
-              <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed space-y-4">
+              <div className="prose max-w-none text-foreground/80 leading-relaxed space-y-5">
                 {article.content.split("\n\n").map((para, i) => {
                   if (para.startsWith("## ")) {
                     const heading = para.replace("## ", "");
-                    return <h2 key={i} id={heading.toLowerCase().replace(/\s+/g, "-")} className="text-lg font-bold text-foreground mt-8 mb-3">{heading}</h2>;
+                    return <h2 key={i} id={heading.toLowerCase().replace(/\s+/g, "-")} className="text-xl md:text-2xl font-extrabold text-navy-dark mt-10 mb-4">{heading}</h2>;
                   }
                   if (para.startsWith("**")) {
-                    return <p key={i} className="font-medium text-foreground">{para.replace(/\*\*/g, "")}</p>;
+                    return <p key={i} className="font-semibold text-foreground text-base md:text-lg">{para.replace(/\*\*/g, "")}</p>;
                   }
-                  return <p key={i}>{para}</p>;
+                  return <p key={i} className="text-base md:text-lg">{para}</p>;
                 })}
               </div>
 
               {/* CTA */}
-              <div className="mt-12 p-6 rounded-xl bg-gradient-navy text-primary-foreground">
-                <h3 className="font-bold mb-2">Ready to apply? Let us handle the paperwork.</h3>
-                <p className="text-sm opacity-70 mb-4">VisaPath experts will guide you through every step of your visa application.</p>
+              <div className="mt-12 p-8 md:p-10 rounded-2xl bg-gradient-navy text-primary-foreground">
+                <h3 className="font-extrabold text-xl mb-3">Başvurmaya hazır mısınız? Evrak işlerini bize bırakın.</h3>
+                <p className="text-base opacity-70 mb-5">VisaPath uzmanları vize başvurunuzun her adımında size rehberlik edecek.</p>
                 <Link to="/apply">
-                  <Button className="bg-accent text-accent-foreground hover:bg-gold-dark">
-                    Start Your Application <ArrowRight size={16} className="ml-2" />
+                  <Button className="btn-gradient text-white font-bold h-13 px-8 text-base rounded-xl">
+                    Başvuruyu Başlat <ArrowRight size={18} className="ml-2" />
                   </Button>
                 </Link>
               </div>
@@ -323,7 +340,7 @@ export default function ArticlePage() {
               {/* Related */}
               {article.related.length > 0 && (
                 <div className="mt-12">
-                  <h3 className="font-bold mb-4">Related Articles</h3>
+                  <h3 className="font-bold mb-4">İlgili Makaleler</h3>
                   <div className="grid gap-3">
                     {article.related.map((relId) => {
                       const rel = articleContent[relId];
