@@ -191,4 +191,8 @@
   .section-gradient-light {
     background: linear-gradient(180deg, #f0fdf9 0%, #ffffff 50%, #f8fffe 100%);
   }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

@@ -1,17 +1,12 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
-  Bell,
-  FileText,
-  User,
-  Settings,
-  Upload,
-  ArrowRight,
-  CheckCircle,
-  Clock,
-  AlertCircle,
+  Bell, FileText, User, Settings, Upload, ArrowRight, CheckCircle, Clock, AlertCircle, LogOut,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const applications = [
   { id: "VP-A1B2", destination: "Fransa", type: "Schengen Turist", status: "İnceleniyor", advisor: "Zeynep Kaya", date: "10 Şubat 2026" },
@@ -37,26 +32,36 @@ const statusColors: Record<string, string> = {
 };
 
 export default function Dashboard() {
+  const { user, profile, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/login");
+    }
+  }, [user, loading, navigate]);
+
+  if (loading || !user) return null;
+
+  const displayName = profile?.full_name || user.email?.split("@")[0] || "Kullanıcı";
+
   return (
     <div className="min-h-screen pt-24 pb-20">
       <div className="container mx-auto px-4 md:px-6 max-w-5xl">
-        <motion.div
-          className="mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <h1 className="text-2xl font-bold mb-1">Hoş geldiniz, Ayşe</h1>
-          <p className="text-muted-foreground">Vize başvurularınızın genel görünümü.</p>
+        <motion.div className="mb-8 flex items-center justify-between" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div>
+            <h1 className="text-2xl font-bold mb-1">Hoş geldiniz, {displayName}</h1>
+            <p className="text-muted-foreground">Vize başvurularınızın genel görünümü.</p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={async () => { await signOut(); navigate("/"); }} className="text-muted-foreground">
+            <LogOut size={16} className="mr-1" /> Çıkış
+          </Button>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {/* Main Content */}
           <div className="md:col-span-2 space-y-6">
-            {/* Applications */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <h2 className="font-semibold mb-4 flex items-center gap-2">
-                <FileText size={18} /> Başvurularınız
-              </h2>
+              <h2 className="font-semibold mb-4 flex items-center gap-2"><FileText size={18} /> Başvurularınız</h2>
               <div className="space-y-4">
                 {applications.map((app) => {
                   const StatusIcon = statusIcons[app.status] || Clock;
@@ -68,24 +73,16 @@ export default function Dashboard() {
                           <h3 className="font-semibold">{app.destination} — {app.type}</h3>
                         </div>
                         <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[app.status] || ""}`}>
-                          <StatusIcon size={12} />
-                          {app.status}
+                          <StatusIcon size={12} /> {app.status}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <User size={14} />
-                          <span>Danışman: {app.advisor}</span>
-                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground"><User size={14} /><span>Danışman: {app.advisor}</span></div>
                         <span className="text-xs text-muted-foreground">{app.date}</span>
                       </div>
                       <div className="mt-4 flex gap-2">
-                        <Link to="/track">
-                          <Button size="sm" variant="outline" className="text-xs">Durumu Takip Et</Button>
-                        </Link>
-                        <Button size="sm" variant="ghost" className="text-xs">
-                          <Upload size={12} className="mr-1" /> Belge Yükle
-                        </Button>
+                        <Link to="/track"><Button size="sm" variant="outline" className="text-xs">Durumu Takip Et</Button></Link>
+                        <Button size="sm" variant="ghost" className="text-xs"><Upload size={12} className="mr-1" /> Belge Yükle</Button>
                       </div>
                     </div>
                   );
@@ -93,23 +90,16 @@ export default function Dashboard() {
               </div>
             </motion.div>
 
-            {/* Start New */}
             <Link to="/apply" className="block">
               <div className="border-2 border-dashed border-accent/20 rounded-xl p-6 text-center hover:border-accent/40 transition-colors">
-                <p className="text-sm font-medium text-muted-foreground">
-                  + Yeni Başvuru Oluştur
-                </p>
+                <p className="text-sm font-medium text-muted-foreground">+ Yeni Başvuru Oluştur</p>
               </div>
             </Link>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* Notifications */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <h2 className="font-semibold mb-4 flex items-center gap-2">
-                <Bell size={18} /> Bildirimler
-              </h2>
+              <h2 className="font-semibold mb-4 flex items-center gap-2"><Bell size={18} /> Bildirimler</h2>
               <div className="bg-card border rounded-xl divide-y">
                 {notifications.map((n, i) => (
                   <div key={i} className="p-4">
@@ -120,23 +110,17 @@ export default function Dashboard() {
               </div>
             </motion.div>
 
-            {/* Account */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-              <h2 className="font-semibold mb-4 flex items-center gap-2">
-                <Settings size={18} /> Hesap
-              </h2>
+              <h2 className="font-semibold mb-4 flex items-center gap-2"><Settings size={18} /> Hesap</h2>
               <div className="bg-card border rounded-xl p-5 space-y-3">
                 <div>
                   <p className="text-xs text-muted-foreground">Ad Soyad</p>
-                  <p className="text-sm font-medium">Ayşe Karagöz</p>
+                  <p className="text-sm font-medium">{displayName}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">E-posta</p>
-                  <p className="text-sm font-medium">ayse@ornek.com</p>
+                  <p className="text-sm font-medium">{user.email}</p>
                 </div>
-                <Button variant="outline" size="sm" className="w-full text-xs">
-                  Profili Düzenle
-                </Button>
               </div>
             </motion.div>
           </div>
