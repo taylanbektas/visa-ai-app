@@ -98,7 +98,7 @@ export default function Contact() {
                                 <Button
                                     type="submit"
                                     disabled={formState === "sending"}
-                                    className="w-full btn-gradient text-white font-bold h-14 text-lg rounded-xl"
+                                    className="w-full btn-gradient text-white font-bold h-14 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 >
                                     {formState === "sending" ? (
                                         t("contact.form.sending")

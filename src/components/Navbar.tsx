@@ -111,6 +111,8 @@ export function Navbar() {
       className={`fixed left-0 right-0 top-0 z-50 pt-[env(safe-area-inset-top,0px)] transition-all duration-300 ${
         scrolled ? "border-b border-border/60 bg-white/95 shadow-sm backdrop-blur-md" : "bg-transparent"
       }`}
+      role="navigation"
+      aria-label="Ana navigasyon"
     >
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex h-16 items-center justify-between md:h-20">
@@ -142,9 +144,12 @@ export function Navbar() {
                   setLangOpen(false);
                 }}
                 className="flex items-center gap-1 text-lg font-bold text-foreground/90 transition-colors hover:text-accent"
+                aria-expanded={helpOpen}
+                aria-haspopup="true"
+                aria-label={`${t("nav.help")} menüsü`}
               >
                 {t("nav.help")}{" "}
-                <ChevronDown size={14} className={`transition-transform ${helpOpen ? "rotate-180" : ""}`} />
+                <ChevronDown size={14} className={`transition-transform ${helpOpen ? "rotate-180" : ""}`} aria-hidden="true" />
               </button>
               <AnimatePresence>
                 {helpOpen && (
@@ -191,10 +196,13 @@ export function Navbar() {
                   setHelpOpen(false);
                 }}
                 className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-sm font-medium text-foreground/70 transition-colors hover:text-foreground"
+                aria-expanded={langOpen}
+                aria-haspopup="true"
+                aria-label={`Dil seçici: ${activeLang.label}`}
               >
-                <span>{activeLang.flag}</span>
+                <span aria-hidden="true">{activeLang.flag}</span>
                 <span className="hidden lg:inline">{activeLang.code.toUpperCase()}</span>
-                <ChevronDown size={12} className={`transition-transform ${langOpen ? "rotate-180" : ""}`} />
+                <ChevronDown size={12} className={`transition-transform ${langOpen ? "rotate-180" : ""}`} aria-hidden="true" />
               </button>
               <AnimatePresence>
                 {langOpen && (

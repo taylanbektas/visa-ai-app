@@ -181,24 +181,24 @@ function StatsSection({ t }: { t: (key: string) => string }) {
   );
 }
 
-/* ── iVisa-style Testimonials Carousel ─────────────────── */
+/* ── Testimonials: ufak kutular, yan yana, butonlarla kaydırma ─────────────────── */
 function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-
-  // Number of cards visible at once: 1 on mobile, 3 on md+
-  const getVisibleCount = () => (typeof window !== "undefined" && window.innerWidth >= 768 ? 3 : 1);
-  const [visibleCount, setVisibleCount] = useState(getVisibleCount());
+  const CARD_WIDTH = 280;
+  const GAP = 16;
+  const VISIBLE_MOBILE = 1;
+  const VISIBLE_DESKTOP = 4;
+  const [visibleCount, setVisibleCount] = useState(typeof window !== "undefined" && window.innerWidth >= 768 ? VISIBLE_DESKTOP : VISIBLE_MOBILE);
 
   useEffect(() => {
-    const handleResize = () => setVisibleCount(getVisibleCount());
+    const handleResize = () => setVisibleCount(window.innerWidth >= 768 ? VISIBLE_DESKTOP : VISIBLE_MOBILE);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const maxIndex = Math.max(0, testimonials.length - visibleCount);
 
-  // Auto-advance every 5 seconds
   useEffect(() => {
     if (isPaused) return;
     const interval = setInterval(() => {
@@ -207,12 +207,10 @@ function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
     return () => clearInterval(interval);
   }, [isPaused, maxIndex]);
 
-  const goTo = (idx: number) => setCurrentIndex(Math.max(0, Math.min(idx, maxIndex)));
-  const goPrev = () => goTo(currentIndex <= 0 ? maxIndex : currentIndex - 1);
-  const goNext = () => goTo(currentIndex >= maxIndex ? 0 : currentIndex + 1);
+  const goPrev = () => setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
+  const goNext = () => setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
 
-  // Dot indicators — group pages
-  const totalDots = maxIndex + 1;
+  const offset = -currentIndex * (CARD_WIDTH + GAP);
 
   return (
     <section
@@ -221,8 +219,7 @@ function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
       onMouseLeave={() => setIsPaused(false)}
     >
       <div className="container mx-auto px-4 md:px-6 max-w-6xl">
-        {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-10">
           <h2 className="text-3xl md:text-5xl font-extrabold text-navy-dark mb-4">
             {t("testimonials.title")}
           </h2>
@@ -237,80 +234,74 @@ function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
           </div>
         </div>
 
-        {/* Carousel container */}
         <div className="relative">
-          {/* Arrow buttons */}
           <button
             onClick={goPrev}
-            className="absolute -left-4 md:-left-6 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white shadow-lg transition-colors hover:bg-secondary md:flex"
-            aria-label="Previous"
+            className="absolute -left-2 md:-left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-full border border-border bg-white shadow-lg transition-colors hover:bg-[#00D69E]/10 hover:border-[#00D69E]/40"
+            aria-label="Önceki"
           >
             <ChevronLeft size={22} className="text-navy-dark" />
           </button>
           <button
             onClick={goNext}
-            className="absolute -right-4 md:-right-6 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white shadow-lg transition-colors hover:bg-secondary md:flex"
-            aria-label="Next"
+            className="absolute -right-2 md:-right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-full border border-border bg-white shadow-lg transition-colors hover:bg-[#00D69E]/10 hover:border-[#00D69E]/40"
+            aria-label="Sonraki"
           >
             <ChevronRight size={22} className="text-navy-dark" />
           </button>
 
-          {/* Cards rail */}
           <div className="overflow-hidden">
             <motion.div
-              className="flex gap-5"
-              animate={{ x: `-${currentIndex * (100 / visibleCount + (5 * (visibleCount - 1)) / visibleCount)}%` }}
+              className="flex gap-4"
+              style={{ transform: `translateX(${offset}px)` }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              style={{ width: `${(testimonials.length / visibleCount) * 100}%` }}
             >
               {testimonials.map((review, i) => (
                 <div
                   key={i}
-                  className="flex-shrink-0 bg-white border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow select-none"
-                  style={{ width: `calc(${100 / testimonials.length * visibleCount}% - ${5 * (visibleCount - 1) / visibleCount * (testimonials.length / visibleCount)}px)` }}
+                  className="flex-shrink-0 w-[260px] md:w-[280px] bg-white border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex gap-0.5">
                       {Array.from({ length: review.rating }).map((_, j) => (
-                        <Star key={j} size={14} className="fill-[#facc15] text-[#facc15]" />
+                        <Star key={j} size={12} className="fill-[#facc15] text-[#facc15]" />
                       ))}
                       {Array.from({ length: 5 - review.rating }).map((_, j) => (
-                        <Star key={`e${j}`} size={14} className="text-border" />
+                        <Star key={`e${j}`} size={12} className="text-border" />
                       ))}
                     </div>
-                    <span className="text-[11px] text-muted-foreground">{review.date}</span>
+                    <span className="text-[10px] text-muted-foreground">{review.date}</span>
                   </div>
-                  <p className="text-[13px] md:text-sm text-foreground/80 leading-relaxed mb-3">
-                    "{review.text}"
+                  <p className="text-xs md:text-sm text-foreground/85 leading-relaxed mb-3 line-clamp-4">
+                    &quot;{review.text}&quot;
                   </p>
-                  <div className="flex items-center gap-2.5 pt-2.5 border-t border-border">
-                    <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-xs">
+                  <div className="flex items-center gap-2 pt-2 border-t border-border">
+                    <div className="w-7 h-7 rounded-full bg-[#00D69E]/10 flex items-center justify-center text-[#00B386] font-bold text-[10px]">
                       {review.name.split(" ").map(n => n[0]).join("")}
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-navy-dark">{review.name}</p>
-                      <p className="text-[11px] text-muted-foreground">{review.city} · {review.country}</p>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-navy-dark truncate">{review.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{review.city} · {review.country}</p>
                     </div>
                   </div>
                 </div>
               ))}
             </motion.div>
           </div>
-        </div>
 
-        {/* Dot indicators */}
-        <div className="flex justify-center gap-2 mt-8">
-          {Array.from({ length: totalDots }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goTo(i)}
-              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === currentIndex
-                ? "bg-[#00D69E] w-7"
-                : "bg-border hover:bg-muted-foreground/30"
+          <div className="flex justify-center gap-2 mt-6">
+            {Array.from({ length: maxIndex + 1 }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentIndex(i)}
+                className={`h-2 rounded-full transition-all duration-300 ${i === currentIndex
+                  ? "bg-[#00D69E] w-6"
+                  : "bg-border w-2 hover:bg-muted-foreground/30"
                 }`}
-              aria-label={`Go to slide ${i + 1}`}
-            />
-          ))}
+                aria-label={`Slide ${i + 1}`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -359,10 +350,10 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen safe-bottom-pad">
+    <div className="min-h-screen safe-bottom-pad" id="main-content">
 
       {/* ━━━ HERO ━━━ */}
-      <section className="relative pt-24 pb-14 md:pt-40 md:pb-24 section-gradient-light">
+      <section className="relative pt-24 pb-14 md:pt-40 md:pb-24 section-gradient-light" aria-label="Ana başlık ve vize kontrol aracı">
         <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           {/* Hidden sizer — measures widest word to prevent layout shifts */}
           <span ref={sizerRef} className="text-5xl sm:text-6xl md:text-7xl font-extrabold invisible absolute" aria-hidden="true" style={{ lineHeight: 1.15 }}>
@@ -456,10 +447,16 @@ export default function Index() {
               {/* CTA Button — visual anchor */}
               <div className="flex items-end">
                 <Button
-                  className="w-full sm:w-auto btn-gradient text-white font-bold h-16 px-10 rounded-xl text-lg"
+                  className="w-full sm:w-auto btn-gradient text-white font-bold h-16 px-8 sm:px-10 rounded-xl text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   disabled={!selectedDestination}
+                  onClick={() => {
+                    if (selectedDestination) {
+                      navigate("/apply", { state: { destination: selectedDestination } });
+                    }
+                  }}
+                  aria-label={t("checker.button")}
                 >
-                  {t("checker.button")} <ArrowRight size={18} className="ml-1.5" />
+                  {t("checker.button")} <ArrowRight size={18} className="ml-1.5" aria-hidden="true" />
                 </Button>
               </div>
             </div>
@@ -528,7 +525,7 @@ export default function Index() {
                         </div>
                       </div>
                       <Link to="/apply" state={{ destination: selectedDestination }} className="block mt-6">
-                        <Button className="w-full btn-gradient text-white font-bold h-14 text-lg rounded-xl">
+                        <Button className="w-full btn-gradient text-white font-bold h-14 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
                           {t("visa.get_visa")} <ArrowRight size={18} className="ml-2" />
                         </Button>
                       </Link>
@@ -541,14 +538,23 @@ export default function Index() {
 
           {/* Trust Row */}
           <motion.div
-            className="flex flex-wrap justify-center gap-4 md:gap-10 mt-8 md:mt-10 text-sm md:text-lg text-muted-foreground"
+            className="flex flex-wrap justify-center gap-6 md:gap-12 mt-10 md:mt-12 text-sm md:text-base text-muted-foreground"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            <div className="flex items-center gap-2"><Users size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">3.200+</strong> {t("trust.applications")}</span></div>
-            <div className="flex items-center gap-2"><Shield size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">%96</strong> {t("trust.approval")}</span></div>
-            <div className="flex items-center gap-2"><Clock size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">{t("trust.supportTime")}</strong> {t("trust.support")}</span></div>
+            <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white/60 backdrop-blur-sm border border-border/50">
+              <Users size={20} className="text-[#00D69E] shrink-0" /> 
+              <span><strong className="text-foreground font-extrabold">3.200+</strong> {t("trust.applications")}</span>
+            </div>
+            <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white/60 backdrop-blur-sm border border-border/50">
+              <Shield size={20} className="text-[#00D69E] shrink-0" /> 
+              <span><strong className="text-foreground font-extrabold">%96</strong> {t("trust.approval")}</span>
+            </div>
+            <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white/60 backdrop-blur-sm border border-border/50">
+              <Clock size={20} className="text-[#00D69E] shrink-0" /> 
+              <span><strong className="text-foreground font-extrabold">{t("trust.supportTime")}</strong> {t("trust.support")}</span>
+            </div>
           </motion.div>
         </div>
       </section >
@@ -556,7 +562,7 @@ export default function Index() {
 
 
       {/* ━━━ COMPARISON — left muted, right green & bigger ━━━ */}
-      < section className="py-16 md:py-28 section-gradient-light" >
+      <section className="py-16 md:py-28 section-gradient-light" aria-label="VisaPath ve kendi başına başvuru karşılaştırması">
         <div className="container mx-auto px-4 md:px-6 max-w-5xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-4">
             {t("comparison.title")} <span className="text-gradient-mint">VisaPath</span>?
@@ -567,42 +573,42 @@ export default function Index() {
 
           <div className="grid md:grid-cols-2 gap-6 md:gap-8">
             {/* DIY — muted, grey, compact */}
-            <div className="rounded-2xl border border-border bg-secondary/30 p-8 md:p-10">
+            <div className="rounded-2xl border border-border bg-secondary/20 p-8 md:p-10 transition-all hover:border-border/60">
               <h3 className="text-2xl font-bold text-muted-foreground mb-7 flex items-center gap-2">
-                <X size={24} className="text-muted-foreground/60" />
+                <X size={24} className="text-muted-foreground/60 shrink-0" />
                 {t("comparison.diy")}
               </h3>
-              <ul className="space-y-5">
+              <ul className="space-y-4">
                 {[0, 1, 2, 3, 4].map((i) => (
-                  <li key={i} className="flex items-start gap-3 text-lg text-muted-foreground">
-                    <X size={22} className="text-muted-foreground/40 mt-0.5 shrink-0" />
-                    <span>{t(`comparison.diy.${i}`)}</span>
+                  <li key={i} className="flex items-start gap-3 text-base md:text-lg text-muted-foreground">
+                    <X size={20} className="text-muted-foreground/40 mt-0.5 shrink-0" />
+                    <span className="leading-relaxed">{t(`comparison.diy.${i}`)}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
             {/* VisaPath — green, bigger, bold, prominent */}
-            <div className="rounded-2xl border-2 border-[#00D69E]/40 p-8 md:p-10 relative" style={{ background: "linear-gradient(135deg, rgba(0,214,158,0.04) 0%, rgba(0,179,134,0.08) 100%)" }}>
-              <div className="absolute -top-3.5 right-5 btn-gradient text-white text-sm font-bold px-5 py-2 rounded-full shadow-md">
+            <div className="rounded-2xl border-2 border-[#00D69E]/50 p-8 md:p-10 relative shadow-lg transition-all hover:shadow-xl pt-12 md:pt-14" style={{ background: "linear-gradient(135deg, rgba(0,214,158,0.06) 0%, rgba(0,179,134,0.12) 100%)" }}>
+              <div className="absolute left-1/2 -translate-x-1/2 -top-4 btn-gradient text-white text-sm font-bold px-5 py-2 rounded-full shadow-lg whitespace-nowrap">
                 {t("comparison.recommended")}
               </div>
-              <h3 className="text-2xl font-extrabold text-[#00B386] mb-7 flex items-center gap-2">
-                <CheckCircle size={26} className="text-[#00D69E]" />
+              <h3 className="text-2xl md:text-3xl font-extrabold text-[#00B386] mb-7 flex items-center gap-2">
+                <CheckCircle size={26} className="text-[#00D69E] shrink-0" />
                 {t("comparison.withVP")}
               </h3>
-              <ul className="space-y-5">
+              <ul className="space-y-4">
                 {[0, 1, 2, 3, 4].map((i) => {
                   const text = t(`comparison.vp.${i}.text`);
                   const bold = t(`comparison.vp.${i}.bold`);
                   return (
-                    <li key={i} className="flex items-start gap-3 text-lg text-foreground">
-                      <CheckCircle size={22} className="text-[#00D69E] mt-0.5 shrink-0" />
-                      <span>
+                    <li key={i} className="flex items-start gap-3 text-base md:text-lg text-foreground">
+                      <CheckCircle size={20} className="text-[#00D69E] mt-0.5 shrink-0" />
+                      <span className="leading-relaxed">
                         {text.split(bold).map((part, j, arr) => (
                           <span key={j}>
                             {part}
-                            {j < arr.length - 1 && <strong className="font-extrabold">{bold}</strong>}
+                            {j < arr.length - 1 && <strong className="font-extrabold text-[#00B386]">{bold}</strong>}
                           </span>
                         ))}
                       </span>
@@ -616,7 +622,7 @@ export default function Index() {
       </section >
 
       {/* ━━━ 3 STEPS ━━━ */}
-      < section className="py-16 md:py-28 bg-white" >
+      <section className="py-16 md:py-28 bg-white" aria-label="Vize başvuru süreci adımları">
         <div className="container mx-auto px-4 md:px-6 max-w-3xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-4">
             {t("steps.title")}
@@ -625,24 +631,25 @@ export default function Index() {
             {t("steps.subtitle")}
           </p>
 
-          <div className="space-y-10">
+          <div className="space-y-8 md:space-y-10">
             {[
               { step: "1", icon: Globe },
               { step: "2", icon: FileText },
               { step: "3", icon: Zap },
-            ].map((item) => (
+            ].map((item, index) => (
               <motion.div
                 key={item.step}
-                className="flex gap-6 items-start"
+                className="flex gap-5 md:gap-6 items-start group"
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
               >
-                <div className="w-20 h-20 rounded-2xl btn-gradient flex items-center justify-center shrink-0 shadow-lg">
-                  <span className="text-3xl font-extrabold text-white">{item.step}</span>
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl btn-gradient flex items-center justify-center shrink-0 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                  <span className="text-2xl md:text-3xl font-extrabold text-white">{item.step}</span>
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-xl md:text-2xl text-navy-dark mb-2">{t(`steps.${parseInt(item.step) - 1}.title`)}</h3>
+                <div className="flex-1">
+                  <h3 className="font-extrabold text-lg md:text-xl lg:text-2xl text-navy-dark mb-2 group-hover:text-[#00B386] transition-colors">{t(`steps.${parseInt(item.step) - 1}.title`)}</h3>
                   <p className="text-base md:text-lg text-muted-foreground leading-relaxed">{t(`steps.${parseInt(item.step) - 1}.desc`)}</p>
                 </div>
               </motion.div>
@@ -658,7 +665,7 @@ export default function Index() {
       < TestimonialsCarousel t={t} />
 
       {/* ━━━ FAQs ━━━ */}
-      < section className="py-16 md:py-28 section-gradient-light" id="sss" >
+      <section className="py-16 md:py-28 section-gradient-light" id="sss" aria-label="Sıkça sorulan sorular">
         <div className="container mx-auto px-4 md:px-6 max-w-2xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-14">
             {t("faq.title")}
@@ -696,9 +703,9 @@ export default function Index() {
             <Input
               type="email"
               placeholder={t("newsletter.placeholder")}
-              className="h-14 text-base bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-[#00D69E] flex-1"
+              className="h-14 text-base bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-[#00D69E] focus:ring-2 focus:ring-[#00D69E]/20 flex-1 backdrop-blur-sm"
             />
-            <Button className="btn-gradient text-white font-bold h-14 px-8 rounded-xl text-base whitespace-nowrap">
+            <Button className="btn-gradient text-white font-bold h-14 px-8 rounded-xl text-base whitespace-nowrap shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
               {t("newsletter.button")}
             </Button>
           </div>
@@ -717,7 +724,7 @@ export default function Index() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/apply">
-              <Button className="btn-gradient text-white font-bold px-10 h-16 text-xl rounded-full shadow-lg">
+              <Button className="btn-gradient text-white font-bold px-10 h-16 text-xl rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
                 {t("cta.button")} <ArrowRight size={22} className="ml-2" />
               </Button>
             </Link>
@@ -726,7 +733,7 @@ export default function Index() {
                 navigate("/pricing");
                 setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 100);
               }}
-              className="bg-transparent border-2 border-white/50 text-white hover:bg-white hover:text-navy-dark font-bold px-8 h-16 text-xl rounded-full transition-colors"
+              className="bg-transparent border-2 border-white/60 text-white hover:bg-white hover:text-navy-dark font-bold px-8 h-16 text-xl rounded-full transition-all duration-300 hover:scale-105 backdrop-blur-sm"
             >
               {t("cta.check_price")}
             </Button>

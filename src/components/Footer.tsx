@@ -9,9 +9,11 @@ export function Footer() {
     {
       title: t("footer.quickLinks"),
       links: [
+        { label: t("nav.home"), to: "/" },
         { label: t("nav.learn"), to: "/learn" },
+        { label: t("nav.pricing"), to: "/pricing" },
         { label: t("nav.track"), to: "/track" },
-        { label: t("nav.faq"), to: "/pricing#sss" },
+        { label: t("nav.faq"), to: "/#sss" },
       ],
     },
     {
@@ -19,13 +21,17 @@ export function Footer() {
       links: [
         { label: t("nav.contact"), to: "/contact" },
         { label: t("nav.whatsapp"), to: "https://wa.me/905XXXXXXXXX", external: true },
+        { label: t("footer.helpCenter"), to: "/learn" },
+        { label: t("footer.videoGuides"), to: "/learn" },
       ],
     },
     {
       title: t("footer.legal"),
       links: [
-        { label: "Privacy Policy", to: "/privacy" },
-        { label: "Terms of Service", to: "/terms" },
+        { label: t("footer.privacy"), to: "/privacy" },
+        { label: t("footer.terms"), to: "/terms" },
+        { label: t("footer.cookies"), to: "/privacy#cookies" },
+        { label: t("footer.refund"), to: "/terms#refund" },
       ],
     },
   ];

@@ -155,11 +155,15 @@ export default function ArticlePage() {
 
           {/* Hero Image */}
           {id && articleImages[id] && (
-            <div className="rounded-2xl overflow-hidden mb-8 border border-border">
+            <div className="rounded-2xl overflow-hidden mb-8 border border-border shadow-sm bg-gradient-to-br from-gray-50 to-gray-100">
               <img
                 src={articleImages[id]}
                 alt={article.title}
-                className="w-full h-48 md:h-64 object-cover"
+                className="w-full h-56 md:h-80 object-cover"
+                loading="eager"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/images/articles/schengen-guide.png";
+                }}
               />
             </div>
           )}

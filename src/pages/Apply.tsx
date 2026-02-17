@@ -37,18 +37,45 @@ type ApplyDraft = {
 
 const APPLY_DRAFT_KEY = "visapath.apply-draft.v1";
 
-/* ── Passport options ────────────────────────────────────── */
+/* ── Passport options: Sadece vize gerektiren pasaportlar (Türkiye'de sık görülen) ────────────────────────────────────── */
 const passportOptions = [
   { code: "TR", label: "Türkiye", flag: "🇹🇷" },
-  { code: "DE", label: "Almanya", flag: "🇩🇪" },
-  { code: "US", label: "ABD", flag: "🇺🇸" },
-  { code: "GB", label: "İngiltere", flag: "🇬🇧" },
-  { code: "FR", label: "Fransa", flag: "🇫🇷" },
-  { code: "NL", label: "Hollanda", flag: "🇳🇱" },
   { code: "AZ", label: "Azerbaycan", flag: "🇦🇿" },
+  { code: "RU", label: "Rusya", flag: "🇷🇺" },
+  { code: "UA", label: "Ukrayna", flag: "🇺🇦" },
+  { code: "GE", label: "Gürcistan", flag: "🇬🇪" },
+  { code: "AM", label: "Ermenistan", flag: "🇦🇲" },
+  { code: "KZ", label: "Kazakistan", flag: "🇰🇿" },
+  { code: "UZ", label: "Özbekistan", flag: "🇺🇿" },
 ];
 
-const destinations = ["Almanya", "Fransa", "İtalya", "İspanya", "Hollanda", "ABD", "İngiltere", "Kanada"];
+const destinations = [
+  { label: "Almanya", flag: "🇩🇪", key: "germany" },
+  { label: "Fransa", flag: "🇫🇷", key: "france" },
+  { label: "İtalya", flag: "🇮🇹", key: "italy" },
+  { label: "İspanya", flag: "🇪🇸", key: "spain" },
+  { label: "Hollanda", flag: "🇳🇱", key: "netherlands" },
+  { label: "ABD", flag: "🇺🇸", key: "usa" },
+  { label: "İngiltere", flag: "🇬🇧", key: "uk" },
+  { label: "Kanada", flag: "🇨🇦", key: "canada" },
+];
+
+const destinationKeyToLabel: Record<string, string> = {
+  germany: "Almanya", france: "Fransa", italy: "İtalya", spain: "İspanya",
+  netherlands: "Hollanda", usa: "ABD", uk: "İngiltere", canada: "Kanada",
+};
+
+/* ── Pasaport → vizesiz gidilebilen hedef key'leri (bunlar listeden çıkarılır) ──── */
+const visaFreeByPassport: Record<string, string[]> = {
+  TR: [], // Türkiye: Schengen, UK, USA, Kanada için vize gerekli
+  AZ: [], // Azerbaycan: hepsi için vize gerekli
+  RU: [], // Rusya: hepsi için vize gerekli
+  UA: ["germany", "france", "italy", "spain", "netherlands"], // Ukrayna: Schengen vizesiz
+  GE: ["germany", "france", "italy", "spain", "netherlands"], // Gürcistan: Schengen vizesiz
+  AM: [],
+  KZ: ["germany", "france", "italy", "spain", "netherlands"],
+  UZ: [],
+};
 const visaTypes = ["Turist Vizesi", "İş Vizesi", "Öğrenci Vizesi", "Aile Birleşim Vizesi"];
 
 /* ── Quiz ──────────────────────────────────────────────── */
@@ -76,7 +103,10 @@ export default function Apply() {
   const preselectedDestination = location.state?.destination as string | undefined;
   const [step, setStep] = useState(1);
   const [selectedPassport, setSelectedPassport] = useState("TR");
-  const [destination, setDestination] = useState(preselectedDestination || "");
+  const preselectedLabel = preselectedDestination
+    ? (destinationKeyToLabel[preselectedDestination] || preselectedDestination)
+    : "";
+  const [destination, setDestination] = useState(preselectedLabel);
   const [visaType, setVisaType] = useState("");
   const [selectedPlan, setSelectedPlan] = useState("");
 
@@ -96,9 +126,19 @@ export default function Apply() {
 
     try {
       const draft: Partial<ApplyDraft> = JSON.parse(rawDraft);
+      const validPassport = passportOptions.some((p) => p.code === draft.selectedPassport)
+        ? draft.selectedPassport!
+        : "TR";
+      const preselected = preselectedDestination
+        ? (destinationKeyToLabel[preselectedDestination] || preselectedDestination)
+        : "";
+      const draftDest = preselected || draft.destination || "";
+      const visaFree = visaFreeByPassport[validPassport] || [];
+      const destObj = destinations.find((d) => d.label === draftDest);
+      const destAllowed = !draftDest || !destObj || !visaFree.includes(destObj.key);
       setStep(draft.step ?? 1);
-      setSelectedPassport(draft.selectedPassport ?? "TR");
-      setDestination(preselectedDestination || draft.destination || "");
+      setSelectedPassport(validPassport);
+      setDestination(destAllowed ? draftDest : "");
       setVisaType(draft.visaType ?? "");
       setSelectedPlan(draft.selectedPlan ?? "");
       setQuizDone(Boolean(draft.quizDone));
@@ -111,6 +151,14 @@ export default function Apply() {
       localStorage.removeItem(APPLY_DRAFT_KEY);
     }
   }, [preselectedDestination]);
+
+  useEffect(() => {
+    const visaFree = visaFreeByPassport[selectedPassport] || [];
+    const currentDest = destinations.find((d) => d.label === destination);
+    if (currentDest && visaFree.includes(currentDest.key)) {
+      setDestination("");
+    }
+  }, [selectedPassport]);
 
   useEffect(() => {
     const draft: ApplyDraft = {
@@ -141,7 +189,11 @@ export default function Apply() {
     authMode,
   ]);
 
-  const currentPassport = passportOptions.find((p) => p.code === selectedPassport)!;
+  const currentPassport = passportOptions.find((p) => p.code === selectedPassport) ?? passportOptions[0];
+  const visaFreeForPassport = visaFreeByPassport[selectedPassport] || [];
+  const availableDestinations = destinations.filter((d) => !visaFreeForPassport.includes(d.key));
+  const selectedDestination = destinations.find((d) => d.label === destination);
+  const isDestinationStillAvailable = selectedDestination != null && availableDestinations.some((d) => d.label === destination);
 
   const handleQuizAnswer = (value: string) => {
     const newAnswers = [...quizAnswers, value];
@@ -225,18 +277,21 @@ export default function Apply() {
                   <div>
                     <label className="text-sm font-semibold text-foreground mb-2 block">Pasaportunuz</label>
                     <Select onValueChange={setSelectedPassport} value={selectedPassport}>
-                      <SelectTrigger className="h-12 text-[15px] font-medium">
+                      <SelectTrigger className="h-12 text-base font-semibold text-foreground">
                         <SelectValue>
                           <span className="flex items-center gap-2">
-                            <span className="text-lg">{currentPassport.flag}</span>
+                            <span className="text-xl">{currentPassport.flag}</span>
                             <span>{currentPassport.label}</span>
                           </span>
                         </SelectValue>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-[280px]">
                         {passportOptions.map((p) => (
-                          <SelectItem key={p.code} value={p.code}>
-                            <span className="flex items-center gap-2">{p.flag} {p.label}</span>
+                          <SelectItem key={p.code} value={p.code} className="py-3 text-base font-semibold">
+                            <span className="flex items-center gap-2.5">
+                              <span className="text-2xl">{p.flag}</span>
+                              <span>{p.label}</span>
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -245,14 +300,35 @@ export default function Apply() {
 
                   <div>
                     <label className="text-sm font-semibold text-foreground mb-2 block">Hedef Ülke</label>
-                    <Select onValueChange={setDestination} value={destination}>
-                      <SelectTrigger className="h-12 text-[15px]">
-                        <SelectValue placeholder="Ülke seçin" />
+                    <Select
+                      onValueChange={setDestination}
+                      value={isDestinationStillAvailable ? destination : ""}
+                    >
+                      <SelectTrigger className="h-12 text-base font-semibold text-foreground">
+                        <SelectValue placeholder={availableDestinations.length === 0 ? "Pasaportunuzla vize gerektiren ülke yok" : "Ülke seçin"}>
+                          {selectedDestination && isDestinationStillAvailable ? (
+                            <span className="flex items-center gap-2">
+                              <span className="text-xl">{selectedDestination.flag}</span>
+                              <span>{selectedDestination.label}</span>
+                            </span>
+                          ) : null}
+                        </SelectValue>
                       </SelectTrigger>
-                      <SelectContent>
-                        {destinations.map((c) => (
-                          <SelectItem key={c} value={c}>{c}</SelectItem>
-                        ))}
+                      <SelectContent className="max-h-[280px]">
+                        {availableDestinations.length === 0 ? (
+                          <div className="py-6 px-4 text-center text-sm text-muted-foreground">
+                            Seçtiğiniz pasaportla vize gerektiren hedef ülke bulunmuyor. Vizesiz seyahat edebilirsiniz.
+                          </div>
+                        ) : (
+                          availableDestinations.map((c) => (
+                            <SelectItem key={c.label} value={c.label} className="py-3 text-base font-semibold">
+                              <span className="flex items-center gap-2.5">
+                                <span className="text-2xl">{c.flag}</span>
+                                <span>{c.label}</span>
+                              </span>
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -273,8 +349,8 @@ export default function Apply() {
                 </div>
 
                 <Button
-                  className="w-full btn-gradient text-white font-bold h-14 text-base rounded-xl mt-8"
-                  disabled={!destination || !visaType}
+                  className="w-full btn-gradient text-white font-bold h-14 text-base rounded-xl mt-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  disabled={!destination || !visaType || !isDestinationStillAvailable}
                   onClick={() => setStep(2)}
                 >
                   Devam Et <ArrowRight size={18} className="ml-2" />
@@ -367,7 +443,7 @@ export default function Apply() {
                     Geri
                   </Button>
                   <Button
-                    className="flex-1 btn-gradient text-white font-bold h-14 text-base rounded-xl"
+                    className="flex-1 btn-gradient text-white font-bold h-14 text-base rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     disabled={!selectedPlan}
                     onClick={() => setStep(3)}
                   >
@@ -449,7 +525,9 @@ export default function Apply() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Hedef</span>
-                          <span className="font-medium">{destination}</span>
+                          <span className="font-semibold text-foreground">
+                            {selectedDestination != null ? `${selectedDestination.flag} ${selectedDestination.label}` : destination || "—"}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Vize Türü</span>
@@ -486,7 +564,7 @@ export default function Apply() {
                       </div>
                     </div>
 
-                    <Button className="w-full btn-gradient text-white font-bold h-14 text-base rounded-xl mt-8">
+                    <Button className="w-full btn-gradient text-white font-bold h-14 text-base rounded-xl mt-8 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
                       <Lock size={18} className="mr-2" /> Güvenli Ödeme Yap
                     </Button>
 

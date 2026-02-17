@@ -123,6 +123,12 @@ export const translations: Record<Locale, Record<string, string>> = {
         "footer.support": "Destek",
         "footer.legal": "Yasal",
         "footer.rights": "Tüm hakları saklıdır.",
+        "footer.helpCenter": "Yardım Merkezi",
+        "footer.videoGuides": "Video Rehberler",
+        "footer.privacy": "Gizlilik Politikası",
+        "footer.terms": "Kullanım Şartları",
+        "footer.cookies": "Çerez Politikası",
+        "footer.refund": "İade Politikası",
 
         // Features & ROI
         "roi.modern_trust": "Modern & Güvenilir",
@@ -521,6 +527,12 @@ export const translations: Record<Locale, Record<string, string>> = {
         "footer.support": "Support",
         "footer.legal": "Legal",
         "footer.rights": "All rights reserved.",
+        "footer.helpCenter": "Help Center",
+        "footer.videoGuides": "Video Guides",
+        "footer.privacy": "Privacy Policy",
+        "footer.terms": "Terms of Service",
+        "footer.cookies": "Cookie Policy",
+        "footer.refund": "Refund Policy",
 
         // Features & ROI
         "roi.modern_trust": "Modern & Reliable",

@@ -115,15 +115,18 @@ export default function Learn() {
                 className="block bg-white border border-border rounded-2xl overflow-hidden card-hover h-full group"
               >
                 {/* Image */}
-                <div className="h-44 md:h-48 overflow-hidden bg-gray-100">
+                <div className="relative h-48 md:h-56 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100" role="img" aria-label={`${article.title} görseli`}>
                   <img
                     src={article.image}
-                    alt={article.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    alt={`${article.title} - ${article.category}`}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                    loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/images/articles/schengen-guide.png"; // Fallback on error
                     }}
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" aria-hidden="true" />
                 </div>
 
                 <div className="p-6">

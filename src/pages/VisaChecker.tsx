@@ -141,7 +141,7 @@ export default function VisaChecker() {
               {/* CTA */}
               {result.visa === "Gerekli" && (
                 <Link to="/apply">
-                  <Button className="w-full btn-gradient text-white font-semibold h-12 rounded-lg">
+                  <Button className="w-full btn-gradient text-white font-semibold h-12 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
                     Başvuruya Başla <ArrowRight size={16} className="ml-2" />
                   </Button>
                 </Link>
