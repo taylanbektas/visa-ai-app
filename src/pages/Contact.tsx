@@ -60,17 +60,17 @@ export default function Contact() {
                             <form onSubmit={handleSubmit} className="space-y-5">
                                 <div className="grid sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="text-sm font-bold text-foreground mb-1.5 block">{t("contact.form.name")}</label>
-                                        <Input required className="h-12 text-base" placeholder="Ahmet Yılmaz" />
+                                        <label className="text-base font-bold text-foreground mb-1.5 block">{t("contact.form.name")}</label>
+                                        <Input required className="h-12 text-base" placeholder="Adınız Soyadınız" />
                                     </div>
                                     <div>
-                                        <label className="text-sm font-bold text-foreground mb-1.5 block">{t("contact.form.email")}</label>
-                                        <Input required type="email" className="h-12 text-base" placeholder="ahmet@mail.com" />
+                                        <label className="text-base font-bold text-foreground mb-1.5 block">{t("contact.form.email")}</label>
+                                        <Input required type="email" className="h-12 text-base" placeholder="adiniz@ornek.com" />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="text-sm font-bold text-foreground mb-1.5 block">{t("contact.form.subject")}</label>
+                                    <label className="text-base font-bold text-foreground mb-1.5 block">{t("contact.form.subject")}</label>
                                     <Select defaultValue="general">
                                         <SelectTrigger className="h-12 text-base">
                                             <SelectValue />
@@ -86,12 +86,12 @@ export default function Contact() {
                                 </div>
 
                                 <div>
-                                    <label className="text-sm font-bold text-foreground mb-1.5 block">{t("contact.form.message")}</label>
+                                    <label className="text-base font-bold text-foreground mb-1.5 block">{t("contact.form.message")}</label>
                                     <textarea
                                         required
                                         rows={5}
                                         className="w-full rounded-lg border border-input bg-background px-4 py-3 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
-                                        placeholder="..."
+                                        placeholder="Mesajınız..."
                                     />
                                 </div>
 

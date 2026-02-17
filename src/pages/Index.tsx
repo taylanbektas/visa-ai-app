@@ -98,17 +98,26 @@ const visaData: Record<string, { typeKey: string; docKeys: string[]; durationKey
   "canada": { typeKey: "visa_type.trv", docKeys: ["doc.passport", "doc.bank_statement", "doc.travel_history", "doc.invitation_if_any"], durationKey: "duration.20_30", fee: "CAD $100" },
   "japan": { typeKey: "visa_type.tourist", docKeys: ["doc.passport", "doc.application_form", "doc.photo", "doc.flight_ticket", "doc.hotel"], durationKey: "duration.5_7", fee: "Ücretsiz" },
   "south_korea": { typeKey: "visa_type.keta", docKeys: ["doc.passport", "doc.keta"], durationKey: "duration.1_3", fee: "₩10,000 (~€7)" },
+  "montenegro": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation", "doc.travel_insurance"], durationKey: "duration.90_days", fee: "Ücretsiz" },
+  "serbia": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation"], durationKey: "duration.90_days", fee: "Ücretsiz" },
+  "bosnia": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation"], durationKey: "duration.90_days", fee: "Ücretsiz" },
+  "macedonia": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation"], durationKey: "duration.90_days", fee: "Ücretsiz" },
+  "albania": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation"], durationKey: "duration.90_days", fee: "Ücretsiz" },
+  "kosovo": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation"], durationKey: "duration.90_days", fee: "Ücretsiz" },
 };
 
 /* ── Testimonials data — realistic reviews ────────────── */
 const testimonials = [
   { name: "Selin Y.", city: "İstanbul", country: "🇫🇷 Fransa", rating: 5, date: "2 gün önce", text: "ilk defa schengen aldim cok gergindim ama ekip saolsun her seyi halletti. 12 gunde geldi vizem tavsiye ederim." },
   { name: "Murat Demir", city: "Ankara", country: "🇺🇸 ABD", rating: 5, date: "1 hafta önce", text: "Amerika vizesi için mülakat korkum vardı, yaptığımız prova çok işe yaradı. Vizeyi kaptım teşekkürler VisaPath :)" },
-  { name: "Ayşe Kaya", city: "İzmir", country: "🇩🇪 Almanya", rating: 4, date: "2 hafta önce", text: "Randevu bulmak zordu ama sürekli takip edip buldular. Evrak işleriyle uğraşmamak harika. Teşk." },
+  { name: "Ayşe K.", city: "İzmir", country: "🇩🇪 Almanya", rating: 4, date: "2 hafta önce", text: "Randevu bulmak zordu ama sürekli takip edip buldular. Evrak işleriyle uğraşmamak harika. Teşekkürler." },
   { name: "Caner E.", city: "Bursa", country: "🇬🇧 İngiltere", rating: 5, date: "3 hafta önce", text: "Ingiltere vizesi zor diyolardi ama hic sorun yasamadim. belgeleri yukledim gerisini onlar halletti. 6 aylik geldi." },
   { name: "Zeynep T.", city: "Antalya", country: "🇮🇹 İtalya", rating: 5, date: "1 ay önce", text: "İtalya için başvurdum, otel uçak rezervasyonlarını da onlar ayarladı. Kafam rahat gitti geldim. Tekrar tercih ederim." },
   { name: "Barış K.", city: "İstanbul", country: "🇳🇱 Hollanda", rating: 5, date: "1 ay önce", text: "Red alma riskim vardı ama dosya çok sağlam hazırlandı. 10 günde sonuçlandı." },
   { name: "Derya Y.", city: "Gaziantep", country: "🇦🇪 BAE", rating: 5, date: "2 gün önce", text: "Dubai vizesi 2 günde geldi. Çok hızlı sistem." },
+  { name: "Ozan Çelik", city: "Eskişehir", country: "🇪🇸 İspanya", rating: 5, date: "3 gün önce", text: "Erasmus stajı için vize lazımdı. Okulun evrakları karışıktı ama danışmanım hemen çözdü. Süreç çok şeffaftı." },
+  { name: "Elif S.", city: "Ankara", country: "🇨🇦 Kanada", rating: 5, date: "1 ay önce", text: "Kanada turist vizesi aldık ailecek. Formlar çok detaylıydı, kendimiz yapsak kesin hata yapardık. Profesyonel destek şart." },
+  { name: "Mehmet A.", city: "İstanbul", country: "🇯🇵 Japonya", rating: 5, date: "2 hafta önce", text: "Japonya e-vize kalktı sanıyordum ama prosedür varmış. Hızlıca bilgilendirdiler, sorunsuz gittim." },
 ];
 
 
@@ -143,7 +152,7 @@ function AnimatedCounter({ target, suffix = "", prefix = "", label }: { target: 
 
   return (
     <div ref={ref}>
-      <p className="text-4xl md:text-5xl font-extrabold text-gradient-mint">
+      <p className="text-5xl md:text-6xl font-black text-navy-dark tracking-tight drop-shadow-sm">
         {prefix}{count.toLocaleString("tr-TR")}{suffix}
       </p>
       <p className="text-base text-white/70 mt-2 font-medium">{label}</p>
@@ -549,7 +558,7 @@ export default function Index() {
               <ul className="space-y-5">
                 {[0, 1, 2, 3, 4].map((i) => (
                   <li key={i} className="flex items-start gap-4 text-base md:text-lg text-muted-foreground/90">
-                    <X size={20} className="text-red-400 mt-1 shrink-0" />
+                    <X size={20} className="text-red-400/80 mt-1 shrink-0" />
                     <span className="leading-relaxed">{t(`comparison.diy.${i}`)}</span>
                   </li>
                 ))}
@@ -559,7 +568,9 @@ export default function Index() {
             {/* VisaPath — premium, trustworthy, no badges */}
             <div className="bg-white rounded-2xl p-8 md:p-10 border-2 border-[#00D69E]/20 shadow-[0_8px_30px_rgb(0,214,158,0.12)] relative">
               <h3 className="text-2xl md:text-3xl font-extrabold text-navy-dark mb-8 flex items-center gap-3 pb-4 border-b border-[#00D69E]/20">
-                <CheckCircle size={32} className="text-[#00D69E] shrink-0 fill-[#00D69E]/10" />
+                <div className="w-10 h-10 rounded-full bg-[#00D69E] flex items-center justify-center shrink-0 shadow-md">
+                  <Check size={20} className="text-white stroke-[3]" />
+                </div>
                 {t("comparison.withVP")}
               </h3>
               <ul className="space-y-5">
@@ -568,7 +579,9 @@ export default function Index() {
                   const bold = t(`comparison.vp.${i}.bold`);
                   return (
                     <li key={i} className="flex items-start gap-4 text-base md:text-lg text-foreground">
-                      <CheckCircle size={22} className="text-[#00D69E] mt-1 shrink-0" />
+                      <div className="w-6 h-6 rounded-full bg-[#00D69E]/20 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check size={14} className="text-[#00B386] stroke-[3]" />
+                      </div>
                       <span className="leading-relaxed">
                         {text.split(bold).map((part, j, arr) => (
                           <span key={j}>
@@ -580,6 +593,15 @@ export default function Index() {
                     </li>
                   );
                 })}
+                {/* Extra AI Feature */}
+                <li className="flex items-start gap-4 text-base md:text-lg text-foreground bg-mint-light/10 p-4 rounded-xl -mx-4 border border-mint-light/20">
+                  <div className="w-6 h-6 rounded-full bg-[#00D69E]/20 flex items-center justify-center shrink-0 mt-0.5">
+                    <Zap size={14} className="text-[#00B386] stroke-[3]" />
+                  </div>
+                  <span className="leading-relaxed">
+                    <strong className="font-bold text-[#00B386]">AI Agent Teknolojisi</strong> ile başvuru formlarınız anlık olarak taranır, hata riski <strong className="font-bold text-[#00B386]">sıfıra indirilir.</strong>
+                  </span>
+                </li>
               </ul>
             </div>
           </div>

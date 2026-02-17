@@ -62,7 +62,7 @@ export function Footer() {
                 <MessageCircle size={14} /> WhatsApp
               </a>
               <a
-                href="tel:+902125550000"
+                href="tel:+905555555555"
                 className="inline-flex items-center justify-center gap-1 rounded-lg border border-border px-2 py-2 text-xs font-semibold text-foreground/80 transition-colors hover:bg-secondary"
               >
                 <Phone size={14} /> Ara
@@ -78,7 +78,7 @@ export function Footer() {
             <div className="text-sm text-muted-foreground space-y-1.5 mb-5">
               <p>📍 İstanbul, Türkiye</p>
               <p>📧 info@visapath.com.tr</p>
-              <p>📞 +90 (212) 555 00 00</p>
+              <p>📞 +90 (555) 555 55 55</p>
             </div>
 
             <div className="flex gap-3">

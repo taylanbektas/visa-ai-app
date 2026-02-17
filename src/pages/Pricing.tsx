@@ -188,9 +188,8 @@ export default function Pricing() {
                   </p>
                   <p className="font-semibold text-[15px] mb-5">{questions[currentQ].q}</p>
                   <div
-                    className={`grid gap-3 ${
-                      questions[currentQ].options.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"
-                    }`}
+                    className={`grid gap-3 ${questions[currentQ].options.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"
+                      }`}
                   >
                     {questions[currentQ].options.map((opt) => (
                       <Button
@@ -217,10 +216,13 @@ export default function Pricing() {
                   <p className="text-sm text-muted-foreground mb-5">
                     {t(`pricing.quiz.result.${recommendation}`)}
                   </p>
-                  <div className="flex flex-col gap-3 sm:flex-row">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <Link to="/apply" className="flex-1">
                       <Button className="w-full btn-gradient text-white font-bold h-12 rounded-xl text-[15px] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
-                        {t("pricing.quiz.btnStartPlan")} {t(`pricing.plan.${recommendation}.id`)}
+                        {locale === "en" ?
+                          <>{t("pricing.quiz.btnStartPlan")} {t(`pricing.plan.${recommendation}.id`)}</> :
+                          <>{t(`pricing.plan.${recommendation}.id`)} {t("pricing.quiz.btnStartPlan")}</>
+                        }
                       </Button>
                     </Link>
                     <Button variant="ghost" onClick={resetQuiz} className="text-muted-foreground font-semibold">
@@ -250,8 +252,8 @@ export default function Pricing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
               >
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 w-max max-w-[90%] justify-center z-10">
-                  {plan.popular && !isRecommended && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex flex-row items-center gap-2 w-max max-w-[95%] justify-center z-10 flex-wrap">
+                  {plan.popular && (
                     <div className="btn-gradient text-white text-sm font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-md whitespace-nowrap">
                       <Star size={13} className="fill-white" /> {t("pricing.plan.popular")}
                     </div>
@@ -261,14 +263,9 @@ export default function Pricing() {
                       ✨ {t("pricing.plan.recommended")}
                     </div>
                   )}
-                  {isRecommended && plan.popular && (
-                    <div className="btn-gradient text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm whitespace-nowrap">
-                      <Star size={11} className="fill-white" /> {t("pricing.plan.popular")}
-                    </div>
-                  )}
                 </div>
 
-                <div className="mb-6">
+                <div className="mb-6 mt-2">
                   <h3 className="text-xl font-extrabold text-navy-dark">{plan.name}</h3>
                   <p className="text-sm text-muted-foreground mt-1">{plan.subtitle}</p>
                 </div>
@@ -289,11 +286,10 @@ export default function Pricing() {
 
                 <Link to="/apply">
                   <Button
-                    className={`w-full font-bold h-12 text-base rounded-xl transition-all duration-300 ${
-                      plan.popular || isRecommended
+                    className={`w-full font-bold h-12 text-base rounded-xl transition-all duration-300 ${plan.popular || isRecommended
                         ? "btn-gradient text-white shadow-lg hover:shadow-xl hover:scale-[1.02]"
                         : "bg-secondary text-foreground hover:bg-secondary/80 hover:scale-[1.01]"
-                    }`}
+                      }`}
                   >
                     {locale === "en" ? <>{t("pricing.plan.btn")} {plan.name}</> : <>{plan.name} {t("pricing.plan.btn")}</>}
                   </Button>

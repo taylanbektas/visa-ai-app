@@ -70,7 +70,7 @@ const App = () => (
             </Routes>
             <Footer />
             <MobileBottomNav />
-            <AIChatBot />
+            {/* <AIChatBot /> */}
           </LanguageProvider>
         </AuthProvider>
       </BrowserRouter>

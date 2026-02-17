@@ -218,18 +218,18 @@ export default function Apply() {
               return (
                 <div
                   key={i}
-                  className={`rounded-xl border px-2 py-2 text-center transition-colors ${isActive || isDone ? "border-accent/30 bg-accent/5" : "border-border bg-white"
+                  className={`rounded-xl border px-3 py-3 md:py-4 text-center transition-colors ${isActive || isDone ? "border-accent/30 bg-accent/5" : "border-border bg-white"
                     }`}
                 >
-                  <div className="flex items-center justify-center gap-2">
+                  <div className="flex items-center justify-center gap-3">
                     <div
-                      className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${isDone || isActive ? "btn-gradient text-white" : "bg-secondary text-muted-foreground"
+                      className={`flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-full text-sm md:text-base font-bold transition-colors ${isDone || isActive ? "btn-gradient text-white" : "bg-secondary text-muted-foreground"
                         }`}
                     >
-                      {isDone ? <CheckCircle size={16} /> : stepNum}
+                      {isDone ? <CheckCircle size={18} /> : stepNum}
                     </div>
                     <span
-                      className={`text-[11px] font-semibold leading-tight ${isActive ? "text-navy-dark" : "text-muted-foreground"
+                      className={`text-sm md:text-base font-bold leading-tight ${isActive ? "text-navy-dark" : "text-muted-foreground"
                         }`}
                     >
                       {title}
