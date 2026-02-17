@@ -20,6 +20,12 @@ import {
   LogIn,
   Mail,
 } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
+import {
+  passportOptions as rawPassportOptions,
+  destinations as rawDestinations,
+  visaFreeMap as sharedVisaFreeMap,
+} from "@/data/countries";
 
 type ApplyDraft = {
   step: number;
@@ -37,45 +43,6 @@ type ApplyDraft = {
 
 const APPLY_DRAFT_KEY = "visapath.apply-draft.v1";
 
-/* ── Passport options: Sadece vize gerektiren pasaportlar (Türkiye'de sık görülen) ────────────────────────────────────── */
-const passportOptions = [
-  { code: "TR", label: "Türkiye", flag: "🇹🇷" },
-  { code: "AZ", label: "Azerbaycan", flag: "🇦🇿" },
-  { code: "RU", label: "Rusya", flag: "🇷🇺" },
-  { code: "UA", label: "Ukrayna", flag: "🇺🇦" },
-  { code: "GE", label: "Gürcistan", flag: "🇬🇪" },
-  { code: "AM", label: "Ermenistan", flag: "🇦🇲" },
-  { code: "KZ", label: "Kazakistan", flag: "🇰🇿" },
-  { code: "UZ", label: "Özbekistan", flag: "🇺🇿" },
-];
-
-const destinations = [
-  { label: "Almanya", flag: "🇩🇪", key: "germany" },
-  { label: "Fransa", flag: "🇫🇷", key: "france" },
-  { label: "İtalya", flag: "🇮🇹", key: "italy" },
-  { label: "İspanya", flag: "🇪🇸", key: "spain" },
-  { label: "Hollanda", flag: "🇳🇱", key: "netherlands" },
-  { label: "ABD", flag: "🇺🇸", key: "usa" },
-  { label: "İngiltere", flag: "🇬🇧", key: "uk" },
-  { label: "Kanada", flag: "🇨🇦", key: "canada" },
-];
-
-const destinationKeyToLabel: Record<string, string> = {
-  germany: "Almanya", france: "Fransa", italy: "İtalya", spain: "İspanya",
-  netherlands: "Hollanda", usa: "ABD", uk: "İngiltere", canada: "Kanada",
-};
-
-/* ── Pasaport → vizesiz gidilebilen hedef key'leri (bunlar listeden çıkarılır) ──── */
-const visaFreeByPassport: Record<string, string[]> = {
-  TR: [], // Türkiye: Schengen, UK, USA, Kanada için vize gerekli
-  AZ: [], // Azerbaycan: hepsi için vize gerekli
-  RU: [], // Rusya: hepsi için vize gerekli
-  UA: ["germany", "france", "italy", "spain", "netherlands"], // Ukrayna: Schengen vizesiz
-  GE: ["germany", "france", "italy", "spain", "netherlands"], // Gürcistan: Schengen vizesiz
-  AM: [],
-  KZ: ["germany", "france", "italy", "spain", "netherlands"],
-  UZ: [],
-};
 const visaTypes = ["Turist Vizesi", "İş Vizesi", "Öğrenci Vizesi", "Aile Birleşim Vizesi"];
 
 /* ── Quiz ──────────────────────────────────────────────── */
@@ -99,12 +66,26 @@ function getRecommendation(answers: string[]): string {
 }
 
 export default function Apply() {
+  const { t } = useLanguage();
   const location = useLocation();
+
+  // Map data to include translated labels, compatible with existing logic
+  const passportOptions = rawPassportOptions.map(p => ({
+    ...p,
+    label: t(p.labelKey)
+  }));
+
+  const destinations = rawDestinations.map(d => ({
+    ...d,
+    label: t("country." + d.key)
+  }));
+
+
   const preselectedDestination = location.state?.destination as string | undefined;
   const [step, setStep] = useState(1);
   const [selectedPassport, setSelectedPassport] = useState("TR");
   const preselectedLabel = preselectedDestination
-    ? (destinationKeyToLabel[preselectedDestination] || preselectedDestination)
+    ? destinations.find(d => d.key === preselectedDestination)?.label || preselectedDestination
     : "";
   const [destination, setDestination] = useState(preselectedLabel);
   const [visaType, setVisaType] = useState("");
@@ -130,10 +111,10 @@ export default function Apply() {
         ? draft.selectedPassport!
         : "TR";
       const preselected = preselectedDestination
-        ? (destinationKeyToLabel[preselectedDestination] || preselectedDestination)
+        ? destinations.find(d => d.key === preselectedDestination)?.label || preselectedDestination
         : "";
       const draftDest = preselected || draft.destination || "";
-      const visaFree = visaFreeByPassport[validPassport] || [];
+      const visaFree = sharedVisaFreeMap[validPassport] || [];
       const destObj = destinations.find((d) => d.label === draftDest);
       const destAllowed = !draftDest || !destObj || !visaFree.includes(destObj.key);
       setStep(draft.step ?? 1);
@@ -153,7 +134,7 @@ export default function Apply() {
   }, [preselectedDestination]);
 
   useEffect(() => {
-    const visaFree = visaFreeByPassport[selectedPassport] || [];
+    const visaFree = sharedVisaFreeMap[selectedPassport] || [];
     const currentDest = destinations.find((d) => d.label === destination);
     if (currentDest && visaFree.includes(currentDest.key)) {
       setDestination("");
@@ -190,7 +171,7 @@ export default function Apply() {
   ]);
 
   const currentPassport = passportOptions.find((p) => p.code === selectedPassport) ?? passportOptions[0];
-  const visaFreeForPassport = visaFreeByPassport[selectedPassport] || [];
+  const visaFreeForPassport = sharedVisaFreeMap[selectedPassport] || [];
   const availableDestinations = destinations.filter((d) => !visaFreeForPassport.includes(d.key));
   const selectedDestination = destinations.find((d) => d.label === destination);
   const isDestinationStillAvailable = selectedDestination != null && availableDestinations.some((d) => d.label === destination);
@@ -226,36 +207,33 @@ export default function Apply() {
         {/* Progress Steps */}
         <div className="mb-10">
           <div className="grid grid-cols-3 gap-2">
-          {stepTitles.map((title, i) => {
-            const stepNum = i + 1;
-            const isActive = step === stepNum;
-            const isDone = step > stepNum;
-            return (
+            {stepTitles.map((title, i) => {
+              const stepNum = i + 1;
+              const isActive = step === stepNum;
+              const isDone = step > stepNum;
+              return (
                 <div
                   key={i}
-                  className={`rounded-xl border px-2 py-2 text-center transition-colors ${
-                    isActive || isDone ? "border-accent/30 bg-accent/5" : "border-border bg-white"
-                  }`}
+                  className={`rounded-xl border px-2 py-2 text-center transition-colors ${isActive || isDone ? "border-accent/30 bg-accent/5" : "border-border bg-white"
+                    }`}
                 >
                   <div className="flex items-center justify-center gap-2">
-                  <div
-                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                      isDone || isActive ? "btn-gradient text-white" : "bg-secondary text-muted-foreground"
-                    }`}
-                  >
-                    {isDone ? <CheckCircle size={16} /> : stepNum}
-                  </div>
-                    <span
-                      className={`text-[11px] font-semibold leading-tight ${
-                        isActive ? "text-navy-dark" : "text-muted-foreground"
-                      }`}
+                    <div
+                      className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${isDone || isActive ? "btn-gradient text-white" : "bg-secondary text-muted-foreground"
+                        }`}
                     >
-                    {title}
-                  </span>
+                      {isDone ? <CheckCircle size={16} /> : stepNum}
+                    </div>
+                    <span
+                      className={`text-[11px] font-semibold leading-tight ${isActive ? "text-navy-dark" : "text-muted-foreground"
+                        }`}
+                    >
+                      {title}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
           </div>
           <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
             <div

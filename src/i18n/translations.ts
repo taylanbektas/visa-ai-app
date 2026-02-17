@@ -193,6 +193,7 @@ export const translations: Record<Locale, Record<string, string>> = {
         "country.georgia": "Gürcistan",
         "country.serbia": "Sırbistan",
         "country.qatar": "Katar",
+        "country.ukraine": "Ukrayna",
 
         // Document names
         "doc.passport": "Pasaport",
@@ -597,6 +598,7 @@ export const translations: Record<Locale, Record<string, string>> = {
         "country.georgia": "Georgia",
         "country.serbia": "Serbia",
         "country.qatar": "Qatar",
+        "country.ukraine": "Ukraine",
 
         // Document names
         "doc.passport": "Passport",

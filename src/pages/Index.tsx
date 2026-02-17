@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import useEmblaCarousel from "embla-carousel-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,13 +42,14 @@ const longestWord = "smartest"; // used to size the container - using longest EN
 /* ── Passport options — ordered by target audience ─────── */
 const passportOptions = [
   { code: "TR", labelKey: "country.turkey", flag: "🇹🇷" },
+  { code: "AZ", labelKey: "country.azerbaijan", flag: "🇦🇿" },
+  { code: "RU", labelKey: "country.russia", flag: "🇷🇺" },
+  { code: "UA", labelKey: "country.ukraine", flag: "🇺🇦" },
   { code: "DE", labelKey: "country.germany", flag: "🇩🇪" },
   { code: "NL", labelKey: "country.netherlands", flag: "🇳🇱" },
   { code: "FR", labelKey: "country.france", flag: "🇫🇷" },
   { code: "GB", labelKey: "country.uk", flag: "🇬🇧" },
   { code: "US", labelKey: "country.usa", flag: "🇺🇸" },
-  { code: "RU", labelKey: "country.russia", flag: "🇷🇺" },
-  { code: "AZ", labelKey: "country.azerbaijan", flag: "🇦🇿" },
   { code: "IR", labelKey: "country.iran", flag: "🇮🇷" },
   { code: "UZ", labelKey: "country.uzbekistan", flag: "🇺🇿" },
   { code: "TM", labelKey: "country.turkmenistan", flag: "🇹🇲" },
@@ -87,6 +89,7 @@ const visaFreeMap: Record<string, string[]> = {
   TR: ["south_korea", "japan"],
   AZ: ["south_korea"],
   RU: ["south_korea"],
+  UA: ["germany", "france", "italy", "spain", "netherlands", "belgium", "austria", "switzerland", "portugal", "greece", "uk", "japan", "south_korea", "canada", "usa"], // UA visa free to schengen
   SY: [], IQ: [], IR: [], AF: [], UZ: [], TM: [], KG: [], EG: [],
 };
 
@@ -181,127 +184,96 @@ function StatsSection({ t }: { t: (key: string) => string }) {
   );
 }
 
-/* ── Testimonials: ufak kutular, yan yana, butonlarla kaydırma ─────────────────── */
+/* ── Testimonials: Continuous Marquee ─────────────────── */
 function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const CARD_WIDTH = 280;
-  const GAP = 16;
-  const VISIBLE_MOBILE = 1;
-  const VISIBLE_DESKTOP = 4;
-  const [visibleCount, setVisibleCount] = useState(typeof window !== "undefined" && window.innerWidth >= 768 ? VISIBLE_DESKTOP : VISIBLE_MOBILE);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "start" });
+  const [prevBtnEnabled, setPrevBtnEnabled] = useState(false);
+  const [nextBtnEnabled, setNextBtnEnabled] = useState(false);
 
-  useEffect(() => {
-    const handleResize = () => setVisibleCount(window.innerWidth >= 768 ? VISIBLE_DESKTOP : VISIBLE_MOBILE);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+  /* ── Embla navigation helpers ── */
+  const scrollPrev = useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi]);
+
+  const onSelect = useCallback((api: any) => {
+    setPrevBtnEnabled(api.canScrollPrev());
+    setNextBtnEnabled(api.canScrollNext());
   }, []);
 
-  const maxIndex = Math.max(0, testimonials.length - visibleCount);
-
   useEffect(() => {
-    if (isPaused) return;
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [isPaused, maxIndex]);
-
-  const goPrev = () => setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
-  const goNext = () => setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
-
-  const offset = -currentIndex * (CARD_WIDTH + GAP);
+    if (!emblaApi) return;
+    onSelect(emblaApi);
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onSelect);
+  }, [emblaApi, onSelect]);
 
   return (
-    <section
-      className="py-16 md:py-28 bg-white overflow-hidden"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
-      <div className="container mx-auto px-4 md:px-6 max-w-6xl">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-5xl font-extrabold text-navy-dark mb-4">
-            {t("testimonials.title")}
-          </h2>
-          <div className="flex items-center justify-center gap-2 text-lg text-muted-foreground">
-            <div className="flex gap-0.5">
-              {Array.from({ length: 5 }).map((_, j) => (
-                <Star key={j} size={20} className="fill-[#facc15] text-[#facc15]" />
-              ))}
-            </div>
-            <span className="font-bold text-foreground">4.9/5</span>
-            <span>— {testimonials.length}+ {t("testimonials.reviews")}</span>
+    <section className="py-16 md:py-28 bg-white overflow-hidden">
+      <div className="container mx-auto px-4 md:px-6 max-w-7xl mb-10 text-center">
+        <h2 className="text-3xl md:text-5xl font-extrabold text-navy-dark mb-4">
+          {t("testimonials.title")}
+        </h2>
+        <div className="flex items-center justify-center gap-2 text-lg text-muted-foreground">
+          <div className="flex gap-0.5">
+            {Array.from({ length: 5 }).map((_, j) => (
+              <Star key={j} size={20} className="fill-[#facc15] text-[#facc15]" />
+            ))}
           </div>
+          <span className="font-bold text-foreground">4.9/5</span>
+          <span>— {testimonials.length}+ {t("testimonials.reviews")}</span>
         </div>
+      </div>
 
-        <div className="relative">
-          <button
-            onClick={goPrev}
-            className="absolute -left-2 md:-left-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-full border border-border bg-white shadow-lg transition-colors hover:bg-[#00D69E]/10 hover:border-[#00D69E]/40"
-            aria-label="Önceki"
-          >
-            <ChevronLeft size={22} className="text-navy-dark" />
-          </button>
-          <button
-            onClick={goNext}
-            className="absolute -right-2 md:-right-4 top-1/2 -translate-y-1/2 z-10 h-10 w-10 md:h-12 md:w-12 flex items-center justify-center rounded-full border border-border bg-white shadow-lg transition-colors hover:bg-[#00D69E]/10 hover:border-[#00D69E]/40"
-            aria-label="Sonraki"
-          >
-            <ChevronRight size={22} className="text-navy-dark" />
-          </button>
-
-          <div className="overflow-hidden">
-            <motion.div
-              className="flex gap-4"
-              style={{ transform: `translateX(${offset}px)` }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            >
-              {testimonials.map((review, i) => (
-                <div
-                  key={i}
-                  className="flex-shrink-0 w-[260px] md:w-[280px] bg-white border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center justify-between mb-2">
+      <div className="relative container mx-auto px-4 md:px-6 max-w-7xl">
+        <div className="overflow-hidden cursor-grab active:cursor-grabbing" ref={emblaRef}>
+          <div className="flex -ml-4">
+            {testimonials.map((review, i) => (
+              <div
+                key={i}
+                className="flex-[0_0_100%] sm:flex-[0_0_50%] md:flex-[0_0_33.33%] lg:flex-[0_0_25%] pl-4 min-w-0"
+              >
+                <div className="bg-white border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex gap-0.5">
                       {Array.from({ length: review.rating }).map((_, j) => (
-                        <Star key={j} size={12} className="fill-[#facc15] text-[#facc15]" />
-                      ))}
-                      {Array.from({ length: 5 - review.rating }).map((_, j) => (
-                        <Star key={`e${j}`} size={12} className="text-border" />
+                        <Star key={j} size={16} className="fill-[#facc15] text-[#facc15]" />
                       ))}
                     </div>
-                    <span className="text-[10px] text-muted-foreground">{review.date}</span>
+                    <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded-full">{review.date}</span>
                   </div>
-                  <p className="text-xs md:text-sm text-foreground/85 leading-relaxed mb-3 line-clamp-4">
+                  <p className="text-sm md:text-base text-foreground/85 leading-relaxed mb-6 flex-grow">
                     &quot;{review.text}&quot;
                   </p>
-                  <div className="flex items-center gap-2 pt-2 border-t border-border">
-                    <div className="w-7 h-7 rounded-full bg-[#00D69E]/10 flex items-center justify-center text-[#00B386] font-bold text-[10px]">
+                  <div className="flex items-center gap-3 pt-4 border-t border-border mt-auto">
+                    <div className="w-10 h-10 rounded-full bg-[#00D69E]/10 flex items-center justify-center text-[#00B386] font-bold text-sm ring-2 ring-white shadow-sm shrink-0">
                       {review.name.split(" ").map(n => n[0]).join("")}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-navy-dark truncate">{review.name}</p>
-                      <p className="text-[10px] text-muted-foreground truncate">{review.city} · {review.country}</p>
+                      <p className="text-sm font-bold text-navy-dark truncate">{review.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{review.city} · {review.country}</p>
                     </div>
                   </div>
                 </div>
-              ))}
-            </motion.div>
-          </div>
-
-          <div className="flex justify-center gap-2 mt-6">
-            {Array.from({ length: maxIndex + 1 }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentIndex(i)}
-                className={`h-2 rounded-full transition-all duration-300 ${i === currentIndex
-                  ? "bg-[#00D69E] w-6"
-                  : "bg-border w-2 hover:bg-muted-foreground/30"
-                }`}
-                aria-label={`Slide ${i + 1}`}
-              />
+              </div>
             ))}
           </div>
+        </div>
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-center gap-4 mt-8">
+          <button
+            onClick={scrollPrev}
+            className="w-12 h-12 rounded-full border border-border bg-white flex items-center justify-center text-muted-foreground hover:text-navy-dark hover:border-navy-dark/30 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <button
+            onClick={scrollNext}
+            className="w-12 h-12 rounded-full btn-gradient text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Next slide"
+          >
+            <ChevronRight size={24} />
+          </button>
         </div>
       </div>
     </section>
@@ -412,11 +384,12 @@ export default function Index() {
                       </span>
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="w-full min-w-[300px] max-h-[350px]">
                     {passportOptions.map((p) => (
-                      <SelectItem key={p.code} value={p.code}>
-                        <span className="flex items-center gap-2">
-                          <span>{p.flag}</span> {t(p.labelKey)}
+                      <SelectItem key={p.code} value={p.code} className="py-3 cursor-pointer">
+                        <span className="flex items-center gap-3">
+                          <span className="text-2xl">{p.flag}</span>
+                          <span className="text-base font-medium">{t(p.labelKey)}</span>
                         </span>
                       </SelectItem>
                     ))}
@@ -428,15 +401,15 @@ export default function Index() {
               <div className="flex-1">
                 <label className="text-sm font-extrabold text-foreground mb-2 block text-left uppercase tracking-wide">{t("checker.destination")}</label>
                 <Select onValueChange={setSelectedDestination} value={selectedDestination}>
-                  <SelectTrigger className="h-16 text-lg">
+                  <SelectTrigger className="h-16 text-lg shadow-sm border-border/60">
                     <SelectValue placeholder={t("checker.placeholder")} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="w-full min-w-[300px] max-h-[350px]">
                     {destinations.map((country) => (
-                      <SelectItem key={country.key} value={country.key}>
-                        <span className="flex items-center gap-2">
-                          <span className="text-lg">{country.flag}</span>
-                          <span>{t("country." + country.key)}</span>
+                      <SelectItem key={country.key} value={country.key} className="py-3 cursor-pointer">
+                        <span className="flex items-center gap-3">
+                          <span className="text-2xl">{country.flag}</span>
+                          <span className="text-base font-medium">{t("country." + country.key)}</span>
                         </span>
                       </SelectItem>
                     ))}
@@ -503,7 +476,7 @@ export default function Index() {
                       <div className="grid sm:grid-cols-3 gap-4 text-left">
                         <div>
                           <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">{t("checker.visaType")}</p>
-                          <p className="font-bold text-base">{visaResult ? t(visaResult.typeKey) : ""}</p>
+                          <p className="font-bold text-base">{visaResult && visaResult.typeKey ? t(visaResult.typeKey) : "Standard"}</p>
                         </div>
                         <div>
                           <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">{t("checker.duration")}</p>
@@ -544,15 +517,15 @@ export default function Index() {
             transition={{ delay: 0.4 }}
           >
             <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white/60 backdrop-blur-sm border border-border/50">
-              <Users size={20} className="text-[#00D69E] shrink-0" /> 
+              <Users size={20} className="text-[#00D69E] shrink-0" />
               <span><strong className="text-foreground font-extrabold">3.200+</strong> {t("trust.applications")}</span>
             </div>
             <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white/60 backdrop-blur-sm border border-border/50">
-              <Shield size={20} className="text-[#00D69E] shrink-0" /> 
+              <Shield size={20} className="text-[#00D69E] shrink-0" />
               <span><strong className="text-foreground font-extrabold">%96</strong> {t("trust.approval")}</span>
             </div>
             <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white/60 backdrop-blur-sm border border-border/50">
-              <Clock size={20} className="text-[#00D69E] shrink-0" /> 
+              <Clock size={20} className="text-[#00D69E] shrink-0" />
               <span><strong className="text-foreground font-extrabold">{t("trust.supportTime")}</strong> {t("trust.support")}</span>
             </div>
           </motion.div>
@@ -590,7 +563,7 @@ export default function Index() {
 
             {/* VisaPath — green, bigger, bold, prominent */}
             <div className="rounded-2xl border-2 border-[#00D69E]/50 p-8 md:p-10 relative shadow-lg transition-all hover:shadow-xl pt-12 md:pt-14" style={{ background: "linear-gradient(135deg, rgba(0,214,158,0.06) 0%, rgba(0,179,134,0.12) 100%)" }}>
-              <div className="absolute left-1/2 -translate-x-1/2 -top-4 btn-gradient text-white text-sm font-bold px-5 py-2 rounded-full shadow-lg whitespace-nowrap">
+              <div className="absolute left-1/2 -translate-x-1/2 -top-5 z-20 btn-gradient text-white text-sm font-bold px-6 py-2.5 rounded-full shadow-xl whitespace-nowrap ring-4 ring-white">
                 {t("comparison.recommended")}
               </div>
               <h3 className="text-2xl md:text-3xl font-extrabold text-[#00B386] mb-7 flex items-center gap-2">
