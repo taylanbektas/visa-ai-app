@@ -551,12 +551,12 @@ export default function Index() {
             <div className="flex items-center gap-2"><Clock size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">{t("trust.supportTime")}</strong> {t("trust.support")}</span></div>
           </motion.div>
         </div>
-      </section>
+      </section >
 
 
 
       {/* ━━━ COMPARISON — left muted, right green & bigger ━━━ */}
-      <section className="py-20 md:py-28 section-gradient-light">
+      < section className="py-20 md:py-28 section-gradient-light" >
         <div className="container mx-auto px-4 md:px-6 max-w-5xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-4">
             {t("comparison.title")} <span className="text-gradient-mint">VisaPath</span>?
@@ -613,10 +613,10 @@ export default function Index() {
             </div>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* ━━━ 3 STEPS ━━━ */}
-      <section className="py-20 md:py-28 bg-white">
+      < section className="py-20 md:py-28 bg-white" >
         <div className="container mx-auto px-4 md:px-6 max-w-3xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-4">
             {t("steps.title")}
@@ -649,16 +649,16 @@ export default function Index() {
             ))}
           </div>
         </div>
-      </section>
+      </section >
 
       {/* ━━━ STATS — Animated Counters ━━━ */}
-      <StatsSection t={t} />
+      < StatsSection t={t} />
 
       {/* ━━━ TESTIMONIALS — iVisa-style carousel ━━━ */}
-      <TestimonialsCarousel t={t} />
+      < TestimonialsCarousel t={t} />
 
       {/* ━━━ FAQs ━━━ */}
-      <section className="py-20 md:py-28 section-gradient-light" id="sss">
+      < section className="py-20 md:py-28 section-gradient-light" id="sss" >
         <div className="container mx-auto px-4 md:px-6 max-w-2xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-14">
             {t("faq.title")}
@@ -677,10 +677,10 @@ export default function Index() {
             ))}
           </Accordion>
         </div>
-      </section>
+      </section >
 
       {/* ━━━ NEWSLETTER ━━━ */}
-      <section className="py-20 md:py-24 bg-gradient-navy">
+      < section className="py-20 md:py-24 bg-gradient-navy" >
         <div className="container mx-auto px-4 md:px-6 text-center max-w-2xl">
           <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-6">
             <Mail size={36} className="text-[#00D69E]" />
@@ -704,10 +704,10 @@ export default function Index() {
           </div>
           <p className="text-sm text-white/40 mt-4">{t("newsletter.privacy")}</p>
         </div>
-      </section>
+      </section >
 
       {/* ━━━ CTA BANNER ━━━ */}
-      <section className="py-20 md:py-24 bg-gradient-navy">
+      < section className="py-20 md:py-24 bg-gradient-navy" >
         <div className="container mx-auto px-4 md:px-6 text-center max-w-2xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-5">
             {t("cta.title")} <span className="text-gradient-mint">{t("cta.highlight")}</span> {t("cta.titleSuffix")}
@@ -732,7 +732,7 @@ export default function Index() {
             </Button>
           </div>
         </div>
-      </section>
-    </div>
+      </section >
+    </div >
   );
 }

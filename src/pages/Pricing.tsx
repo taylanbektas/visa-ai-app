@@ -16,21 +16,10 @@ import {
   Star,
   ShieldCheck,
   X,
-  Check,
-  AlertTriangle,
-  Clock,
-  Phone,
-  Ban,
 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 
-/* ── Quiz ──────────────────────────────────────────────── */
-const questions = [
-  { q: "Daha önce Schengen vizesi aldınız mı?", options: [{ label: "Evet", value: "yes" }, { label: "Hayır", value: "no" }] },
-  { q: "Belge hazırlamayı kendiniz yapmak ister misiniz?", options: [{ label: "Evet, yapabilirim", value: "yes" }, { label: "Kısmen", value: "partial" }, { label: "Hayır, destek istiyorum", value: "no" }] },
-  { q: "Randevu ve takip desteği ister misiniz?", options: [{ label: "Evet, kesinlikle", value: "yes" }, { label: "Hayır, gerek yok", value: "no" }] },
-];
-
+/* ── Quiz Logic Helper ──────────────────────────────────── */
 function getRecommendation(answers: string[]): string {
   let score = 0;
   for (const a of answers) {
@@ -42,97 +31,110 @@ function getRecommendation(answers: string[]): string {
   return "elite";
 }
 
-/* ── Plans ─────────────────────────────────────────────── */
-const plans = [
-  {
-    id: "starter",
-    name: "Starter",
-    subtitle: "Deneyimli gezginler için",
-    price: "49",
-    features: [
-      "Dijital vize rehberi",
-      "Gerekli belge checklist'i",
-      "AI belge ön kontrol",
-      "E-posta desteği",
-      "Bilgi bankası erişimi",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    subtitle: "En popüler seçim",
-    price: "149",
-    popular: true,
-    features: [
-      "Starter'daki her şey",
-      "Uzman belge inceleme ve düzeltme",
-      "Randevu alma desteği",
-      "AI destekli başvuru doğrulama",
-      "5 iş günü takip desteği",
-      "Telefon desteği",
-      "Ret durumunda indirimli yeniden başvuru",
-    ],
-  },
-  {
-    id: "elite",
-    name: "Elite",
-    subtitle: "Tam kapsamlı VIP hizmet",
-    price: "349",
-    features: [
-      "Pro'daki her şey",
-      "Kişisel vize danışmanı",
-      "7/24 WhatsApp destek hattı",
-      "Seyahat planlaması desteği",
-      "Otel ve restoran önerileri",
-      "Havalimanı bilgi paketi",
-      "%100 para iade garantisi (ret durumunda)",
-      "Öncelikli işlem",
-    ],
-  },
-];
-
-/* ── Comparison table features ─────────────────────────── */
-const compareFeatures = [
-  { feature: "Dijital Vize Rehberi", starter: true, pro: true, elite: true },
-  { feature: "Belge Checklist", starter: true, pro: true, elite: true },
-  { feature: "AI Belge Kontrol", starter: true, pro: true, elite: true },
-  { feature: "Uzman Belge İnceleme", starter: false, pro: true, elite: true },
-  { feature: "Randevu Desteği", starter: false, pro: true, elite: true },
-  { feature: "Telefon Desteği", starter: false, pro: true, elite: true },
-  { feature: "Kişisel Danışman", starter: false, pro: false, elite: true },
-  { feature: "7/24 WhatsApp Hattı", starter: false, pro: false, elite: true },
-  { feature: "Seyahat Planlaması", starter: false, pro: false, elite: true },
-  { feature: "%100 İade Garantisi", starter: false, pro: false, elite: true },
-  { feature: "Fiyat", starter: "€49", pro: "€149", elite: "€349" },
-];
-
-/* ── Competitor comparison ────────────────────────────── */
-const competitorRows = [
-  { feature: "Ortalama Fiyat", us: "€49 – €349", them: "€500 – €1.500+" },
-  { feature: "Kişisel İlgi", us: "Her müşteriye özel danışman", them: "Toplu işlem, kişisel destek yok" },
-  { feature: "Hata Riski", us: "AI + uzman çift kontrol", them: "Manuel süreç, hataya açık" },
-  { feature: "İletişim", us: "7/24 WhatsApp, telefon, e-posta", them: "Sadece e-posta, uzun bekleme" },
-  { feature: "İade Garantisi", us: "%100 para iade (Elite)", them: "İade yok veya kısıtlı" },
-  { feature: "Süreç Takibi", us: "Gerçek zamanlı bilgilendirme", them: "Siz sormadıkça bilgi yok" },
-  { feature: "Teknoloji", us: "AI destekli belge kontrolü", them: "Tamamen manuel" },
-];
-
-/* ── FAQ ───────────────────────────────────────────────── */
-const faqs = [
-  { q: "Fiyata konsolosluk ücreti dahil mi?", a: "Hayır. Fiyatlarımız danışmanlık hizmet ücretini kapsar. Konsolosluk harçları (Schengen vizesi için €90 vb.) ayrıca ödenir." },
-  { q: "Ödeme nasıl yapılır?", a: "Kredi kartı, banka kartı ve havale ile ödeme yapabilirsiniz. Tüm ödemeler 256-bit SSL şifreleme ile güvence altındadır." },
-  { q: "Pro paket neyi içerir?", a: "Pro paket; uzman belge incelemesi, randevu desteği, AI destekli doğrulama, 5 iş günü takip ve telefon desteğini içerir." },
-  { q: "Elite'deki %100 iade garantisi nasıl çalışır?", a: "Elite planında vize başvurunuz reddedilirse, danışmanlık ücretinin tamamını iade ederiz. Konsolosluk harçları hariçtir." },
-  { q: "Planımı sonradan yükseltebilir miyim?", a: "Evet! İstediğiniz zaman planınızı yükseltebilirsiniz. Sadece fark ücretini ödersiniz." },
-];
-
 export default function Pricing() {
   const [quizStarted, setQuizStarted] = useState(false);
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [recommendation, setRecommendation] = useState<string | null>(null);
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
+  /* ── Data with Translations ───────────────────────────── */
+  const questions = [
+    {
+      q: t("pricing.quiz.q1"),
+      options: [{ label: t("pricing.quiz.opt.yes"), value: "yes" }, { label: t("pricing.quiz.opt.no"), value: "no" }]
+    },
+    {
+      q: t("pricing.quiz.q2"),
+      options: [{ label: t("pricing.quiz.opt.canDo"), value: "yes" }, { label: t("pricing.quiz.opt.partial"), value: "partial" }, { label: t("pricing.quiz.opt.support"), value: "no" }]
+    },
+    {
+      q: t("pricing.quiz.q3"),
+      options: [{ label: t("pricing.quiz.opt.absolute"), value: "yes" }, { label: t("pricing.quiz.opt.noNeed"), value: "no" }]
+    },
+  ];
+
+  const plans = [
+    {
+      id: "starter",
+      name: t("pricing.plan.starter.id"),
+      subtitle: t("pricing.plan.starter.sub"),
+      price: "49",
+      features: [
+        t("pricing.plan.feature.guide"),
+        t("pricing.plan.feature.checklist"),
+        t("pricing.plan.feature.ai"),
+        t("pricing.plan.feature.email"),
+        t("pricing.plan.feature.kb"),
+      ],
+    },
+    {
+      id: "pro",
+      name: t("pricing.plan.pro.id"),
+      subtitle: t("pricing.plan.pro.sub"),
+      price: "149",
+      popular: true,
+      features: [
+        t("pricing.plan.feature.starterAll"),
+        t("pricing.plan.feature.expertReview"),
+        t("pricing.plan.feature.appSupport"),
+        t("pricing.plan.feature.aiVerify"),
+        t("pricing.plan.feature.tracking"),
+        t("pricing.plan.feature.phone"),
+        t("pricing.plan.feature.reapply"),
+      ],
+    },
+    {
+      id: "elite",
+      name: t("pricing.plan.elite.id"),
+      subtitle: t("pricing.plan.elite.sub"),
+      price: "349",
+      features: [
+        t("pricing.plan.feature.proAll"),
+        t("pricing.plan.feature.consultant"),
+        t("pricing.plan.feature.whatsapp"),
+        t("pricing.plan.feature.travelPlan"),
+        t("pricing.plan.feature.hotel"),
+        t("pricing.plan.feature.airport"),
+        t("pricing.plan.feature.guarantee"),
+        t("pricing.plan.feature.priority"),
+      ],
+    },
+  ];
+
+  const compareFeatures = [
+    { feature: t("pricing.plan.feature.guide"), starter: true, pro: true, elite: true },
+    { feature: t("pricing.plan.feature.checklist"), starter: true, pro: true, elite: true },
+    { feature: t("pricing.plan.feature.ai"), starter: true, pro: true, elite: true },
+    { feature: t("pricing.plan.feature.expertReview"), starter: false, pro: true, elite: true },
+    { feature: t("pricing.plan.feature.appSupport"), starter: false, pro: true, elite: true },
+    { feature: t("pricing.plan.feature.phone"), starter: false, pro: true, elite: true },
+    { feature: t("pricing.plan.feature.consultant"), starter: false, pro: false, elite: true },
+    { feature: t("pricing.plan.feature.whatsapp"), starter: false, pro: false, elite: true },
+    { feature: t("pricing.plan.feature.travelPlan"), starter: false, pro: false, elite: true },
+    { feature: t("pricing.plan.feature.guarantee"), starter: false, pro: false, elite: true },
+    { feature: t("pricing.comp.row.avgPrice"), starter: "€49", pro: "€149", elite: "€349" },
+  ];
+
+  const competitorRows = [
+    { feature: t("pricing.comp.row.avgPrice"), us: t("pricing.comp.val.vp.price"), them: t("pricing.comp.val.trad.price") },
+    { feature: t("pricing.comp.row.personal"), us: t("pricing.comp.val.vp.personal"), them: t("pricing.comp.val.trad.personal") },
+    { feature: t("pricing.comp.row.error"), us: t("pricing.comp.val.vp.error"), them: t("pricing.comp.val.trad.error") },
+    { feature: t("pricing.comp.row.contact"), us: t("pricing.comp.val.vp.contact"), them: t("pricing.comp.val.trad.contact") },
+    { feature: t("pricing.comp.row.refund"), us: t("pricing.comp.val.vp.refund"), them: t("pricing.comp.val.trad.refund") },
+    { feature: t("pricing.comp.row.process"), us: t("pricing.comp.val.vp.process"), them: t("pricing.comp.val.trad.process") },
+    { feature: t("pricing.comp.row.tech"), us: t("pricing.comp.val.vp.tech"), them: t("pricing.comp.val.trad.tech") },
+  ];
+
+  const faqs = [
+    { q: t("pricing.faq.q1"), a: t("pricing.faq.a1") },
+    { q: t("pricing.faq.q2"), a: t("pricing.faq.a2") },
+    { q: t("pricing.faq.q3"), a: t("pricing.faq.a3") },
+    { q: t("pricing.faq.q4"), a: t("pricing.faq.a4") },
+    { q: t("pricing.faq.q5"), a: t("pricing.faq.a5") },
+  ];
+
+  /* ── Handlers ─────────────────────────────────────────── */
   const handleAnswer = (value: string) => {
     const newAnswers = [...answers, value];
     setAnswers(newAnswers);
@@ -156,11 +158,9 @@ export default function Pricing() {
         {/* Header */}
         <div className="text-center mb-14">
           <h1 className="text-3xl md:text-5xl font-extrabold text-navy-dark mb-4">
-            Basit ve Şeffaf <span className="text-gradient-mint">Fiyatlandırma</span>
+            {t("pricing.title")} <span className="text-gradient-mint">{t("pricing.titleHighlight")}</span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-md mx-auto">
-            İhtiyacınıza uygun planı seçin. <strong className="text-foreground">Gizli ücret yok</strong>, <strong className="text-foreground">sürpriz yok</strong>.
-          </p>
+          <p className="text-lg text-muted-foreground max-w-md mx-auto" dangerouslySetInnerHTML={{ __html: t("pricing.subtitle") }} />
         </div>
 
         {/* Quiz */}
@@ -168,15 +168,15 @@ export default function Pricing() {
           <div className="bg-white border border-border rounded-2xl p-7 shadow-sm">
             <div className="flex items-center gap-2 mb-5">
               <Sparkles size={20} className="text-[#00D69E]" />
-              <h3 className="font-bold text-lg">Size Uygun Planı 3 Soruda Bulun</h3>
+              <h3 className="font-bold text-lg">{t("pricing.quiz.title")}</h3>
             </div>
 
             <AnimatePresence mode="wait">
               {!quizStarted && !recommendation && (
                 <motion.div key="start" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <p className="text-[15px] text-muted-foreground mb-5">Kısa testimiz ile hangi planın size en uygun olduğunu öğrenin.</p>
+                  <p className="text-[15px] text-muted-foreground mb-5">{t("pricing.quiz.desc")}</p>
                   <Button onClick={() => setQuizStarted(true)} className="btn-gradient text-white font-bold w-full h-12 rounded-xl text-[15px]">
-                    Teste Başla <ArrowRight size={16} className="ml-2" />
+                    {t("pricing.quiz.btnStart")} <ArrowRight size={16} className="ml-2" />
                   </Button>
                 </motion.div>
               )}
@@ -184,7 +184,7 @@ export default function Pricing() {
               {quizStarted && !recommendation && (
                 <motion.div key={`q-${currentQ}`} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                   <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                    Soru {currentQ + 1} / {questions.length}
+                    {t("pricing.quiz.question")} {currentQ + 1} / {questions.length}
                   </p>
                   <p className="font-semibold text-[15px] mb-5">{questions[currentQ].q}</p>
                   <div className="flex gap-3">
@@ -207,22 +207,20 @@ export default function Pricing() {
                   <div className="flex items-center gap-2 mb-3">
                     <CheckCircle size={20} className="text-[#00D69E]" />
                     <p className="font-bold text-[15px]">
-                      Size önerimiz: <span className="text-[#00D69E] capitalize">{recommendation === "starter" ? "Starter" : recommendation === "pro" ? "Pro" : "Elite"} Plan</span>
+                      {t("pricing.quiz.result.rec")} <span className="text-[#00D69E] capitalize">{t(`pricing.plan.${recommendation}.id`)} Plan</span>
                     </p>
                   </div>
                   <p className="text-sm text-muted-foreground mb-5">
-                    {recommendation === "starter" && "Deneyimli bir gezginsiniz. Starter planı ile kendi hızınızda ilerleyebilirsiniz."}
-                    {recommendation === "pro" && "Profesyonel destek sizi rahatlatacak. Pro planı belgelerinizi uzmanlarımız kontrol etsin."}
-                    {recommendation === "elite" && "Tam kapsamlı, kişisel bir hizmet istiyorsunuz. Elite planı sizi her adımda destekleyecek."}
+                    {t(`pricing.quiz.result.${recommendation}`)}
                   </p>
                   <div className="flex gap-3">
                     <Link to="/apply" className="flex-1">
                       <Button className="w-full btn-gradient text-white font-bold h-12 rounded-xl text-[15px]">
-                        {recommendation === "starter" ? "Starter" : recommendation === "pro" ? "Pro" : "Elite"} ile Başla
+                        {t("pricing.quiz.btnStartPlan")} {t(`pricing.plan.${recommendation}.id`)}
                       </Button>
                     </Link>
                     <Button variant="ghost" onClick={resetQuiz} className="text-muted-foreground font-semibold">
-                      Tekrar Dene
+                      {t("pricing.quiz.btnRetry")}
                     </Button>
                   </div>
                 </motion.div>
@@ -251,17 +249,17 @@ export default function Pricing() {
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 w-max max-w-[90%] justify-center z-10">
                   {plan.popular && !isRecommended && (
                     <div className="btn-gradient text-white text-sm font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-md whitespace-nowrap">
-                      <Star size={13} className="fill-white" /> En Popüler
+                      <Star size={13} className="fill-white" /> {t("pricing.plan.popular")}
                     </div>
                   )}
                   {isRecommended && (
                     <div className="bg-navy-dark text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
-                      ✨ Size Önerildi
+                      ✨ {t("pricing.plan.recommended")}
                     </div>
                   )}
                   {isRecommended && plan.popular && (
                     <div className="btn-gradient text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm whitespace-nowrap">
-                      <Star size={11} className="fill-white" /> En Popüler
+                      <Star size={11} className="fill-white" /> {t("pricing.plan.popular")}
                     </div>
                   )}
                 </div>
@@ -273,12 +271,12 @@ export default function Pricing() {
 
                 <div className="mb-7">
                   <span className="text-4xl md:text-5xl font-extrabold text-navy-dark">€{plan.price}</span>
-                  <span className="text-muted-foreground font-medium ml-1">/ başvuru</span>
+                  <span className="text-muted-foreground font-medium ml-1">{t("pricing.plan.perApp")}</span>
                 </div>
 
                 <ul className="space-y-3.5 mb-8 flex-1">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2.5 text-[15px]">
+                  {plan.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-start gap-2.5 text-[15px]">
                       <CheckCircle size={18} className="text-[#00D69E] mt-0.5 shrink-0" />
                       <span>{feature}</span>
                     </li>
@@ -292,7 +290,7 @@ export default function Pricing() {
                       : "bg-secondary text-foreground hover:bg-secondary/80"
                       }`}
                   >
-                    {plan.name} ile Başla
+                    {locale === "en" ? <>{t("pricing.plan.btn")} {plan.name}</> : <>{plan.name} {t("pricing.plan.btn")}</>}
                   </Button>
                 </Link>
               </motion.div>
@@ -303,11 +301,9 @@ export default function Pricing() {
         {/* ━━━ COMPETITOR COMPARISON ━━━ */}
         <div className="max-w-4xl mx-auto mb-20">
           <h2 className="text-3xl md:text-4xl font-extrabold text-center text-navy-dark mb-4">
-            Diğer Ajanslarla <span className="text-gradient-mint">Karşılaştırın</span>
+            {t("pricing.comp.title")} <span className="text-gradient-mint">{t("pricing.comp.highlight")}</span>
           </h2>
-          <p className="text-center text-muted-foreground text-xl mb-12 max-w-lg mx-auto">
-            Geleneksel vize danışmanlık şirketleri pahalı ve yavaş. <strong className="text-foreground">VisaPath farkını rakamlarla görün.</strong>
-          </p>
+          <p className="text-center text-muted-foreground text-xl mb-12 max-w-lg mx-auto" dangerouslySetInnerHTML={{ __html: t("pricing.comp.desc") }} />
 
           <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-sm">
             {/* Desktop table header */}
@@ -316,13 +312,13 @@ export default function Pricing() {
               <div className="p-5 text-center border-l border-border">
                 <div className="flex items-center justify-center gap-2 mb-1">
                   <span className="text-xl">✈️</span>
-                  <span className="font-extrabold text-lg text-navy-dark">VisaPath</span>
+                  <span className="font-extrabold text-lg text-navy-dark">{t("pricing.comp.col.vp")}</span>
                 </div>
                 <span className="text-base font-bold text-[#00D69E]">{t("roi.modern_trust")}</span>
               </div>
               <div className="p-5 text-center border-l border-border">
-                <span className="font-bold text-base text-muted-foreground">Geleneksel Ajanslar</span>
-                <p className="text-sm text-muted-foreground/60 mt-0.5">Ortalama rakip</p>
+                <span className="font-bold text-base text-muted-foreground">{t("pricing.comp.col.traditional")}</span>
+                <p className="text-sm text-muted-foreground/60 mt-0.5">{t("pricing.comp.row.avgPrice")}</p>
               </div>
             </div>
 
@@ -351,14 +347,14 @@ export default function Pricing() {
                   <div className="flex items-start gap-2">
                     <CheckCircle size={16} className="text-[#00D69E] shrink-0 mt-0.5" />
                     <div>
-                      <span className="text-xs font-bold text-[#00D69E] uppercase">VisaPath</span>
+                      <span className="text-xs font-bold text-[#00D69E] uppercase">{t("pricing.comp.col.vp")}</span>
                       <p className="text-sm font-medium text-foreground">{row.us}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
                     <X size={16} className="text-muted-foreground/40 shrink-0 mt-0.5" />
                     <div>
-                      <span className="text-xs font-bold text-muted-foreground uppercase">Rakipler</span>
+                      <span className="text-xs font-bold text-muted-foreground uppercase">{t("pricing.comp.col.traditional")}</span>
                       <p className="text-sm text-muted-foreground">{row.them}</p>
                     </div>
                   </div>
@@ -371,17 +367,17 @@ export default function Pricing() {
         {/* Feature Comparison Table */}
         <div className="max-w-4xl mx-auto mb-20">
           <h2 className="text-3xl font-extrabold text-center text-navy-dark mb-12">
-            Plan Karşılaştırma
+            {t("pricing.table.title")}
           </h2>
 
           <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-sm">
             {/* Desktop table */}
             <div className="hidden md:block">
               <div className="grid grid-cols-4 border-b border-border">
-                <div className="p-5 font-bold text-base text-muted-foreground">Özellik</div>
-                <div className="p-5 text-center font-bold text-base border-l border-border">Starter</div>
-                <div className="p-5 text-center font-bold text-base border-l border-border text-[#00D69E]">Pro</div>
-                <div className="p-5 text-center font-bold text-base border-l border-border">Elite</div>
+                <div className="p-5 font-bold text-base text-muted-foreground">{t("pricing.table.feature")}</div>
+                <div className="p-5 text-center font-bold text-base border-l border-border">{t("pricing.plan.starter.id")}</div>
+                <div className="p-5 text-center font-bold text-base border-l border-border text-[#00D69E]">{t("pricing.plan.pro.id")}</div>
+                <div className="p-5 text-center font-bold text-base border-l border-border">{t("pricing.plan.elite.id")}</div>
               </div>
               {compareFeatures.map((row, i) => (
                 <div key={i} className={`grid grid-cols-4 ${i < compareFeatures.length - 1 ? "border-b border-border/50" : ""}`}>
@@ -407,10 +403,10 @@ export default function Pricing() {
             <div className="md:hidden overflow-x-auto">
               <div className="min-w-[500px]">
                 <div className="grid grid-cols-4 border-b border-border">
-                  <div className="p-3 font-bold text-sm text-muted-foreground">Özellik</div>
-                  <div className="p-3 text-center font-bold text-sm border-l border-border">Starter</div>
-                  <div className="p-3 text-center font-bold text-sm border-l border-border text-[#00D69E]">Pro</div>
-                  <div className="p-3 text-center font-bold text-sm border-l border-border">Elite</div>
+                  <div className="p-3 font-bold text-sm text-muted-foreground">{t("pricing.table.feature")}</div>
+                  <div className="p-3 text-center font-bold text-sm border-l border-border">{t("pricing.plan.starter.id")}</div>
+                  <div className="p-3 text-center font-bold text-sm border-l border-border text-[#00D69E]">{t("pricing.plan.pro.id")}</div>
+                  <div className="p-3 text-center font-bold text-sm border-l border-border">{t("pricing.plan.elite.id")}</div>
                 </div>
                 {compareFeatures.map((row, i) => (
                   <div key={i} className={`grid grid-cols-4 ${i < compareFeatures.length - 1 ? "border-b border-border/50" : ""}`}>
@@ -441,18 +437,16 @@ export default function Pricing() {
             <div className="w-16 h-16 rounded-full bg-[#00D69E]/10 flex items-center justify-center mx-auto mb-5">
               <ShieldCheck size={32} className="text-[#00D69E]" />
             </div>
-            <h3 className="text-2xl md:text-3xl font-extrabold text-navy-dark mb-3">%100 Para İade Garantisi</h3>
-            <p className="text-base md:text-lg text-foreground/80 leading-relaxed max-w-md mx-auto mb-4">
-              Elite planımızda vize başvurunuz reddedilirse, danışmanlık ücretinin <strong className="text-foreground font-extrabold">tamamını iade ederiz</strong>. Risk sıfır.
-            </p>
-            <p className="text-sm text-muted-foreground">Konsolosluk harçları hariçtir.</p>
+            <h3 className="text-2xl md:text-3xl font-extrabold text-navy-dark mb-3">{t("pricing.guarantee.title")}</h3>
+            <p className="text-base md:text-lg text-foreground/80 leading-relaxed max-w-md mx-auto mb-4" dangerouslySetInnerHTML={{ __html: t("pricing.guarantee.text") }} />
+            <p className="text-sm text-muted-foreground">{t("pricing.guarantee.note")}</p>
           </div>
         </div>
 
         {/* FAQ */}
         <div className="max-w-2xl mx-auto" id="sss">
           <h2 className="text-3xl font-extrabold text-center text-navy-dark mb-12">
-            Fiyatlandırma Hakkında <span className="text-gradient-mint">SSS</span>
+            {t("pricing.faq.title")} <span className="text-gradient-mint">{t("pricing.faq.titleSuffix")}</span>
           </h2>
 
           <Accordion type="single" collapsible className="space-y-3">

@@ -1,27 +1,25 @@
 import { Link } from "react-router-dom";
-
-const footerLinks = {
-  Hizmetler: [
-    { label: "Schengen Vizesi", to: "/apply" },
-    { label: "ABD Vizesi", to: "/apply" },
-    { label: "İngiltere Vizesi", to: "/apply" },
-    { label: "Fiyatlar", to: "/pricing" },
-  ],
-  Kaynaklar: [
-    { label: "Vize Rehberi", to: "/learn" },
-    { label: "Vize Kontrol", to: "/visa-checker" },
-    { label: "Başvuru Takip", to: "/track" },
-    { label: "SSS", to: "/#sss" },
-  ],
-  Şirket: [
-    { label: "Hakkımızda", to: "/about" },
-    { label: "İletişim", to: "/contact" },
-    { label: "Gizlilik Politikası", to: "/privacy" },
-    { label: "Kullanım Şartları", to: "/terms" },
-  ],
-};
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export function Footer() {
+  const { t } = useLanguage();
+
+  const footerLinks = {
+    [t("footer.quickLinks")]: [
+      { label: t("nav.learn"), to: "/learn" },
+      { label: t("nav.track"), to: "/track" },
+      { label: t("nav.faq"), to: "/pricing#sss" },
+    ],
+    [t("footer.support")]: [
+      { label: t("nav.contact"), to: "/contact" },
+      { label: t("nav.whatsapp"), to: "https://wa.me/905XXXXXXXXX" },
+    ],
+    [t("footer.legal")]: [
+      { label: "Privacy Policy", to: "/privacy" },
+      { label: "Terms of Service", to: "/terms" },
+    ],
+  };
+
   return (
     <footer className="border-t border-border bg-white">
       <div className="container mx-auto px-4 md:px-6 py-14">
@@ -36,7 +34,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-              Türk vatandaşları için profesyonel vize danışmanlığı. Hızlı, güvenilir ve şeffaf.
+              {t("footer.tagline")}
             </p>
             <div className="text-sm text-muted-foreground space-y-1.5 mb-5">
               <p>📍 İstanbul, Türkiye</p>
@@ -93,7 +91,7 @@ export function Footer() {
 
         <div className="border-t border-border mt-12 pt-6 text-center">
           <p className="text-xs text-muted-foreground">
-            © 2026 VisaPath. Tüm hakları saklıdır. VisaPath bir vize danışmanlık hizmetidir ve resmi konsolosluk temsilcisi değildir.
+            © 2026 VisaPath. {t("footer.rights")} VisaPath bir vize danışmanlık hizmetidir ve resmi konsolosluk temsilcisi değildir.
           </p>
         </div>
       </div>
