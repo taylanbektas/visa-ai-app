@@ -33,30 +33,31 @@ export const passportOptions: Country[] = [
 ];
 
 /* ── Destination list — sorted by popularity for Turkish citizens (2024-2025 stats) ─────── */
+/* ── Destination list — sorted by popularity for Turkish citizens (2024-2025 stats) ─────── */
 export const destinations: Destination[] = [
-    { key: "georgia", flag: "🇬🇪", popular: true },      // Very high volume (visa-free)
-    { key: "greece", flag: "🇬🇷", popular: true },       // High volume (neighbor, islands)
-    { key: "bulgaria", flag: "🇧🇬", popular: true },     // High volume (neighbor)
-    { key: "germany", flag: "🇩🇪", popular: true },      // High diaspora connection
-    { key: "italy", flag: "🇮🇹", popular: true },        // Tourism
-    { key: "france", flag: "🇫🇷", popular: true },       // Tourism
-    { key: "netherlands", flag: "🇳🇱" },
-    { key: "uk", flag: "🇬🇧" },
-    { key: "usa", flag: "🇺🇸" },
+    { key: "germany", flag: "🇩🇪", popular: true },
+    { key: "italy", flag: "🇮🇹", popular: true },
+    { key: "france", flag: "🇫🇷", popular: true },
+    { key: "greece", flag: "🇬🇷", popular: true },
+    { key: "montenegro", flag: "🇲🇪" },
+    { key: "serbia", flag: "🇷🇸" },
+    { key: "bosnia", flag: "🇧🇦" },
+    { key: "macedonia", flag: "🇲🇰" },
+    { key: "albania", flag: "🇦🇱" },
+    { key: "kosovo", flag: "🇽🇰" },
     { key: "spain", flag: "🇪🇸" },
-    { key: "egypt", flag: "🇪🇬", popular: true },        // Rising popularity (Sharm el-Sheikh etc.)
-    { key: "uae", flag: "🇦🇪" },                         // Dubai
-    { key: "montenegro", flag: "🇲🇪" },                  // Visa-free Balkan
-    { key: "macedonia", flag: "🇲🇰" },                   // Visa-free Balkan
-    { key: "serbia", flag: "🇷🇸" },                      // Visa-free Balkan
-    { key: "bosnia", flag: "🇧🇦" },                      // Visa-free Balkan
-    { key: "austria", flag: "🇦🇹" },
+    { key: "netherlands", flag: "🇳🇱" },
     { key: "belgium", flag: "🇧🇪" },
+    { key: "austria", flag: "🇦🇹" },
     { key: "switzerland", flag: "🇨🇭" },
     { key: "portugal", flag: "🇵🇹" },
+    { key: "usa", flag: "🇺🇸" },
+    { key: "uk", flag: "🇬🇧" },
     { key: "canada", flag: "🇨🇦" },
     { key: "japan", flag: "🇯🇵" },
     { key: "south_korea", flag: "🇰🇷" },
+    { key: "egypt", flag: "🇪🇬" },
+    { key: "uae", flag: "🇦🇪" },
 ];
 
 /* ── Visa-free map: passport → visa-free destination keys ──── */
@@ -71,7 +72,7 @@ export const visaFreeMap: Record<string, string[]> = {
     US: ["germany", "france", "italy", "spain", "netherlands", "belgium", "austria", "switzerland", "portugal", "greece", "bulgaria", "uk", "japan", "south_korea", "canada", "georgia", "montenegro", "macedonia", "serbia", "bosnia"],
 
     // TR - Visa Free / VOA
-    TR: ["georgia", "montenegro", "macedonia", "serbia", "bosnia", "japan", "south_korea", "ukraine", "belgrade", "sharm"],
+    TR: ["georgia", "montenegro", "macedonia", "serbia", "bosnia", "albania", "kosovo", "japan", "south_korea", "ukraine", "belgrade", "sharm"],
     // NOTE: Egypt is VOA for Turks usually, but we'll treat as 'visa needed' for the upsell or handle in logic if needed. 
     // For simplicity in this app, we mark widely known visa-free. 
 

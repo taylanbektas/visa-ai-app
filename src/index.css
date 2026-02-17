@@ -119,6 +119,7 @@
     font-size: 16px;
     line-height: 1.65;
     overflow-x: hidden;
+    width: 100%;
     text-rendering: optimizeLegibility;
   }
 
@@ -174,8 +175,8 @@
 
   .btn-gradient {
     position: relative;
-    background: linear-gradient(135deg, #34D399 0%, #2DD4BF 50%, #38BDF8 100%);
-    /* Lighter, brighter mint-to-blue */
+    background: linear-gradient(135deg, #00D69E 0%, #00e6a8 60%, #0EA5E9 100%);
+    /* Matching text-gradient-mint */
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 15px rgba(0, 214, 158, 0.2);

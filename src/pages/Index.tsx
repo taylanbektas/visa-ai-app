@@ -61,23 +61,8 @@ const passportOptions = [
 ];
 
 /* ── Destination list with flags ─────────────────────────── */
-const destinations = [
-  { key: "germany", flag: "🇩🇪" },
-  { key: "france", flag: "🇫🇷" },
-  { key: "italy", flag: "🇮🇹" },
-  { key: "spain", flag: "🇪🇸" },
-  { key: "netherlands", flag: "🇳🇱" },
-  { key: "belgium", flag: "🇧🇪" },
-  { key: "austria", flag: "🇦🇹" },
-  { key: "switzerland", flag: "🇨🇭" },
-  { key: "portugal", flag: "🇵🇹" },
-  { key: "greece", flag: "🇬🇷" },
-  { key: "usa", flag: "🇺🇸" },
-  { key: "uk", flag: "🇬🇧" },
-  { key: "canada", flag: "🇨🇦" },
-  { key: "japan", flag: "🇯🇵" },
-  { key: "south_korea", flag: "🇰🇷" },
-];
+/* ── Destination list with flags ─────────────────────────── */
+import { destinations } from "@/data/countries";
 
 /* ── Visa-free map: passport → visa-free destination keys ──── */
 const visaFreeMap: Record<string, string[]> = {
@@ -186,7 +171,12 @@ function StatsSection({ t }: { t: (key: string) => string }) {
 
 /* ── Testimonials: Continuous Marquee ─────────────────── */
 function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "start" });
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: true,
+    align: "start",
+    dragFree: true, // Enable "wheel" feel
+    containScroll: "trimSnaps"
+  });
   const [prevBtnEnabled, setPrevBtnEnabled] = useState(false);
   const [nextBtnEnabled, setNextBtnEnabled] = useState(false);
 
@@ -207,7 +197,7 @@ function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
   }, [emblaApi, onSelect]);
 
   return (
-    <section className="py-16 md:py-28 bg-white overflow-hidden">
+    <section className="py-16 md:py-28 bg-white overflow-hidden relative group">
       <div className="container mx-auto px-4 md:px-6 max-w-7xl mb-10 text-center">
         <h2 className="text-3xl md:text-5xl font-extrabold text-navy-dark mb-4">
           {t("testimonials.title")}
@@ -224,14 +214,33 @@ function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
       </div>
 
       <div className="relative container mx-auto px-4 md:px-6 max-w-7xl">
+        {/* Navigation Buttons - Absolute positioned on sides */}
+        <button
+          onClick={scrollPrev}
+          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-14 h-14 rounded-full border border-border bg-white flex items-center justify-center text-muted-foreground hover:text-navy-dark hover:border-navy-dark/30 transition-all shadow-lg hover:shadow-xl opacity-0 group-hover:opacity-100 duration-300 disabled:opacity-0"
+          aria-label="Previous slide"
+          disabled={!prevBtnEnabled}
+        >
+          <ChevronLeft size={28} />
+        </button>
+
+        <button
+          onClick={scrollNext}
+          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-14 h-14 rounded-full btn-gradient text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 opacity-0 group-hover:opacity-100 duration-300 disabled:opacity-0"
+          aria-label="Next slide"
+          disabled={!nextBtnEnabled}
+        >
+          <ChevronRight size={28} />
+        </button>
+
         <div className="overflow-hidden cursor-grab active:cursor-grabbing" ref={emblaRef}>
           <div className="flex -ml-4">
             {testimonials.map((review, i) => (
               <div
                 key={i}
-                className="flex-[0_0_100%] sm:flex-[0_0_50%] md:flex-[0_0_33.33%] lg:flex-[0_0_25%] pl-4 min-w-0"
+                className="flex-[0_0_85%] sm:flex-[0_0_50%] md:flex-[0_0_33.33%] lg:flex-[0_0_25%] pl-4 min-w-0"
               >
-                <div className="bg-white border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
+                <div className="bg-white border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow h-full flex flex-col user-select-none">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex gap-0.5">
                       {Array.from({ length: review.rating }).map((_, j) => (
@@ -256,24 +265,6 @@ function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Navigation Buttons */}
-        <div className="flex justify-center gap-4 mt-8">
-          <button
-            onClick={scrollPrev}
-            className="w-12 h-12 rounded-full border border-border bg-white flex items-center justify-center text-muted-foreground hover:text-navy-dark hover:border-navy-dark/30 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Previous slide"
-          >
-            <ChevronLeft size={24} />
-          </button>
-          <button
-            onClick={scrollNext}
-            className="w-12 h-12 rounded-full btn-gradient text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Next slide"
-          >
-            <ChevronRight size={24} />
-          </button>
         </div>
       </div>
     </section>
@@ -541,7 +532,7 @@ export default function Index() {
 
 
 
-      {/* ━━━ COMPARISON — left muted, right green & bigger ━━━ */}
+      {/* ━━━ COMPARISON — clean, trust-focused ━━━ */}
       <section className="py-16 md:py-28 section-gradient-light" aria-label="VisaPath ve kendi başına başvuru karşılaştırması">
         <div className="container mx-auto px-4 md:px-6 max-w-5xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-4">
@@ -551,44 +542,41 @@ export default function Index() {
             {t("comparison.subtitle")}
           </p>
 
-          <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-            {/* DIY — muted, grey, compact */}
-            <div className="rounded-2xl border border-border bg-secondary/20 p-8 md:p-10 transition-all hover:border-border/60">
-              <h3 className="text-2xl font-bold text-muted-foreground mb-7 flex items-center gap-2">
-                <X size={24} className="text-muted-foreground/60 shrink-0" />
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-start">
+            {/* DIY — muted, clean */}
+            <div className="bg-white rounded-2xl p-8 md:p-10 border border-border/60 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
+              <h3 className="text-2xl font-bold text-muted-foreground mb-8 flex items-center gap-3 pb-4 border-b border-border/50">
+                <X size={28} className="text-muted-foreground/60 shrink-0" />
                 {t("comparison.diy")}
               </h3>
-              <ul className="space-y-4">
+              <ul className="space-y-5">
                 {[0, 1, 2, 3, 4].map((i) => (
-                  <li key={i} className="flex items-start gap-3 text-base md:text-lg text-muted-foreground">
-                    <X size={20} className="text-muted-foreground/40 mt-0.5 shrink-0" />
+                  <li key={i} className="flex items-start gap-4 text-base md:text-lg text-muted-foreground/90">
+                    <X size={20} className="text-red-400 mt-1 shrink-0" />
                     <span className="leading-relaxed">{t(`comparison.diy.${i}`)}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* VisaPath — green, bigger, bold, prominent */}
-            <div className="rounded-2xl border-2 border-[#00D69E]/50 p-8 md:p-10 relative shadow-lg transition-all hover:shadow-xl pt-12 md:pt-14" style={{ background: "linear-gradient(135deg, rgba(0,214,158,0.06) 0%, rgba(0,179,134,0.12) 100%)" }}>
-              <div className="absolute left-1/2 -translate-x-1/2 -top-5 z-20 btn-gradient text-white text-sm font-bold px-6 py-2.5 rounded-full shadow-xl whitespace-nowrap ring-4 ring-white">
-                {t("comparison.recommended")}
-              </div>
-              <h3 className="text-2xl md:text-3xl font-extrabold text-[#00B386] mb-7 flex items-center gap-2">
-                <CheckCircle size={26} className="text-[#00D69E] shrink-0" />
+            {/* VisaPath — premium, trustworthy, no badges */}
+            <div className="bg-white rounded-2xl p-8 md:p-10 border-2 border-[#00D69E]/20 shadow-[0_8px_30px_rgb(0,214,158,0.12)] relative">
+              <h3 className="text-2xl md:text-3xl font-extrabold text-navy-dark mb-8 flex items-center gap-3 pb-4 border-b border-[#00D69E]/20">
+                <CheckCircle size={32} className="text-[#00D69E] shrink-0 fill-[#00D69E]/10" />
                 {t("comparison.withVP")}
               </h3>
-              <ul className="space-y-4">
+              <ul className="space-y-5">
                 {[0, 1, 2, 3, 4].map((i) => {
                   const text = t(`comparison.vp.${i}.text`);
                   const bold = t(`comparison.vp.${i}.bold`);
                   return (
-                    <li key={i} className="flex items-start gap-3 text-base md:text-lg text-foreground">
-                      <CheckCircle size={20} className="text-[#00D69E] mt-0.5 shrink-0" />
+                    <li key={i} className="flex items-start gap-4 text-base md:text-lg text-foreground">
+                      <CheckCircle size={22} className="text-[#00D69E] mt-1 shrink-0" />
                       <span className="leading-relaxed">
                         {text.split(bold).map((part, j, arr) => (
                           <span key={j}>
                             {part}
-                            {j < arr.length - 1 && <strong className="font-extrabold text-[#00B386]">{bold}</strong>}
+                            {j < arr.length - 1 && <strong className="font-bold text-[#00B386]">{bold}</strong>}
                           </span>
                         ))}
                       </span>

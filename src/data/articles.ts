@@ -24,7 +24,7 @@ export const articleImages: Record<string, string> = {
 export const articles: Record<string, { tr: Article; en: Article }> = {
     "schengen-guide": {
         tr: {
-            title: "Türk Vatandaşları İçin Eksiksiz Schengen Vize Rehberi",
+            title: "🌍 Türk Vatandaşları İçin Eksiksiz Schengen Vize Rehberi",
             category: "Schengen",
             toc: ["Schengen Alanı Nedir?", "Gerekli Belgeler", "Başvuru Süreci", "Sık Yapılan Hatalar"],
             content: `## Schengen Vizesi Nedir?
@@ -62,7 +62,7 @@ Başvurunuzun onaylanması için aşağıdaki belgelerin eksiksiz ve güncel olm
             related: ["rejection-reasons", "biometric-photo", "cover-letter"],
         },
         en: {
-            title: "Complete Schengen Visa Guide for Turkish Citizens",
+            title: "🌍 Complete Schengen Visa Guide for Turkish Citizens",
             category: "Schengen",
             toc: ["What is Schengen?", "Required Documents", "Application Process", "Common Mistakes"],
             content: `## What is a Schengen Visa?
@@ -102,7 +102,7 @@ Your first Schengen visa might be short-term (e.g., exact travel dates). Regular
     },
     "us-tourist-visa": {
         tr: {
-            title: "ABD Turist Vizesi (B-1/B-2)",
+            title: "🇺🇸 ABD Turist Vizesi (B-1/B-2)",
             category: "ABD",
             toc: ["B1/B2 Nedir?", "DS-160 Formu", "Mülakat Hazırlığı", "Sık Sorulan Sorular"],
             content: `## B1/B2 Vizesi Nedir?
@@ -137,7 +137,7 @@ Eğer memur, Türkiye'ye döneceğinize ikna olmazsa, başvurunuzu **INA 214(b)*
             related: ["schengen-guide", "rejection-reasons", "cover-letter"],
         },
         en: {
-            title: "US Tourist Visa (B-1/B-2)",
+            title: "🇺🇸 US Tourist Visa (B-1/B-2)",
             category: "USA",
             toc: ["What is B1/B2?", "DS-160 Form", "Interview Prep", "Common Questions"],
             content: `## What is a B1/B2 Visa?
@@ -174,7 +174,7 @@ If the officer isn't convinced you'll return, they may reject under **INA 214(b)
     },
     "uk-visitor-visa": {
         tr: {
-            title: "İngiltere Standart Ziyaretçi Vizesi",
+            title: "🇬🇧 İngiltere Standart Ziyaretçi Vizesi",
             category: "İngiltere",
             toc: ["Genel Bakış", "Başvuru ve Ödeme", "Biyometrik Randevu", "Dikkat Edilmesi Gerekenler"],
             content: `## İngiltere Standart Ziyaretçi Vizesi 🇬🇧
@@ -203,7 +203,7 @@ Randevu günü pasaportunuzu teslim edersiniz. İşlem süresi standart olarak *
             related: ["schengen-guide", "rejection-reasons", "biometric-photo"],
         },
         en: {
-            title: "UK Standard Visitor Visa",
+            title: "🇬🇧 UK Standard Visitor Visa",
             category: "UK",
             toc: ["Overview", "Application", "Biometrics", "Key Points"],
             content: `## UK Standard Visitor Visa
@@ -234,7 +234,7 @@ Submit your passport on appointment day. Standard processing is **3 weeks (15 wo
     },
     "rejection-reasons": {
         tr: {
-            title: "Vize Başvuruları Neden Reddedilir?",
+            title: "🛑 Vize Başvuruları Neden Reddedilir?",
             category: "Seyahat İpuçları",
             toc: ["Amaç İnandırıcı Değil", "Yetersiz Maddi Olanak", "Geri Dönüş Şüphesi", "Eksik Belge"],
             content: `## Vize Reddini Anlamak 🚫
@@ -278,7 +278,7 @@ Sigortanız tüm seyahat süresini kapsamıyor veya teminatı düşük.
             related: ["schengen-guide", "us-tourist-visa", "cover-letter"],
         },
         en: {
-            title: "Why Are Visa Applications Rejected?",
+            title: "🛑 Why Are Visa Applications Rejected?",
             category: "Travel Tips",
             toc: ["Not Credible", "Insufficient Funds", "Return Doubts", "Missing Docs"],
             content: `## Understanding Visa Rejection
@@ -324,7 +324,7 @@ Coverage doesn't match dates or is too low.
     },
     "biometric-photo": {
         tr: {
-            title: "Biyometrik Fotoğraf Nedir?",
+            title: "📸 Biyometrik Fotoğraf Nedir?",
             category: "Belge Rehberleri",
             toc: ["Genel Kurallar", "Ülke Standartları", "Tavsiyeler"],
             content: `## Biyometrik Fotoğraf Nedir? 📸
@@ -353,7 +353,7 @@ Vize başvurularında kullanılan, uluslararası ICAO (Uluslararası Sivil Havac
             related: ["schengen-guide", "uk-visitor-visa", "cover-letter"],
         },
         en: {
-            title: "What is a Biometric Photo?",
+            title: "📸 What is a Biometric Photo?",
             category: "Document Guides",
             toc: ["General Rules", "Sizes by Country", "Tips"],
             content: `## What is a Biometric Photo?
@@ -384,7 +384,7 @@ A photo meeting ICAO standards, clearly showing facial biometrics, used for visa
     },
     "cover-letter": {
         tr: {
-            title: "Vize Niyet Mektubu Nasıl Yazılır?",
+            title: "📝 Vize Niyet Mektubu Nasıl Yazılır?",
             category: "Belge Rehberleri",
             toc: ["Neden Önemli?", "Nasıl Yazılmalı?", "Örnek Şablon"],
             content: `## Vize Talep Dilekçesi (Niyet Mektubu) Nedir? ✍️
@@ -424,7 +424,7 @@ Sincerely,
             related: ["schengen-guide", "rejection-reasons", "biometric-photo"],
         },
         en: {
-            title: "How to Write a Visa Cover Letter",
+            title: "📝 How to Write a Visa Cover Letter",
             category: "Document Guides",
             toc: ["Why Important?", "How to Write", "Sample Template"],
             content: `## What is a Visa Cover Letter?
@@ -466,7 +466,7 @@ Sincerely,
     },
     "digital-nomad": {
         tr: {
-            title: "Dijital Göçebe (Digital Nomad) Vizesi",
+            title: "💻 Dijital Göçebe (Digital Nomad) Vizesi",
             category: "Modern Vize",
             toc: ["Nedir?", "Kimler Başvurabilir?", "Avantajları", "Gerekenler"],
             content: `## Dijital Göçebe (Digital Nomad) Vizesi Nedir?
@@ -494,7 +494,7 @@ Uzaktan çalışanların (freelancer veya şirkete bağlı) başka bir ülkede y
             related: ["schengen-guide"],
         },
         en: {
-            title: "Digital Nomad Visa Guide",
+            title: "💻 Digital Nomad Visa Guide",
             category: "Modern Visa",
             toc: ["What is it?", "Who Can Apply?", "Benefits", "Requirements"],
             content: `## What is a Digital Nomad Visa?
@@ -524,7 +524,7 @@ Allows remote workers (freelance or employed) to live and work in another countr
     },
     "student-visa": {
         tr: {
-            title: "Öğrenci Vizesi Rehberi",
+            title: "🎓 Öğrenci Vizesi Rehberi",
             category: "Eğitim",
             toc: ["Vize Türleri", "Kabul Mektubu", "Bloke Hesap", "Süreç"],
             content: `## Öğrenci Vizesi (Eğitim Vizesi)
@@ -543,7 +543,7 @@ Süreç turist vizesine göre daha uzundur (4-8 hafta). Mülakatta dil yeterlili
             related: ["schengen-guide", "us-tourist-visa"],
         },
         en: {
-            title: "Student Visa Guide",
+            title: "🎓 Student Visa Guide",
             category: "Education",
             toc: ["Visa Types", "Acceptance Letter", "Blocked Account", "Process"],
             content: `## Student Visa
@@ -564,7 +564,7 @@ Takes longer than tourist visas (4-8 weeks). Interviews may test language skills
     },
     "canada-tourist-visa": {
         tr: {
-            title: "Kanada Turist Vizesi (TRV)",
+            title: "🇨🇦 Kanada Turist Vizesi (TRV)",
             category: "Kanada",
             toc: ["Online Başvuru", "Gerekli Belgeler", "Biyometrik"],
             content: `## Kanada Turist Vizesi (TRV)
@@ -590,7 +590,7 @@ Başvuruyu gönderip ödemeyi (Vize + Biyometrik ücreti) yaptıktan sonra, **VF
             related: ["schengen-guide", "us-tourist-visa", "cover-letter"],
         },
         en: {
-            title: "Canada Tourist Visa (TRV)",
+            title: "🇨🇦 Canada Tourist Visa (TRV)",
             category: "Canada",
             toc: ["Online Application", "Documents", "Biometrics"],
             content: `## Canada Tourist Visa (TRV)
@@ -618,7 +618,7 @@ After payment (Visa + Bio fee), book biometric appointment at **VFS Global**. On
     },
     "travel-insurance": {
         tr: {
-            title: "Vize İçin Seyahat Sigortası",
+            title: "🛡️ Vize İçin Seyahat Sigortası",
             category: "Belgeler",
             toc: ["Zorunluluk", "Schengen Şartları", "Hatalar", "Satın Alma"],
             content: `## Vize İçin Seyahat Sağlık Sigortası
@@ -644,7 +644,7 @@ VisaPath üzerinden başvuru yaparken size uygun sigortayı indirimli olarak sun
             related: ["schengen-guide"],
         },
         en: {
-            title: "Travel Insurance for Visas",
+            title: "🛡️ Travel Insurance for Visas",
             category: "Documents",
             toc: ["Requirement", "Schengen Rules", "Mistakes", "Buying"],
             content: `## Travel Health Insurance for Visas
@@ -672,7 +672,7 @@ VisaPath offers discounted suitable insurance during application. If buying inde
     },
     "transit-visa": {
         tr: {
-            title: "Transit Vize Rehberi",
+            title: "✈️ Transit Vize Rehberi",
             category: "Vize Türleri",
             toc: ["Nedir?", "A Tipi", "C Tipi", "Muafiyetler"],
             content: `## Transit Vize Nedir?
@@ -699,7 +699,7 @@ Genellikle şu durumlarda transit vize istenmez:
             related: ["schengen-guide"],
         },
         en: {
-            title: "Transit Visa Guide",
+            title: "✈️ Transit Visa Guide",
             category: "Visa Types",
             toc: ["What is it?", "Type A", "Type C", "Exemptions"],
             content: `## What is a Transit Visa?
@@ -728,7 +728,7 @@ Usually waived if:
     },
     "first-time-abroad": {
         tr: {
-            title: "İlk Kez Yurtdışına Çıkacaklara Tavsiyeler",
+            title: "✈️ İlk Kez Yurtdışına Çıkacaklara Tavsiyeler",
             category: "Seyahat İpuçları",
             toc: ["Pasaport", "Ülke Seçimi", "Uçak & Otel", "Havalimanı"],
             content: `## İlk Kez Yurtdışına Çıkacaklar İçin Adım Adım Rehber
@@ -770,7 +770,7 @@ Yanınızda bir miktar o ülkenin nakit parasını (Döviz) bulundurun. Kredi ka
             related: ["schengen-guide", "travel-insurance"],
         },
         en: {
-            title: "Tips for First-Time Travelers",
+            title: "✈️ Tips for First-Time Travelers",
             category: "Travel Tips",
             toc: ["Passport", "Destination", "Flight & Hotel", "Airport"],
             content: `## Step-by-Step Guide for First-Time Travelers
