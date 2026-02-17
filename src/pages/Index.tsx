@@ -100,8 +100,8 @@ const visaData: Record<string, { typeKey: string; docKeys: string[]; durationKey
   "south_korea": { typeKey: "visa_type.keta", docKeys: ["doc.passport", "doc.keta"], durationKey: "duration.1_3", fee: "₩10,000 (~€7)" },
   "montenegro": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation", "doc.travel_insurance"], durationKey: "duration.90_days", fee: "Ücretsiz" },
   "serbia": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation"], durationKey: "duration.90_days", fee: "Ücretsiz" },
-  "bosnia": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation"], durationKey: "duration.90_days", fee: "Ücretsiz" },
-  "macedonia": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation"], durationKey: "duration.90_days", fee: "Ücretsiz" },
+  "bosnia_and_herzegovina": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation"], durationKey: "duration.90_days", fee: "Ücretsiz" },
+  "north_macedonia": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation"], durationKey: "duration.90_days", fee: "Ücretsiz" },
   "albania": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation"], durationKey: "duration.90_days", fee: "Ücretsiz" },
   "kosovo": { typeKey: "visa_type.visa_free", docKeys: ["doc.passport", "doc.accommodation"], durationKey: "duration.90_days", fee: "Ücretsiz" },
 };
@@ -109,7 +109,7 @@ const visaData: Record<string, { typeKey: string; docKeys: string[]; durationKey
 /* ── Testimonials data — realistic reviews ────────────── */
 const testimonials = [
   { name: "Selin Y.", city: "İstanbul", country: "🇫🇷 Fransa", rating: 5, date: "2 gün önce", text: "ilk defa schengen aldim cok gergindim ama ekip saolsun her seyi halletti. 12 gunde geldi vizem tavsiye ederim." },
-  { name: "Murat Demir", city: "Ankara", country: "🇺🇸 ABD", rating: 5, date: "1 hafta önce", text: "Amerika vizesi için mülakat korkum vardı, yaptığımız prova çok işe yaradı. Vizeyi kaptım teşekkürler VisaPath :)" },
+  { name: "Murat Demir", city: "Ankara", country: "🇺🇸 ABD", rating: 5, date: "1 hafta önce", text: "Amerika vizesi için mülakat korkum vardı, yaptığımız prova çok işe yaradı. Vizeyi kaptım teşekkürler :)" },
   { name: "Ayşe K.", city: "İzmir", country: "🇩🇪 Almanya", rating: 4, date: "2 hafta önce", text: "Randevu bulmak zordu ama sürekli takip edip buldular. Evrak işleriyle uğraşmamak harika. Teşekkürler." },
   { name: "Caner E.", city: "Bursa", country: "🇬🇧 İngiltere", rating: 5, date: "3 hafta önce", text: "Ingiltere vizesi zor diyolardi ama hic sorun yasamadim. belgeleri yukledim gerisini onlar halletti. 6 aylik geldi." },
   { name: "Zeynep T.", city: "Antalya", country: "🇮🇹 İtalya", rating: 5, date: "1 ay önce", text: "İtalya için başvurdum, otel uçak rezervasyonlarını da onlar ayarladı. Kafam rahat gitti geldim. Tekrar tercih ederim." },
@@ -152,17 +152,17 @@ function AnimatedCounter({ target, suffix = "", prefix = "", label }: { target: 
 
   return (
     <div ref={ref}>
-      <p className="text-5xl md:text-6xl font-black text-navy-dark tracking-tight drop-shadow-sm">
+      <p className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[#00D69E] to-[#00B386] tracking-tight drop-shadow-sm">
         {prefix}{count.toLocaleString("tr-TR")}{suffix}
       </p>
-      <p className="text-base text-white/70 mt-2 font-medium">{label}</p>
+      <p className="text-base text-navy-dark/70 mt-2 font-medium">{label}</p>
     </div>
   );
 }
 
 function StatsSection({ t }: { t: (key: string) => string }) {
   return (
-    <section className="py-16 md:py-20 bg-gradient-navy">
+    <section className="py-16 md:py-20 bg-white border-t border-border/40">
       <div className="container mx-auto px-4 md:px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           <AnimatedCounter target={3200} suffix="+" label={t("stats.applications")} />
@@ -256,7 +256,7 @@ function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
                     <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded-full">{review.date}</span>
                   </div>
                   <p className="text-sm md:text-base text-foreground/85 leading-relaxed mb-6 flex-grow">
-                    &quot;{review.text}&quot;
+                    {review.text}
                   </p>
                   <div className="flex items-center gap-3 pt-4 border-t border-border mt-auto">
                     <div className="w-10 h-10 rounded-full bg-[#00D69E]/10 flex items-center justify-center text-[#00B386] font-bold text-sm ring-2 ring-white shadow-sm shrink-0">
@@ -515,22 +515,24 @@ export default function Index() {
 
           {/* Trust Row */}
           <motion.div
-            className="flex flex-wrap justify-center gap-6 md:gap-12 mt-10 md:mt-12 text-sm md:text-base text-muted-foreground"
+            className="flex flex-wrap justify-center items-center gap-6 sm:gap-10 mt-12 text-sm md:text-base text-muted-foreground font-medium"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
           >
-            <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white/60 backdrop-blur-sm border border-border/50">
-              <Users size={20} className="text-[#00D69E] shrink-0" />
-              <span><strong className="text-foreground font-extrabold">3.200+</strong> {t("trust.applications")}</span>
+            <div className="flex items-center gap-2">
+              <Users size={20} className="text-[#00D69E]" />
+              <span><strong className="text-navy-dark font-extrabold">3.200+</strong> {t("trust.applications")}</span>
             </div>
-            <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white/60 backdrop-blur-sm border border-border/50">
-              <Shield size={20} className="text-[#00D69E] shrink-0" />
-              <span><strong className="text-foreground font-extrabold">%96</strong> {t("trust.approval")}</span>
+            <div className="w-1.5 h-1.5 rounded-full bg-border hidden sm:block" />
+            <div className="flex items-center gap-2">
+              <Shield size={20} className="text-[#00D69E]" />
+              <span><strong className="text-navy-dark font-extrabold">%96</strong> {t("trust.approval")}</span>
             </div>
-            <div className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white/60 backdrop-blur-sm border border-border/50">
-              <Clock size={20} className="text-[#00D69E] shrink-0" />
-              <span><strong className="text-foreground font-extrabold">{t("trust.supportTime")}</strong> {t("trust.support")}</span>
+            <div className="w-1.5 h-1.5 rounded-full bg-border hidden sm:block" />
+            <div className="flex items-center gap-2">
+              <Clock size={20} className="text-[#00D69E]" />
+              <span><strong className="text-navy-dark font-extrabold">{t("trust.supportTime")}</strong> {t("trust.support")}</span>
             </div>
           </motion.div>
         </div>
@@ -568,9 +570,7 @@ export default function Index() {
             {/* VisaPath — premium, trustworthy, no badges */}
             <div className="bg-white rounded-2xl p-8 md:p-10 border-2 border-[#00D69E]/20 shadow-[0_8px_30px_rgb(0,214,158,0.12)] relative">
               <h3 className="text-2xl md:text-3xl font-extrabold text-navy-dark mb-8 flex items-center gap-3 pb-4 border-b border-[#00D69E]/20">
-                <div className="w-10 h-10 rounded-full bg-[#00D69E] flex items-center justify-center shrink-0 shadow-md">
-                  <Check size={20} className="text-white stroke-[3]" />
-                </div>
+                <CheckCircle size={32} className="text-[#00D69E] fill-[#00D69E]/20" />
                 {t("comparison.withVP")}
               </h3>
               <ul className="space-y-5">
@@ -579,9 +579,7 @@ export default function Index() {
                   const bold = t(`comparison.vp.${i}.bold`);
                   return (
                     <li key={i} className="flex items-start gap-4 text-base md:text-lg text-foreground">
-                      <div className="w-6 h-6 rounded-full bg-[#00D69E]/20 flex items-center justify-center shrink-0 mt-0.5">
-                        <Check size={14} className="text-[#00B386] stroke-[3]" />
-                      </div>
+                      <CheckCircle size={24} className="text-[#00D69E] fill-[#00D69E]/20 shrink-0 mt-0.5" />
                       <span className="leading-relaxed">
                         {text.split(bold).map((part, j, arr) => (
                           <span key={j}>

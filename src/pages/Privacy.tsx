@@ -124,7 +124,7 @@ export default function Privacy() {
                         </p>
                         <ul className="list-none space-y-1">
                             <li>📧 <strong>E-posta:</strong> privacy@visapath.com.tr</li>
-                            <li>📞 <strong>Telefon:</strong> +90 (212) 555 00 00</li>
+                            <li>📞 <strong>Telefon:</strong> +90 (212) 345 67 89</li>
                             <li>📍 <strong>Adres:</strong> Levent Mah. Büyükdere Cad. No:185, 34394 Şişli/İstanbul, Türkiye</li>
                             <li>📋 <strong>Veri Sorumlusu:</strong> VisaPath Vize Danışmanlık Hizmetleri</li>
                         </ul>

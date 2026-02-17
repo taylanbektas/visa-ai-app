@@ -24,7 +24,7 @@ export const articleImages: Record<string, string> = {
 export const articles: Record<string, { tr: Article; en: Article }> = {
     "schengen-guide": {
         tr: {
-            title: "🌍 Türk Vatandaşları İçin Eksiksiz Schengen Vize Rehberi",
+            title: "🇪🇺 Türk Vatandaşları İçin Eksiksiz Schengen Vize Rehberi",
             category: "Schengen",
             toc: ["Schengen Alanı Nedir?", "Gerekli Belgeler", "Başvuru Süreci", "Sık Yapılan Hatalar"],
             content: `## Schengen Vizesi Nedir?
