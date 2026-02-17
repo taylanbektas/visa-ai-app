@@ -79,14 +79,14 @@ export function Navbar() {
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-6">
             {navLinks.map((link) => (
-              <Link key={link.to} to={link.to} className={`text-lg font-semibold transition-colors hover:text-accent ${location.pathname === link.to ? "text-accent" : "text-foreground/80"}`}>
+              <Link key={link.to} to={link.to} className={`text-lg font-bold transition-colors hover:text-accent ${location.pathname === link.to ? "text-accent" : "text-foreground/90"}`}>
                 {t(link.labelKey)}
               </Link>
             ))}
 
             {/* Help Dropdown */}
             <div className="relative" ref={helpRef}>
-              <button onClick={() => { setHelpOpen(!helpOpen); setLangOpen(false); }} className="flex items-center gap-1 text-lg font-semibold text-foreground/80 hover:text-accent transition-colors">
+              <button onClick={() => { setHelpOpen(!helpOpen); setLangOpen(false); }} className="flex items-center gap-1 text-lg font-bold text-foreground/90 hover:text-accent transition-colors">
                 {t("nav.help")} <ChevronDown size={14} className={`transition-transform ${helpOpen ? "rotate-180" : ""}`} />
               </button>
               <AnimatePresence>

@@ -144,9 +144,9 @@
   }
 
   .btn-gradient {
-    background: linear-gradient(135deg, #00b386 0%, #00D69E 25%, #00e6a8 50%, #38bdf8 75%, #0EA5E9 100%);
-    background-size: 300% 300%;
-    animation: gradient-shift 4s ease infinite;
+    background: linear-gradient(90deg, #00b386 0%, #00D69E 16%, #00e6a8 32%, #38bdf8 50%, #0EA5E9 66%, #38bdf8 82%, #00e6a8 100%);
+    background-size: 300% 100%;
+    animation: gradient-shift 6s linear infinite;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 

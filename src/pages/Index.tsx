@@ -114,16 +114,16 @@ const visaData: Record<string, { typeKey: string; docKeys: string[]; durationKey
 
 /* ── Testimonials data — realistic reviews ────────────── */
 const testimonials = [
-  { name: "Ayşe Karagöz", city: "İstanbul", country: "🇫🇷 Fransa", rating: 5, date: "2 hafta önce", text: "İlk kez Schengen vizesi aldım ve sürecin ne kadar kolay olduğuna inanamadım. Belgelerimi yükledikten 24 saat içinde kontrol edip eksikleri bildirdiler. 12 günde vizem elime ulaştı. Kesinlikle tavsiye ediyorum!" },
-  { name: "Mehmet Yılmaz", city: "Ankara", country: "🇺🇸 ABD", rating: 5, date: "1 ay önce", text: "ABD B1/B2 vize mülakatı çok stresli bir süreçti ama VisaPath ekibi mülakat simülasyonu yaptı, sorulara nasıl cevap vereceğimi öğretti. İlk denemede onaylandım!" },
-  { name: "Elif Demir", city: "İzmir", country: "🇩🇪 Almanya", rating: 5, date: "3 hafta önce", text: "Daha önce kendi başıma başvurdum ve banka hesap özeti yetersiz diye reddedildim. VisaPath ile ikinci başvurumda eksiklerimi tamamlayıp onay aldım. Gerçekten profesyonel bir hizmet." },
-  { name: "Burak Arslan", city: "Bursa", country: "🇩🇪 Almanya", rating: 5, date: "1 hafta önce", text: "Almanya iş vizesi için başvurdum. VIP Concierge paketini aldım, özel danışmanım Zeynep Hanım her adımda yanımdaydı. 10 iş gününde sonuç aldım. Fiyatına değer!" },
-  { name: "Zeynep Tuncer", city: "Antalya", country: "🇬🇧 İngiltere", rating: 5, date: "2 ay önce", text: "İngiltere vizesi için çok endişeliydim çünkü online formu çok karmaşık. VisaPath benim için her şeyi halletti, sadece belgeleri yükledim. İlk denemede onay geldi!" },
-  { name: "Emre Sarıoğlu", city: "İstanbul", country: "🇫🇷 Fransa", rating: 4, date: "1 ay önce", text: "Eşim ve 2 çocuğumla aile vizesi başvurusu yaptık. 3 kişilik dosya hazırlamak zordu ama VisaPath her şeyi organize etti. Tek seferde 3 vize aldık. Harika!" },
-  { name: "Selin Mutlu", city: "Ankara", country: "🇵🇹 Portekiz", rating: 5, date: "3 ay önce", text: "Dijital göçebe vizesi (D7) konusunda çok bilgiliydiler. Hangi belgelerin gerektiğini, gelir kanıtlarını nasıl hazırlayacağımı anlattılar. Portekiz vizemi 3 haftada aldım!" },
-  { name: "Oğuz Kılıçarslan", city: "İzmir", country: "🇨🇦 Kanada", rating: 5, date: "2 hafta önce", text: "Kanada turist vizem reddedilmişti. VisaPath ile ret nedenlerini analiz edip güçlü bir dosya hazırladık. İkinci başvuruda kabul edildi! Gerçek uzmanlar." },
-  { name: "Fatma Şahin", city: "Gaziantep", country: "🇦🇪 BAE", rating: 5, date: "1 hafta önce", text: "Dubai vizesi için başvurdum, 3 günde elime ulaştı. Online süreç çok hızlı ve pratikti. Fiyat/performans açısından mükemmel." },
-  { name: "Ali Özkan", city: "İstanbul", country: "🇯🇵 Japonya", rating: 5, date: "1 ay önce", text: "Japonya vizesi almak istiyordum ama süreç hakkında hiçbir fikrim yoktu. VisaPath adım adım yönlendirdi, 5 iş gününde vizem geldi. Teşekkürler!" },
+  { name: "Ayşe Karagöz", city: "İstanbul", country: "🇫🇷 Fransa", rating: 5, date: "2 hafta önce", text: "İlk kez Schengen vizesi aldım. Belgelerimi 24 saat içinde kontrol ettiler, 12 günde vizem geldi. Tavsiye ederim!" },
+  { name: "Mehmet Yılmaz", city: "Ankara", country: "🇺🇸 ABD", rating: 5, date: "1 ay önce", text: "ABD mülakat hazırlığında çok yardımcı oldular. Mülakat simülasyonu yaptık, ilk denemede onaylandım!" },
+  { name: "Elif Demir", city: "İzmir", country: "🇩🇪 Almanya", rating: 5, date: "3 hafta önce", text: "Daha önce reddedildim. VisaPath ile ikinci başvurumda eksiklerimi tamamlayıp onay aldım. Profesyonel hizmet." },
+  { name: "Burak Arslan", city: "Bursa", country: "🇩🇪 Almanya", rating: 5, date: "1 hafta önce", text: "VIP Concierge ile Almanya iş vizesi aldım. Özel danışmanım her adımda yanımdaydı. 10 iş gününde sonuç!" },
+  { name: "Zeynep Tuncer", city: "Antalya", country: "🇬🇧 İngiltere", rating: 5, date: "2 ay önce", text: "İngiltere vizesi formları karmaşıktı ama VisaPath her şeyi halletti. İlk denemede onay geldi!" },
+  { name: "Emre Sarıoğlu", city: "İstanbul", country: "🇫🇷 Fransa", rating: 4, date: "1 ay önce", text: "Eşim ve 2 çocuğumla aile vizesi başvurduk. 3 kişilik dosyayı organize ettiler, tek seferde 3 vize aldık!" },
+  { name: "Selin Mutlu", city: "Ankara", country: "🇵🇹 Portekiz", rating: 5, date: "3 ay önce", text: "Dijital göçebe vizesi (D7) için başvurdum. Gelir kanıtları konusunda yönlendirdiler. 3 haftada vizem geldi!" },
+  { name: "Oğuz Kılıçarslan", city: "İzmir", country: "🇨🇦 Kanada", rating: 5, date: "2 hafta önce", text: "Kanada turist vizem reddedilmişti. Ret nedenlerini analiz edip güçlü bir dosya hazırladık. İkinci başvuruda kabul!" },
+  { name: "Fatma Şahin", city: "Gaziantep", country: "🇦🇪 BAE", rating: 5, date: "1 hafta önce", text: "Dubai vizesi için başvurdum, 3 günde elime ulaştı. Online süreç çok hızlı ve pratikti. Mükemmel!" },
+  { name: "Deniz Aydın", city: "İstanbul", country: "🇮🇹 İtalya", rating: 5, date: "1 ay önce", text: "İtalya Schengen vizesini 2 haftada aldım. Belge kontrolü çok detaylıydı, hiç sorun yaşamadım." },
 ];
 
 
@@ -266,30 +266,30 @@ function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
               {testimonials.map((review, i) => (
                 <div
                   key={i}
-                  className="flex-shrink-0 bg-white border border-border rounded-2xl p-7 shadow-sm hover:shadow-md transition-shadow select-none"
+                  className="flex-shrink-0 bg-white border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow select-none"
                   style={{ width: `calc(${100 / testimonials.length * visibleCount}% - ${5 * (visibleCount - 1) / visibleCount * (testimonials.length / visibleCount)}px)` }}
                 >
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex gap-0.5">
                       {Array.from({ length: review.rating }).map((_, j) => (
-                        <Star key={j} size={16} className="fill-[#facc15] text-[#facc15]" />
+                        <Star key={j} size={14} className="fill-[#facc15] text-[#facc15]" />
                       ))}
                       {Array.from({ length: 5 - review.rating }).map((_, j) => (
-                        <Star key={`e${j}`} size={16} className="text-border" />
+                        <Star key={`e${j}`} size={14} className="text-border" />
                       ))}
                     </div>
-                    <span className="text-xs text-muted-foreground">{review.date}</span>
+                    <span className="text-[11px] text-muted-foreground">{review.date}</span>
                   </div>
-                  <p className="text-sm md:text-base text-foreground/80 leading-relaxed mb-5 min-h-[80px]">
+                  <p className="text-[13px] md:text-sm text-foreground/80 leading-relaxed mb-3">
                     "{review.text}"
                   </p>
-                  <div className="flex items-center gap-3 pt-3 border-t border-border">
-                    <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-sm">
+                  <div className="flex items-center gap-2.5 pt-2.5 border-t border-border">
+                    <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-xs">
                       {review.name.split(" ").map(n => n[0]).join("")}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-navy-dark">{review.name}</p>
-                      <p className="text-xs text-muted-foreground">{review.city} · {review.country}</p>
+                      <p className="text-xs font-bold text-navy-dark">{review.name}</p>
+                      <p className="text-[11px] text-muted-foreground">{review.city} · {review.country}</p>
                     </div>
                   </div>
                 </div>
@@ -627,9 +627,9 @@ export default function Index() {
 
           <div className="space-y-10">
             {[
-              { step: "01", icon: Globe },
-              { step: "02", icon: FileText },
-              { step: "03", icon: Zap },
+              { step: "1", icon: Globe },
+              { step: "2", icon: FileText },
+              { step: "3", icon: Zap },
             ].map((item) => (
               <motion.div
                 key={item.step}
