@@ -198,7 +198,7 @@ export default function Apply() {
   return (
     <div className="page-shell section-gradient-light">
       <div className="container mx-auto px-4 md:px-6 max-w-3xl">
-        <h1 className="text-3xl md:text-4xl font-extrabold text-navy-dark text-center mb-4">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-navy-dark text-center mb-4">
           Vize <span className="text-gradient-mint">Başvurusu</span>
         </h1>
         <p className="text-center text-muted-foreground text-lg mb-12">
@@ -252,8 +252,8 @@ export default function Apply() {
           {/* ── STEP 1: Trip Details ── */}
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="bg-white rounded-2xl border border-border p-5 sm:p-7 md:p-10 shadow-sm">
-                <h2 className="text-xl font-extrabold text-navy-dark mb-8">Seyahat Bilgileriniz</h2>
+              <div className="bg-white rounded-2xl border border-border p-5 sm:p-7 md:p-10 shadow-sm min-h-[400px] flex flex-col justify-center">
+                <h2 className="text-xl md:text-2xl font-extrabold text-navy-dark mb-8">Seyahat Bilgileriniz</h2>
 
                 <div className="space-y-6">
                   <div>
@@ -263,7 +263,7 @@ export default function Apply() {
                         <SelectValue>
                           <span className="flex items-center gap-2">
                             <span className="text-xl">{currentPassport.flag}</span>
-                            <span>{currentPassport.label}</span>
+                            <span className="font-bold">{currentPassport.label}</span>
                           </span>
                         </SelectValue>
                       </SelectTrigger>
@@ -272,7 +272,7 @@ export default function Apply() {
                           <SelectItem key={p.code} value={p.code} className="py-3 text-lg font-semibold cursor-pointer">
                             <span className="flex items-center gap-2.5">
                               <span className="text-2xl">{p.flag}</span>
-                              <span>{p.label}</span>
+                              <span className="font-bold">{p.label}</span>
                             </span>
                           </SelectItem>
                         ))}
@@ -291,7 +291,7 @@ export default function Apply() {
                           {selectedDestination && isDestinationStillAvailable ? (
                             <span className="flex items-center gap-2">
                               <span className="text-xl">{selectedDestination.flag}</span>
-                              <span>{selectedDestination.label}</span>
+                              <span className="font-bold">{selectedDestination.label}</span>
                             </span>
                           ) : null}
                         </SelectValue>
@@ -306,7 +306,7 @@ export default function Apply() {
                             <SelectItem key={c.label} value={c.label} className="py-3 text-lg font-semibold cursor-pointer">
                               <span className="flex items-center gap-2.5">
                                 <span className="text-2xl">{c.flag}</span>
-                                <span>{c.label}</span>
+                                <span className="font-bold">{c.label}</span>
                               </span>
                             </SelectItem>
                           ))

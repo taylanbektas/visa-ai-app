@@ -102,16 +102,13 @@ const visaData: Record<string, { typeKey: string; docKeys: string[]; durationKey
 
 /* ── Testimonials data — realistic reviews ────────────── */
 const testimonials = [
-  { name: "Ayşe Karagöz", city: "İstanbul", country: "🇫🇷 Fransa", rating: 5, date: "2 hafta önce", text: "İlk kez Schengen vizesi aldım. Belgelerimi 24 saat içinde kontrol ettiler, 12 günde vizem geldi. Tavsiye ederim!" },
-  { name: "Mehmet Yılmaz", city: "Ankara", country: "🇺🇸 ABD", rating: 5, date: "1 ay önce", text: "ABD mülakat hazırlığında çok yardımcı oldular. Mülakat simülasyonu yaptık, ilk denemede onaylandım!" },
-  { name: "Elif Demir", city: "İzmir", country: "🇩🇪 Almanya", rating: 5, date: "3 hafta önce", text: "Daha önce reddedildim. VisaPath ile ikinci başvurumda eksiklerimi tamamlayıp onay aldım. Profesyonel hizmet." },
-  { name: "Burak Arslan", city: "Bursa", country: "🇩🇪 Almanya", rating: 5, date: "1 hafta önce", text: "VIP Concierge ile Almanya iş vizesi aldım. Özel danışmanım her adımda yanımdaydı. 10 iş gününde sonuç!" },
-  { name: "Zeynep Tuncer", city: "Antalya", country: "🇬🇧 İngiltere", rating: 5, date: "2 ay önce", text: "İngiltere vizesi formları karmaşıktı ama VisaPath her şeyi halletti. İlk denemede onay geldi!" },
-  { name: "Emre Sarıoğlu", city: "İstanbul", country: "🇫🇷 Fransa", rating: 4, date: "1 ay önce", text: "Eşim ve 2 çocuğumla aile vizesi başvurduk. 3 kişilik dosyayı organize ettiler, tek seferde 3 vize aldık!" },
-  { name: "Selin Mutlu", city: "Ankara", country: "🇵🇹 Portekiz", rating: 5, date: "3 ay önce", text: "Dijital göçebe vizesi (D7) için başvurdum. Gelir kanıtları konusunda yönlendirdiler. 3 haftada vizem geldi!" },
-  { name: "Oğuz Kılıçarslan", city: "İzmir", country: "🇨🇦 Kanada", rating: 5, date: "2 hafta önce", text: "Kanada turist vizem reddedilmişti. Ret nedenlerini analiz edip güçlü bir dosya hazırladık. İkinci başvuruda kabul!" },
-  { name: "Fatma Şahin", city: "Gaziantep", country: "🇦🇪 BAE", rating: 5, date: "1 hafta önce", text: "Dubai vizesi için başvurdum, 3 günde elime ulaştı. Online süreç çok hızlı ve pratikti. Mükemmel!" },
-  { name: "Deniz Aydın", city: "İstanbul", country: "🇮🇹 İtalya", rating: 5, date: "1 ay önce", text: "İtalya Schengen vizesini 2 haftada aldım. Belge kontrolü çok detaylıydı, hiç sorun yaşamadım." },
+  { name: "Selin Y.", city: "İstanbul", country: "🇫🇷 Fransa", rating: 5, date: "2 gün önce", text: "ilk defa schengen aldim cok gergindim ama ekip saolsun her seyi halletti. 12 gunde geldi vizem tavsiye ederim." },
+  { name: "Murat Demir", city: "Ankara", country: "🇺🇸 ABD", rating: 5, date: "1 hafta önce", text: "Amerika vizesi için mülakat korkum vardı, yaptığımız prova çok işe yaradı. Vizeyi kaptım teşekkürler VisaPath :)" },
+  { name: "Ayşe Kaya", city: "İzmir", country: "🇩🇪 Almanya", rating: 4, date: "2 hafta önce", text: "Randevu bulmak zordu ama sürekli takip edip buldular. Evrak işleriyle uğraşmamak harika. Teşk." },
+  { name: "Caner E.", city: "Bursa", country: "🇬🇧 İngiltere", rating: 5, date: "3 hafta önce", text: "Ingiltere vizesi zor diyolardi ama hic sorun yasamadim. belgeleri yukledim gerisini onlar halletti. 6 aylik geldi." },
+  { name: "Zeynep T.", city: "Antalya", country: "🇮🇹 İtalya", rating: 5, date: "1 ay önce", text: "İtalya için başvurdum, otel uçak rezervasyonlarını da onlar ayarladı. Kafam rahat gitti geldim. Tekrar tercih ederim." },
+  { name: "Barış K.", city: "İstanbul", country: "🇳🇱 Hollanda", rating: 5, date: "1 ay önce", text: "Red alma riskim vardı ama dosya çok sağlam hazırlandı. 10 günde sonuçlandı." },
+  { name: "Derya Y.", city: "Gaziantep", country: "🇦🇪 BAE", rating: 5, date: "2 gün önce", text: "Dubai vizesi 2 günde geldi. Çok hızlı sistem." },
 ];
 
 
@@ -226,7 +223,7 @@ function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
 
         <button
           onClick={scrollNext}
-          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-14 h-14 rounded-full btn-gradient text-white flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 opacity-0 group-hover:opacity-100 duration-300 disabled:opacity-0"
+          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10 w-14 h-14 rounded-full border border-border bg-white flex items-center justify-center text-muted-foreground hover:text-navy-dark hover:border-navy-dark/30 transition-all shadow-lg hover:shadow-xl opacity-0 group-hover:opacity-100 duration-300 disabled:opacity-0"
           aria-label="Next slide"
           disabled={!nextBtnEnabled}
         >
@@ -380,7 +377,7 @@ export default function Index() {
                       <SelectItem key={p.code} value={p.code} className="py-3 cursor-pointer">
                         <span className="flex items-center gap-3">
                           <span className="text-2xl">{p.flag}</span>
-                          <span className="text-base font-medium">{t(p.labelKey)}</span>
+                          <span className="text-base font-bold">{t(p.labelKey)}</span>
                         </span>
                       </SelectItem>
                     ))}
@@ -402,7 +399,7 @@ export default function Index() {
                         <SelectItem key={country.key} value={country.key} className="py-3 cursor-pointer">
                           <span className="flex items-center gap-3">
                             <span className="text-2xl">{country.flag}</span>
-                            <span className="text-base font-medium">{t("country." + country.key)}</span>
+                            <span className="text-base font-bold">{t("country." + country.key)}</span>
                           </span>
                         </SelectItem>
                       ))}

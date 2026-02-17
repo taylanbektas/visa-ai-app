@@ -194,6 +194,11 @@ export const translations: Record<Locale, Record<string, string>> = {
         "country.serbia": "Sırbistan",
         "country.qatar": "Katar",
         "country.ukraine": "Ukrayna",
+        "country.montenegro": "Karadağ",
+        "country.bosnia_and_herzegovina": "Bosna Hersek",
+        "country.north_macedonia": "Kuzey Makedonya",
+        "country.albania": "Arnavutluk",
+        "country.kosovo": "Kosova",
 
         // Document names
         "doc.passport": "Pasaport",
@@ -599,6 +604,11 @@ export const translations: Record<Locale, Record<string, string>> = {
         "country.serbia": "Serbia",
         "country.qatar": "Qatar",
         "country.ukraine": "Ukraine",
+        "country.montenegro": "Montenegro",
+        "country.bosnia_and_herzegovina": "Bosnia and Herzegovina",
+        "country.north_macedonia": "North Macedonia",
+        "country.albania": "Albania",
+        "country.kosovo": "Kosovo",
 
         // Document names
         "doc.passport": "Passport",
