@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -28,8 +28,6 @@ import {
   X,
   Check,
   Mail,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -117,17 +115,74 @@ const visaData: Record<string, { type: string; docs: string[]; duration: string;
   "Güney Kore": { type: "K-ETA veya Vizesiz", docs: ["Pasaport", "K-ETA başvurusu (online)"], duration: "1-3 gün", fee: "₩10,000 (~€7)" },
 };
 
-/* ── Testimonials data — 8 reviews ────────────────────── */
+/* ── Testimonials data — realistic reviews ────────────── */
 const testimonials = [
-  { name: "Ayşe K.", city: "İstanbul", text: "İlk kez Schengen vizesi aldım, her şey çok kolaydı. Belgelerimi kontrol ettiler ve 12 günde vizem geldi." },
-  { name: "Mehmet Y.", city: "Ankara", text: "ABD vize mülakatına hazırlanmamda çok yardımcı oldular. Pro paket gerçekten karşılığını veriyor." },
-  { name: "Elif D.", city: "İzmir", text: "Daha önce kendi başıma başvurdum reddedildim. VisaPath ile ikinci başvurumda onaylandı!" },
-  { name: "Burak A.", city: "Bursa", text: "Almanya iş vizesi için başvurdum. Belge kontrolü ve randevu desteği mükemmeldi, 10 günde sonuç aldım." },
-  { name: "Zeynep T.", city: "Antalya", text: "İngiltere vizesi için çok endişeliydim. VisaPath ekibi her adımda yanımdaydı, ilk denemede aldım!" },
-  { name: "Emre S.", city: "İstanbul", text: "Aile vizesi için başvurduk, eşim ve çocuklarımla birlikte. 3 kişilik dosyamız kusursuz hazırlandı." },
-  { name: "Selin M.", city: "Ankara", text: "Dijital göçebe vizesi konusunda çok bilgiliydiler. Portekiz D8 vizemi 3 haftada aldım!" },
-  { name: "Oğuz K.", city: "İzmir", text: "Kanada turist vizesi reddedilmişti. VisaPath ile tekrar başvurduk ve kabul edildi. Harika bir ekip!" },
+  { name: "Ayşe Karagöz", city: "İstanbul", country: "🇫🇷 Fransa", rating: 5, date: "2 hafta önce", text: "İlk kez Schengen vizesi aldım ve sürecin ne kadar kolay olduğuna inanamadım. Belgelerimi yükledikten 24 saat içinde kontrol edip eksikleri bildirdiler. 12 günde vizem elime ulaştı. Kesinlikle tavsiye ediyorum!" },
+  { name: "Mehmet Yılmaz", city: "Ankara", country: "🇺🇸 ABD", rating: 5, date: "1 ay önce", text: "ABD B1/B2 vize mülakatı çok stresli bir süreçti ama VisaPath ekibi mülakat simülasyonu yaptı, sorulara nasıl cevap vereceğimi öğretti. İlk denemede onaylandım!" },
+  { name: "Elif Demir", city: "İzmir", country: "🇩🇪 Almanya", rating: 5, date: "3 hafta önce", text: "Daha önce kendi başıma başvurdum ve banka hesap özeti yetersiz diye reddedildim. VisaPath ile ikinci başvurumda eksiklerimi tamamlayıp onay aldım. Gerçekten profesyonel bir hizmet." },
+  { name: "Burak Arslan", city: "Bursa", country: "🇩🇪 Almanya", rating: 5, date: "1 hafta önce", text: "Almanya iş vizesi için başvurdum. VIP Concierge paketini aldım, özel danışmanım Zeynep Hanım her adımda yanımdaydı. 10 iş gününde sonuç aldım. Fiyatına değer!" },
+  { name: "Zeynep Tuncer", city: "Antalya", country: "🇬🇧 İngiltere", rating: 5, date: "2 ay önce", text: "İngiltere vizesi için çok endişeliydim çünkü online formu çok karmaşık. VisaPath benim için her şeyi halletti, sadece belgeleri yükledim. İlk denemede onay geldi!" },
+  { name: "Emre Sarıoğlu", city: "İstanbul", country: "🇫🇷 Fransa", rating: 4, date: "1 ay önce", text: "Eşim ve 2 çocuğumla aile vizesi başvurusu yaptık. 3 kişilik dosya hazırlamak zordu ama VisaPath her şeyi organize etti. Tek seferde 3 vize aldık. Harika!" },
+  { name: "Selin Mutlu", city: "Ankara", country: "🇵🇹 Portekiz", rating: 5, date: "3 ay önce", text: "Dijital göçebe vizesi (D7) konusunda çok bilgiliydiler. Hangi belgelerin gerektiğini, gelir kanıtlarını nasıl hazırlayacağımı anlattılar. Portekiz vizemi 3 haftada aldım!" },
+  { name: "Oğuz Kılıçarslan", city: "İzmir", country: "🇨🇦 Kanada", rating: 5, date: "2 hafta önce", text: "Kanada turist vizem reddedilmişti. VisaPath ile ret nedenlerini analiz edip güçlü bir dosya hazırladık. İkinci başvuruda kabul edildi! Gerçek uzmanlar." },
+  { name: "Fatma Şahin", city: "Gaziantep", country: "🇦🇪 BAE", rating: 5, date: "1 hafta önce", text: "Dubai vizesi için başvurdum, 3 günde elime ulaştı. Online süreç çok hızlı ve pratikti. Fiyat/performans açısından mükemmel." },
+  { name: "Ali Özkan", city: "İstanbul", country: "🇯🇵 Japonya", rating: 5, date: "1 ay önce", text: "Japonya vizesi almak istiyordum ama süreç hakkında hiçbir fikrim yoktu. VisaPath adım adım yönlendirdi, 5 iş gününde vizem geldi. Teşekkürler!" },
 ];
+
+
+/* ── Animated Stats Section ────────────────────────────── */
+function AnimatedCounter({ target, suffix = "", prefix = "", label }: { target: number; suffix?: string; prefix?: string; label: string }) {
+  const [count, setCount] = useState(0);
+  const [hasAnimated, setHasAnimated] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated) {
+          setHasAnimated(true);
+          const duration = 2000;
+          const startTime = Date.now();
+          const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setCount(Math.round(target * eased));
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.3 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [target, hasAnimated]);
+
+  return (
+    <div ref={ref}>
+      <p className="text-4xl md:text-5xl font-extrabold text-gradient-mint">
+        {prefix}{count.toLocaleString("tr-TR")}{suffix}
+      </p>
+      <p className="text-base text-white/70 mt-2 font-medium">{label}</p>
+    </div>
+  );
+}
+
+function StatsSection({ t }: { t: (key: string) => string }) {
+  return (
+    <section className="py-16 md:py-20 bg-gradient-navy">
+      <div className="container mx-auto px-4 md:px-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+          <AnimatedCounter target={3200} suffix="+" label={t("stats.applications")} />
+          <AnimatedCounter target={96} prefix="%" label={t("stats.approval")} />
+          <AnimatedCounter target={7} suffix="+" label={t("stats.experience")} />
+          <AnimatedCounter target={150} suffix="+" label={t("stats.countries") || "Ülke desteği"} />
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function Index() {
   const [wordIndex, setWordIndex] = useState(0);
@@ -138,24 +193,6 @@ export default function Index() {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  // Testimonial slider state
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const slidesPerView = typeof window !== "undefined" && window.innerWidth < 768 ? 1 : 3;
-  const totalSlides = Math.ceil(testimonials.length / slidesPerView);
-
-  const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % totalSlides);
-  }, [totalSlides]);
-
-  const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
-  }, [totalSlides]);
-
-  // Auto-advance testimonials
-  useEffect(() => {
-    const timer = setInterval(nextSlide, 5000);
-    return () => clearInterval(timer);
-  }, [nextSlide]);
 
   // Measure the widest word once on mount
   useEffect(() => {
@@ -486,99 +523,74 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ━━━ STATS ━━━ */}
-      <section className="py-16 md:py-20 bg-gradient-navy">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {[
-              { value: "3.200+", label: t("stats.applications") },
-              { value: "%96", label: t("stats.approval") },
-              { value: "7+", label: t("stats.experience") },
-              { value: "7/24", label: t("stats.support") },
-            ].map((stat) => (
-              <div key={stat.label}>
-                <p className="text-4xl md:text-5xl font-extrabold text-gradient-mint">{stat.value}</p>
-                <p className="text-base text-white/70 mt-2 font-medium">{stat.label}</p>
+      {/* ━━━ STATS — Animated Counters ━━━ */}
+      <StatsSection t={t} />
+
+      {/* ━━━ TESTIMONIALS — Draggable scroll ━━━ */}
+      <section className="py-20 md:py-28 bg-white overflow-hidden">
+        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-navy-dark mb-4">
+              {t("testimonials.title")}
+            </h2>
+            <div className="flex items-center justify-center gap-2 text-lg text-muted-foreground">
+              <div className="flex gap-0.5">
+                {Array.from({ length: 5 }).map((_, j) => (
+                  <Star key={j} size={20} className="fill-[#facc15] text-[#facc15]" />
+                ))}
+              </div>
+              <span className="font-bold text-foreground">4.9/5</span>
+              <span>— {testimonials.length}+ değerlendirme</span>
+            </div>
+          </div>
+
+          {/* Draggable horizontal scroll */}
+          <div
+            className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide cursor-grab active:cursor-grabbing"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
+            onMouseDown={(e) => {
+              const el = e.currentTarget;
+              const startX = e.pageX - el.offsetLeft;
+              const scrollLeft = el.scrollLeft;
+              const onMove = (ev: MouseEvent) => {
+                const x = ev.pageX - el.offsetLeft;
+                el.scrollLeft = scrollLeft - (x - startX);
+              };
+              const onUp = () => {
+                document.removeEventListener("mousemove", onMove);
+                document.removeEventListener("mouseup", onUp);
+              };
+              document.addEventListener("mousemove", onMove);
+              document.addEventListener("mouseup", onUp);
+            }}
+          >
+            {testimonials.map((review, i) => (
+              <div key={i} className="min-w-[320px] md:min-w-[380px] snap-start flex-shrink-0 bg-white border border-border rounded-2xl p-7 shadow-sm hover:shadow-md transition-shadow select-none">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: review.rating }).map((_, j) => (
+                      <Star key={j} size={16} className="fill-[#facc15] text-[#facc15]" />
+                    ))}
+                    {Array.from({ length: 5 - review.rating }).map((_, j) => (
+                      <Star key={j} size={16} className="text-border" />
+                    ))}
+                  </div>
+                  <span className="text-xs text-muted-foreground">{review.date}</span>
+                </div>
+                <p className="text-sm md:text-base text-foreground/80 leading-relaxed mb-5 line-clamp-4">
+                  "{review.text}"
+                </p>
+                <div className="flex items-center gap-3 pt-3 border-t border-border">
+                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-sm">
+                    {review.name.split(" ").map(n => n[0]).join("")}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-navy-dark">{review.name}</p>
+                    <p className="text-xs text-muted-foreground">{review.city} · {review.country}</p>
+                  </div>
+                </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ━━━ TESTIMONIALS — Auto-sliding carousel ━━━ */}
-      <section className="py-20 md:py-28 bg-white overflow-hidden">
-        <div className="container mx-auto px-4 md:px-6 max-w-5xl">
-          <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-14">
-            {t("testimonials.title")}
-          </h2>
-
-          <div className="relative">
-            {/* Slider Arrows */}
-            <button
-              onClick={prevSlide}
-              className="absolute -left-2 md:-left-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white shadow-lg border border-border flex items-center justify-center hover:bg-secondary transition-colors"
-              aria-label="Önceki yorumlar"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="absolute -right-2 md:-right-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white shadow-lg border border-border flex items-center justify-center hover:bg-secondary transition-colors"
-              aria-label="Sonraki yorumlar"
-            >
-              <ChevronRight size={20} />
-            </button>
-
-            {/* Slider Track */}
-            <div className="overflow-hidden mx-6 md:mx-8">
-              <motion.div
-                className="flex"
-                animate={{ x: `-${currentSlide * 100}%` }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              >
-                {/* Desktop: 3 per slide, Mobile: 1 per slide — we render all and slide */}
-                {/* We group them naturally */}
-                {Array.from({ length: totalSlides }).map((_, slideIdx) => (
-                  <div key={slideIdx} className="w-full flex-shrink-0">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {testimonials
-                        .slice(slideIdx * slidesPerView, slideIdx * slidesPerView + slidesPerView)
-                        .map((review, i) => (
-                          <div key={i} className="bg-white border border-border rounded-2xl p-8 card-hover">
-                            <div className="flex gap-0.5 mb-4">
-                              {Array.from({ length: 5 }).map((_, j) => (
-                                <Star key={j} size={20} className="fill-[#facc15] text-[#facc15]" />
-                              ))}
-                            </div>
-                            <p className="text-base md:text-lg text-foreground/80 leading-relaxed mb-5">
-                              "{review.text}"
-                            </p>
-                            <div>
-                              <p className="text-base font-extrabold text-navy-dark">{review.name}</p>
-                              <p className="text-sm text-muted-foreground">{review.city}</p>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                ))}
-              </motion.div>
-            </div>
-
-            {/* Dot indicators */}
-            <div className="flex justify-center gap-2 mt-8">
-              {Array.from({ length: totalSlides }).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrentSlide(i)}
-                  className={`w-3 h-3 rounded-full transition-all ${currentSlide === i
-                      ? "bg-[#00D69E] w-8"
-                      : "bg-border hover:bg-muted-foreground/30"
-                    }`}
-                  aria-label={`Slide ${i + 1}`}
-                />
-              ))}
-            </div>
           </div>
         </div>
       </section>

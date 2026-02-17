@@ -78,6 +78,7 @@ export const translations: Record<Locale, Record<string, string>> = {
         "stats.approval": "Onay Oranı",
         "stats.experience": "Yıl Deneyim",
         "stats.support": "Müşteri Desteği",
+        "stats.countries": "Ülke Desteği",
 
         // Testimonials
         "testimonials.title": "Müşterilerimiz Ne Diyor?",
@@ -231,6 +232,7 @@ export const translations: Record<Locale, Record<string, string>> = {
         "stats.approval": "Approval Rate",
         "stats.experience": "Years Experience",
         "stats.support": "Customer Support",
+        "stats.countries": "Countries Supported",
 
         // Testimonials
         "testimonials.title": "What Our Customers Say",

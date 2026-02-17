@@ -7,6 +7,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AIChatBot } from "@/components/AIChatBot";
 import { LanguageProvider } from "@/i18n/LanguageContext";
+import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import VisaChecker from "./pages/VisaChecker";
 import Apply from "./pages/Apply";
@@ -27,6 +28,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <AuthProvider>
         <LanguageProvider>
           <Navbar />
           <Routes>
@@ -45,6 +47,7 @@ const App = () => (
           <Footer />
           <AIChatBot />
         </LanguageProvider>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
