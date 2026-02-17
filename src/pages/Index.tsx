@@ -405,14 +405,16 @@ export default function Index() {
                     <SelectValue placeholder={t("checker.placeholder")} />
                   </SelectTrigger>
                   <SelectContent className="w-full min-w-[300px] max-h-[350px]">
-                    {destinations.map((country) => (
-                      <SelectItem key={country.key} value={country.key} className="py-3 cursor-pointer">
-                        <span className="flex items-center gap-3">
-                          <span className="text-2xl">{country.flag}</span>
-                          <span className="text-base font-medium">{t("country." + country.key)}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
+                    {destinations
+                      .filter(d => d.key.toUpperCase() !== selectedPassport) // Prevent selecting same country
+                      .map((country) => (
+                        <SelectItem key={country.key} value={country.key} className="py-3 cursor-pointer">
+                          <span className="flex items-center gap-3">
+                            <span className="text-2xl">{country.flag}</span>
+                            <span className="text-base font-medium">{t("country." + country.key)}</span>
+                          </span>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -424,7 +426,11 @@ export default function Index() {
                   disabled={!selectedDestination}
                   onClick={() => {
                     if (selectedDestination) {
-                      navigate("/apply", { state: { destination: selectedDestination } });
+                      // Scroll to result instead of navigating immediately
+                      const resultElement = document.getElementById("visa-result-container");
+                      if (resultElement) {
+                        resultElement.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }
                     }
                   }}
                   aria-label={t("checker.button")}
@@ -442,6 +448,7 @@ export default function Index() {
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   className="mt-6 pt-6 border-t border-border"
+                  id="visa-result-container" // Added ID for scrolling
                 >
                   {isVisaFree ? (
                     /* ── Visa-free ── */
@@ -456,7 +463,7 @@ export default function Index() {
                           <p className="text-lg text-muted-foreground mb-4">
                             {t(visaResult.typeKey)} gereklidir.
                           </p>
-                          <Link to="/apply" state={{ destination: selectedDestination }}>
+                          <Link to="/apply" state={{ destination: selectedDestination, passport: selectedPassport }}>
                             <Button className="btn-gradient text-white font-bold h-14 px-8 rounded-xl text-base">
                               {t("visa.evisa_starter")} <ArrowRight size={18} className="ml-2" />
                             </Button>
@@ -497,7 +504,7 @@ export default function Index() {
                           ))}
                         </div>
                       </div>
-                      <Link to="/apply" state={{ destination: selectedDestination }} className="block mt-6">
+                      <Link to="/apply" state={{ destination: selectedDestination, passport: selectedPassport }} className="block mt-6">
                         <Button className="w-full btn-gradient text-white font-bold h-14 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
                           {t("visa.get_visa")} <ArrowRight size={18} className="ml-2" />
                         </Button>

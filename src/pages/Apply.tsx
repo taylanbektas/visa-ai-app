@@ -82,8 +82,9 @@ export default function Apply() {
 
 
   const preselectedDestination = location.state?.destination as string | undefined;
+  const preselectedPassport = location.state?.passport as string | undefined; // Read passport from state
   const [step, setStep] = useState(1);
-  const [selectedPassport, setSelectedPassport] = useState("TR");
+  const [selectedPassport, setSelectedPassport] = useState(preselectedPassport || "TR"); // Use state or default to TR
   const preselectedLabel = preselectedDestination
     ? destinations.find(d => d.key === preselectedDestination)?.label || preselectedDestination
     : "";
@@ -109,7 +110,7 @@ export default function Apply() {
       const draft: Partial<ApplyDraft> = JSON.parse(rawDraft);
       const validPassport = passportOptions.some((p) => p.code === draft.selectedPassport)
         ? draft.selectedPassport!
-        : "TR";
+        : (preselectedPassport || "TR");
       const preselected = preselectedDestination
         ? destinations.find(d => d.key === preselectedDestination)?.label || preselectedDestination
         : "";
@@ -172,7 +173,10 @@ export default function Apply() {
 
   const currentPassport = passportOptions.find((p) => p.code === selectedPassport) ?? passportOptions[0];
   const visaFreeForPassport = sharedVisaFreeMap[selectedPassport] || [];
-  const availableDestinations = destinations.filter((d) => !visaFreeForPassport.includes(d.key));
+  const availableDestinations = destinations.filter((d) =>
+    !visaFreeForPassport.includes(d.key) &&
+    d.key.toUpperCase() !== selectedPassport // Filter out own country
+  );
   const selectedDestination = destinations.find((d) => d.label === destination);
   const isDestinationStillAvailable = selectedDestination != null && availableDestinations.some((d) => d.label === destination);
 
@@ -265,7 +269,7 @@ export default function Apply() {
                       </SelectTrigger>
                       <SelectContent className="max-h-[280px]">
                         {passportOptions.map((p) => (
-                          <SelectItem key={p.code} value={p.code} className="py-3 text-base font-semibold">
+                          <SelectItem key={p.code} value={p.code} className="py-3 text-lg font-semibold cursor-pointer">
                             <span className="flex items-center gap-2.5">
                               <span className="text-2xl">{p.flag}</span>
                               <span>{p.label}</span>
@@ -299,7 +303,7 @@ export default function Apply() {
                           </div>
                         ) : (
                           availableDestinations.map((c) => (
-                            <SelectItem key={c.label} value={c.label} className="py-3 text-base font-semibold">
+                            <SelectItem key={c.label} value={c.label} className="py-3 text-lg font-semibold cursor-pointer">
                               <span className="flex items-center gap-2.5">
                                 <span className="text-2xl">{c.flag}</span>
                                 <span>{c.label}</span>
@@ -319,7 +323,7 @@ export default function Apply() {
                       </SelectTrigger>
                       <SelectContent>
                         {visaTypes.map((v) => (
-                          <SelectItem key={v} value={v}>{v}</SelectItem>
+                          <SelectItem key={v} value={v} className="text-lg py-2 cursor-pointer">{v}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
