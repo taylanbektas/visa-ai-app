@@ -102,8 +102,14 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    font-size: 17px;
+    line-height: 1.75;
   }
 
   h1,
@@ -138,16 +144,30 @@
   }
 
   .btn-gradient {
-    /* Using the mint/green palette: #00D69E (Mint), #00B386 (Darker Mint), #00E6A8 (Lighter Mint) */
-    background: linear-gradient(45deg, #009e74 0%, #00d69e 50%, #00e6a8 100%);
-    background-size: 200% auto;
-    transition: all 0.5s ease;
+    background: linear-gradient(135deg, #00b386 0%, #00d69e 25%, #00e6a8 50%, #34d399 75%, #6ee7b7 100%);
+    background-size: 300% 300%;
+    animation: gradient-shift 4s ease infinite;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes gradient-shift {
+    0% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
   }
 
   .btn-gradient:hover {
-    background-position: right center;
-    box-shadow: 0 10px 25px rgba(41, 128, 185, 0.3);
+    box-shadow: 0 12px 28px rgba(0, 214, 158, 0.35);
     transform: translateY(-2px);
+    filter: brightness(1.08);
   }
 
   .btn-gradient-navy {

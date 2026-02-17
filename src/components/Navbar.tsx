@@ -13,9 +13,9 @@ const navLinks = [
 ];
 
 const helpLinks = [
-  { label: "Sıkça Sorulan Sorular", to: "/#sss", icon: HelpCircle },
-  { label: "Bize Ulaşın", to: "/contact", icon: MessageCircle },
-  { label: "WhatsApp Destek", href: "https://wa.me/905XXXXXXXXX", icon: MessageCircle },
+  { labelKey: "nav.faq", to: "/#sss", icon: HelpCircle },
+  { labelKey: "nav.contact", to: "/contact", icon: MessageCircle },
+  { labelKey: "nav.whatsapp", href: "https://wa.me/905XXXXXXXXX", icon: MessageCircle },
 ];
 
 const languages = [
@@ -59,7 +59,7 @@ export function Navbar() {
         }`}
     >
       <div className="container mx-auto px-4 md:px-6">
-        <div className="flex items-center justify-between h-18">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5">
             <span className="text-3xl">✈️</span>
@@ -70,7 +70,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
@@ -101,30 +101,32 @@ export function Navbar() {
                     {helpLinks.map((item) =>
                       item.href ? (
                         <a
-                          key={item.label}
+                          key={item.labelKey}
                           href={item.href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:bg-secondary hover:text-[#00D69E] transition-colors"
+                          className="flex items-center gap-3 px-4 py-2.5 text-base text-foreground/80 hover:bg-secondary hover:text-[#00D69E] transition-colors"
                         >
-                          <item.icon size={16} /> {item.label}
+                          <item.icon size={16} /> {t(item.labelKey)}
                         </a>
                       ) : (
                         <Link
-                          key={item.label}
+                          key={item.labelKey}
                           to={item.to!}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:bg-secondary hover:text-[#00D69E] transition-colors"
+                          className="flex items-center gap-3 px-4 py-2.5 text-base text-foreground/80 hover:bg-secondary hover:text-[#00D69E] transition-colors"
                           onClick={() => {
                             setHelpOpen(false);
                             if (item.to?.includes("#")) {
                               const [path, hash] = item.to.split("#");
-                              if (window.location.pathname === path) {
-                                document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+                              if (window.location.pathname === path || path === "/") {
+                                setTimeout(() => {
+                                  document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
+                                }, 100);
                               }
                             }
                           }}
                         >
-                          <item.icon size={16} /> {item.label}
+                          <item.icon size={16} /> {t(item.labelKey)}
                         </Link>
                       )
                     )}
@@ -169,18 +171,20 @@ export function Navbar() {
               </AnimatePresence>
             </div>
 
-            {/* Auth */}
-            <Link to="/login">
-              <Button className="font-bold px-6 h-11 text-base rounded-full bg-navy-dark text-white hover:bg-navy-light transition-colors">
-                <LogIn size={18} className="mr-2" /> {t("nav.login")}
-              </Button>
-            </Link>
+            {/* Auth — grouped close together */}
+            <div className="flex items-center gap-2">
+              <Link to="/login">
+                <Button className="font-bold px-6 h-11 text-base rounded-full bg-[#1a2332] text-white hover:bg-[#2a3a4e] transition-colors shadow-sm">
+                  <LogIn size={16} className="mr-1.5" /> {t("nav.login")}
+                </Button>
+              </Link>
 
-            <Link to="/apply">
-              <Button className="btn-gradient text-white font-bold px-6 h-11 text-base rounded-full shadow-md">
-                {t("nav.apply")}
-              </Button>
-            </Link>
+              <Link to="/apply">
+                <Button className="btn-gradient text-white font-bold px-6 h-11 text-base rounded-full shadow-md">
+                  {t("nav.apply")}
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* Mobile Toggle */}

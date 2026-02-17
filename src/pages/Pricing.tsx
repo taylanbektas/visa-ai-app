@@ -27,14 +27,18 @@ import { useLanguage } from "@/i18n/LanguageContext";
 /* ── Quiz ──────────────────────────────────────────────── */
 const questions = [
   { q: "Daha önce Schengen vizesi aldınız mı?", options: [{ label: "Evet", value: "yes" }, { label: "Hayır", value: "no" }] },
-  { q: "Belge hazırlamayı kendiniz yapmak ister misiniz?", options: [{ label: "Evet, yapabilirim", value: "yes" }, { label: "Hayır, destek istiyorum", value: "no" }] },
+  { q: "Belge hazırlamayı kendiniz yapmak ister misiniz?", options: [{ label: "Evet, yapabilirim", value: "yes" }, { label: "Kısmen", value: "partial" }, { label: "Hayır, destek istiyorum", value: "no" }] },
   { q: "Randevu ve takip desteği ister misiniz?", options: [{ label: "Evet, kesinlikle", value: "yes" }, { label: "Hayır, gerek yok", value: "no" }] },
 ];
 
 function getRecommendation(answers: string[]): string {
-  const noCount = answers.filter((a) => a === "no").length;
-  if (noCount <= 1) return "starter";
-  if (noCount === 2) return "pro";
+  let score = 0;
+  for (const a of answers) {
+    if (a === "no") score += 1;
+    if (a === "partial") score += 0.5;
+  }
+  if (score <= 1) return "starter";
+  if (score <= 2) return "pro";
   return "elite";
 }
 
@@ -244,15 +248,20 @@ export default function Pricing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
               >
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 flex items-center gap-2 w-max max-w-[90%] justify-center z-10">
-                  {plan.popular && (
-                    <div className="btn-gradient text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-md whitespace-nowrap">
-                      <Star size={12} className="fill-white" /> En Popüler
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 w-max max-w-[90%] justify-center z-10">
+                  {plan.popular && !isRecommended && (
+                    <div className="btn-gradient text-white text-sm font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-md whitespace-nowrap">
+                      <Star size={13} className="fill-white" /> En Popüler
                     </div>
                   )}
                   {isRecommended && (
-                    <div className="bg-navy-dark text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md whitespace-nowrap">
-                      Size Önerildi
+                    <div className="bg-navy-dark text-white text-sm font-bold px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
+                      ✨ Size Önerildi
+                    </div>
+                  )}
+                  {isRecommended && plan.popular && (
+                    <div className="btn-gradient text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-sm whitespace-nowrap">
+                      <Star size={11} className="fill-white" /> En Popüler
                     </div>
                   )}
                 </div>
@@ -301,34 +310,61 @@ export default function Pricing() {
           </p>
 
           <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-sm">
-            <div className="grid grid-cols-3 border-b border-border">
-              <div className="p-5 font-bold text-muted-foreground text-sm"></div>
+            {/* Desktop table header */}
+            <div className="hidden md:grid grid-cols-3 border-b border-border">
+              <div className="p-5 font-bold text-muted-foreground text-base"></div>
               <div className="p-5 text-center border-l border-border">
                 <div className="flex items-center justify-center gap-2 mb-1">
-                  <span className="text-lg">✈️</span>
-                  <span className="font-extrabold text-navy-dark">VisaPath</span>
+                  <span className="text-xl">✈️</span>
+                  <span className="font-extrabold text-lg text-navy-dark">VisaPath</span>
                 </div>
-                <span className="text-sm font-bold text-[#00D69E]">{t("roi.modern_trust")}</span>
+                <span className="text-base font-bold text-[#00D69E]">{t("roi.modern_trust")}</span>
               </div>
               <div className="p-5 text-center border-l border-border">
-                <span className="font-bold text-muted-foreground">Geleneksel Ajanslar</span>
-                <p className="text-xs text-muted-foreground/60 mt-0.5">Ortalama rakip</p>
+                <span className="font-bold text-base text-muted-foreground">Geleneksel Ajanslar</span>
+                <p className="text-sm text-muted-foreground/60 mt-0.5">Ortalama rakip</p>
               </div>
             </div>
 
-            {competitorRows.map((row, i) => (
-              <div key={i} className={`grid grid-cols-3 ${i < competitorRows.length - 1 ? "border-b border-border/50" : ""}`}>
-                <div className="p-4 md:p-5 text-base font-semibold text-foreground flex items-center">{row.feature}</div>
-                <div className="p-4 md:p-5 text-center border-l border-border/50 flex items-center justify-center gap-2">
-                  <CheckCircle size={16} className="text-[#00D69E] shrink-0" />
-                  <span className="text-[15px] font-medium text-foreground">{row.us}</span>
+            {/* Desktop rows */}
+            <div className="hidden md:block">
+              {competitorRows.map((row, i) => (
+                <div key={i} className={`grid grid-cols-3 ${i < competitorRows.length - 1 ? "border-b border-border/50" : ""}`}>
+                  <div className="p-4 md:p-5 text-base md:text-lg font-semibold text-foreground flex items-center">{row.feature}</div>
+                  <div className="p-4 md:p-5 text-center border-l border-border/50 flex items-center justify-center gap-2">
+                    <CheckCircle size={18} className="text-[#00D69E] shrink-0" />
+                    <span className="text-base font-medium text-foreground">{row.us}</span>
+                  </div>
+                  <div className="p-4 md:p-5 text-center border-l border-border/50 flex items-center justify-center gap-2">
+                    <X size={18} className="text-muted-foreground/40 shrink-0" />
+                    <span className="text-base text-muted-foreground">{row.them}</span>
+                  </div>
                 </div>
-                <div className="p-4 md:p-5 text-center border-l border-border/50 flex items-center justify-center gap-2">
-                  <X size={16} className="text-muted-foreground/40 shrink-0" />
-                  <span className="text-[15px] text-muted-foreground">{row.them}</span>
+              ))}
+            </div>
+
+            {/* Mobile card layout */}
+            <div className="md:hidden divide-y divide-border">
+              {competitorRows.map((row, i) => (
+                <div key={i} className="p-4 space-y-2">
+                  <p className="font-bold text-base text-navy-dark">{row.feature}</p>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle size={16} className="text-[#00D69E] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-xs font-bold text-[#00D69E] uppercase">VisaPath</span>
+                      <p className="text-sm font-medium text-foreground">{row.us}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <X size={16} className="text-muted-foreground/40 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="text-xs font-bold text-muted-foreground uppercase">Rakipler</span>
+                      <p className="text-sm text-muted-foreground">{row.them}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
@@ -339,30 +375,63 @@ export default function Pricing() {
           </h2>
 
           <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-sm">
-            <div className="grid grid-cols-4 border-b border-border">
-              <div className="p-5 font-bold text-sm text-muted-foreground">Özellik</div>
-              <div className="p-5 text-center font-bold text-sm border-l border-border">Starter</div>
-              <div className="p-5 text-center font-bold text-sm border-l border-border text-[#00D69E]">Pro</div>
-              <div className="p-5 text-center font-bold text-sm border-l border-border">Elite</div>
-            </div>
-            {compareFeatures.map((row, i) => (
-              <div key={i} className={`grid grid-cols-4 ${i < compareFeatures.length - 1 ? "border-b border-border/50" : ""}`}>
-                <div className="p-5 text-base font-medium">{row.feature}</div>
-                {(["starter", "pro", "elite"] as const).map((plan) => (
-                  <div key={plan} className="p-5 text-center border-l border-border/50 flex items-center justify-center">
-                    {typeof row[plan] === "boolean" ? (
-                      row[plan] ? (
-                        <CheckCircle size={18} className="text-[#00D69E] mx-auto" />
+            {/* Desktop table */}
+            <div className="hidden md:block">
+              <div className="grid grid-cols-4 border-b border-border">
+                <div className="p-5 font-bold text-base text-muted-foreground">Özellik</div>
+                <div className="p-5 text-center font-bold text-base border-l border-border">Starter</div>
+                <div className="p-5 text-center font-bold text-base border-l border-border text-[#00D69E]">Pro</div>
+                <div className="p-5 text-center font-bold text-base border-l border-border">Elite</div>
+              </div>
+              {compareFeatures.map((row, i) => (
+                <div key={i} className={`grid grid-cols-4 ${i < compareFeatures.length - 1 ? "border-b border-border/50" : ""}`}>
+                  <div className="p-5 text-base md:text-lg font-medium">{row.feature}</div>
+                  {(["starter", "pro", "elite"] as const).map((plan) => (
+                    <div key={plan} className="p-5 text-center border-l border-border/50 flex items-center justify-center">
+                      {typeof row[plan] === "boolean" ? (
+                        row[plan] ? (
+                          <CheckCircle size={18} className="text-[#00D69E] mx-auto" />
+                        ) : (
+                          <XCircle size={18} className="text-muted-foreground/30 mx-auto" />
+                        )
                       ) : (
-                        <XCircle size={18} className="text-muted-foreground/30 mx-auto" />
-                      )
-                    ) : (
-                      <span className={`font-bold text-[15px] ${plan === "pro" ? "text-[#00D69E]" : ""}`}>{row[plan]}</span>
-                    )}
+                        <span className={`font-bold text-[15px] ${plan === "pro" ? "text-[#00D69E]" : ""}`}>{row[plan]}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Mobile: horizontal scroll */}
+            <div className="md:hidden overflow-x-auto">
+              <div className="min-w-[500px]">
+                <div className="grid grid-cols-4 border-b border-border">
+                  <div className="p-3 font-bold text-sm text-muted-foreground">Özellik</div>
+                  <div className="p-3 text-center font-bold text-sm border-l border-border">Starter</div>
+                  <div className="p-3 text-center font-bold text-sm border-l border-border text-[#00D69E]">Pro</div>
+                  <div className="p-3 text-center font-bold text-sm border-l border-border">Elite</div>
+                </div>
+                {compareFeatures.map((row, i) => (
+                  <div key={i} className={`grid grid-cols-4 ${i < compareFeatures.length - 1 ? "border-b border-border/50" : ""}`}>
+                    <div className="p-3 text-sm font-medium">{row.feature}</div>
+                    {(["starter", "pro", "elite"] as const).map((plan) => (
+                      <div key={plan} className="p-3 text-center border-l border-border/50 flex items-center justify-center">
+                        {typeof row[plan] === "boolean" ? (
+                          row[plan] ? (
+                            <CheckCircle size={16} className="text-[#00D69E] mx-auto" />
+                          ) : (
+                            <XCircle size={16} className="text-muted-foreground/30 mx-auto" />
+                          )
+                        ) : (
+                          <span className={`font-bold text-xs ${plan === "pro" ? "text-[#00D69E]" : ""}`}>{row[plan]}</span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
 

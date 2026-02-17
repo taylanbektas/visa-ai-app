@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +27,11 @@ import {
   Zap,
   X,
   Check,
+  Mail,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 /* ── Animated hero word ─────────────────────────────────── */
@@ -54,11 +58,23 @@ const passportOptions = [
   { code: "AF", label: "Afganistan", flag: "🇦🇫" },
 ];
 
-/* ── Destination list ────────────────────────────────────── */
+/* ── Destination list with flags ─────────────────────────── */
 const destinations = [
-  "Almanya", "Fransa", "İtalya", "İspanya", "Hollanda", "Belçika",
-  "Avusturya", "İsviçre", "Portekiz", "Yunanistan",
-  "ABD", "İngiltere", "Kanada", "Japonya", "Güney Kore",
+  { name: "Almanya", flag: "🇩🇪" },
+  { name: "Fransa", flag: "🇫🇷" },
+  { name: "İtalya", flag: "🇮🇹" },
+  { name: "İspanya", flag: "🇪🇸" },
+  { name: "Hollanda", flag: "🇳🇱" },
+  { name: "Belçika", flag: "🇧🇪" },
+  { name: "Avusturya", flag: "🇦🇹" },
+  { name: "İsviçre", flag: "🇨🇭" },
+  { name: "Portekiz", flag: "🇵🇹" },
+  { name: "Yunanistan", flag: "🇬🇷" },
+  { name: "ABD", flag: "🇺🇸" },
+  { name: "İngiltere", flag: "🇬🇧" },
+  { name: "Kanada", flag: "🇨🇦" },
+  { name: "Japonya", flag: "🇯🇵" },
+  { name: "Güney Kore", flag: "🇰🇷" },
 ];
 
 /* ── Visa-free map: passport → visa-free destinations ──── */
@@ -79,6 +95,9 @@ const visaFreeMap: Record<string, string[]> = {
   SY: [], IQ: [], IR: [], AF: [], UZ: [], TM: [], KG: [], EG: [],
 };
 
+/* ── E-Visa destinations (need an e-visa even if "visa-free" for some) ──── */
+const eVisaDestinations = ["Güney Kore"]; // K-ETA required
+
 /* ── Visa data by destination ─────────────────────────── */
 const visaData: Record<string, { type: string; docs: string[]; duration: string; fee: string }> = {
   "Almanya": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Otel rezervasyonu", "Uçak bileti"], duration: "10-15 iş günü", fee: "€90" },
@@ -98,22 +117,16 @@ const visaData: Record<string, { type: string; docs: string[]; duration: string;
   "Güney Kore": { type: "K-ETA veya Vizesiz", docs: ["Pasaport", "K-ETA başvurusu (online)"], duration: "1-3 gün", fee: "₩10,000 (~€7)" },
 };
 
-/* ── Testimonials ────────────────────────────────────────── */
+/* ── Testimonials data — 8 reviews ────────────────────── */
 const testimonials = [
-  { name: "Ayşe K.", city: "İstanbul", text: "İlk kez Schengen vizesi aldım, her şey çok kolaydı. Belgelerimi kontrol ettiler ve 12 günde vizem geldi.", rating: 5 },
-  { name: "Mehmet Y.", city: "Ankara", text: "ABD vize mülakatına hazırlanmamda çok yardımcı oldular. Pro paket gerçekten karşılığını veriyor.", rating: 5 },
-  { name: "Elif D.", city: "İzmir", text: "Daha önce kendi başıma başvurdum reddedildim. VisaPath ile ikinci başvurumda onaylandı!", rating: 5 },
-];
-
-
-
-/* ── FAQ ─────────────────────────────────────────────────── */
-const faqs = [
-  { q: "VisaPath gerçekten gerekli mi, kendi başıma yapamaz mıyım?", a: "Tabii ki kendiniz de başvurabilirsiniz. Ancak vize başvurularında en küçük bir eksik belge veya hata, ret ya da gecikme sebebi olabilir. VisaPath olarak uzman ekibimiz belgelerinizi kontrol eder, başvurunuzu optimize eder ve %98 onay oranıyla güvenle başvurmanızı sağlar." },
-  { q: "Hangi ülkelere vize başvurusu yapabilirsiniz?", a: "Schengen ülkeleri (Almanya, Fransa, İtalya, İspanya, Hollanda vb.), ABD, İngiltere, Kanada ve daha birçok ülke için hizmet veriyoruz." },
-  { q: "Başvuru süreci ne kadar sürer?", a: "Starter planımızla kendi hızınızda ilerlersiniz. Pro ve Elite planlarında belgelerinizi 24-48 saat içinde inceler, başvurunuzu hazırlarız. Konsolosluk işlem süreleri ülkeden ülkeye değişir." },
-  { q: "Vize reddedilirse ne olur?", a: "Elite planımızda %100 para iade garantisi sunuyoruz. Pro ve Starter planlarında yeniden başvuru için indirimli destek sağlıyoruz." },
-  { q: "Ödeme nasıl yapılır?", a: "Kredi kartı, banka kartı ve havale ile ödeme yapabilirsiniz. Tüm ödemeler SSL şifreleme ile güvence altındadır." },
+  { name: "Ayşe K.", city: "İstanbul", text: "İlk kez Schengen vizesi aldım, her şey çok kolaydı. Belgelerimi kontrol ettiler ve 12 günde vizem geldi." },
+  { name: "Mehmet Y.", city: "Ankara", text: "ABD vize mülakatına hazırlanmamda çok yardımcı oldular. Pro paket gerçekten karşılığını veriyor." },
+  { name: "Elif D.", city: "İzmir", text: "Daha önce kendi başıma başvurdum reddedildim. VisaPath ile ikinci başvurumda onaylandı!" },
+  { name: "Burak A.", city: "Bursa", text: "Almanya iş vizesi için başvurdum. Belge kontrolü ve randevu desteği mükemmeldi, 10 günde sonuç aldım." },
+  { name: "Zeynep T.", city: "Antalya", text: "İngiltere vizesi için çok endişeliydim. VisaPath ekibi her adımda yanımdaydı, ilk denemede aldım!" },
+  { name: "Emre S.", city: "İstanbul", text: "Aile vizesi için başvurduk, eşim ve çocuklarımla birlikte. 3 kişilik dosyamız kusursuz hazırlandı." },
+  { name: "Selin M.", city: "Ankara", text: "Dijital göçebe vizesi konusunda çok bilgiliydiler. Portekiz D8 vizemi 3 haftada aldım!" },
+  { name: "Oğuz K.", city: "İzmir", text: "Kanada turist vizesi reddedilmişti. VisaPath ile tekrar başvurduk ve kabul edildi. Harika bir ekip!" },
 ];
 
 export default function Index() {
@@ -123,6 +136,26 @@ export default function Index() {
   const sizerRef = useRef<HTMLSpanElement>(null);
   const [wordWidth, setWordWidth] = useState<number | undefined>(undefined);
   const { t } = useLanguage();
+  const navigate = useNavigate();
+
+  // Testimonial slider state
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slidesPerView = typeof window !== "undefined" && window.innerWidth < 768 ? 1 : 3;
+  const totalSlides = Math.ceil(testimonials.length / slidesPerView);
+
+  const nextSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev + 1) % totalSlides);
+  }, [totalSlides]);
+
+  const prevSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
+  }, [totalSlides]);
+
+  // Auto-advance testimonials
+  useEffect(() => {
+    const timer = setInterval(nextSlide, 5000);
+    return () => clearInterval(timer);
+  }, [nextSlide]);
 
   // Measure the widest word once on mount
   useEffect(() => {
@@ -144,13 +177,22 @@ export default function Index() {
   const isVisaFree = selectedDestination
     ? (visaFreeMap[selectedPassport] || []).includes(selectedDestination)
     : false;
+  const isEVisa = selectedDestination ? eVisaDestinations.includes(selectedDestination) : false;
   const visaResult = selectedDestination ? visaData[selectedDestination] : null;
+
+  /* ── Smooth scroll helper ─────────────────────────────── */
+  const scrollToSection = (sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <div className="min-h-screen">
 
       {/* ━━━ HERO ━━━ */}
-      <section className="relative pt-28 pb-16 md:pt-40 md:pb-28 section-gradient-light">
+      <section className="relative pt-32 pb-20 md:pt-44 md:pb-32 section-gradient-light">
         <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           {/* Hidden sizer — measures widest word to prevent layout shifts */}
           <span ref={sizerRef} className="text-5xl sm:text-6xl md:text-7xl font-extrabold invisible absolute" aria-hidden="true" style={{ lineHeight: 1.15 }}>
@@ -230,7 +272,12 @@ export default function Index() {
                   </SelectTrigger>
                   <SelectContent>
                     {destinations.map((country) => (
-                      <SelectItem key={country} value={country}>{country}</SelectItem>
+                      <SelectItem key={country.name} value={country.name}>
+                        <span className="flex items-center gap-2">
+                          <span className="text-lg">{country.flag}</span>
+                          <span>{country.name}</span>
+                        </span>
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -264,21 +311,28 @@ export default function Index() {
                       </div>
                       <h3 className="text-2xl font-extrabold text-navy-dark mb-2">{t("checker.visaFree")}</h3>
 
-                      {visaResult && visaResult.type.includes("K-ETA") ? (
+                      {isEVisa && visaResult ? (
                         <div className="mt-4">
                           <p className="text-lg text-muted-foreground mb-4">
                             {visaResult.type} gereklidir.
                           </p>
-                          <Link to="/apply">
+                          <Link to="/apply" state={{ destination: selectedDestination }}>
                             <Button className="btn-gradient text-white font-bold h-14 px-8 rounded-xl text-base">
                               {t("visa.evisa_starter")} <ArrowRight size={18} className="ml-2" />
                             </Button>
                           </Link>
                         </div>
                       ) : (
-                        <p className="text-lg text-muted-foreground mb-2">
-                          <strong className="text-foreground">{currentPassport.label}</strong> {t("checker.visaFreeDesc")} <strong className="text-foreground">{selectedDestination}</strong> {t("checker.visaFreeFor")}
-                        </p>
+                        <div className="mt-4">
+                          <p className="text-lg text-muted-foreground mb-4">
+                            <strong className="text-foreground">{currentPassport.label}</strong> {t("checker.visaFreeDesc")} <strong className="text-foreground">{selectedDestination}</strong> {t("checker.visaFreeFor")}
+                          </p>
+                          <Link to="/apply" state={{ destination: selectedDestination }}>
+                            <Button className="bg-secondary text-foreground hover:bg-secondary/80 font-bold h-14 px-8 rounded-xl text-base">
+                              {t("visa.visa_free_starter")} <ArrowRight size={18} className="ml-2" />
+                            </Button>
+                          </Link>
+                        </div>
                       )}
                     </div>
                   ) : (
@@ -286,20 +340,20 @@ export default function Index() {
                     <>
                       <div className="grid sm:grid-cols-3 gap-4 text-left">
                         <div>
-                          <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">Vize Türü</p>
+                          <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">{t("checker.visaType")}</p>
                           <p className="font-bold text-base">{visaResult?.type}</p>
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">Tahmini Süre</p>
+                          <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">{t("checker.duration")}</p>
                           <p className="font-bold text-base">{visaResult?.duration}</p>
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">Konsolosluk Ücreti</p>
+                          <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">{t("checker.fee")}</p>
                           <p className="font-bold text-base">{visaResult?.fee}</p>
                         </div>
                       </div>
                       <div className="mt-5">
-                        <p className="text-xs font-bold text-muted-foreground mb-2.5 uppercase tracking-wide">Gerekli Belgeler</p>
+                        <p className="text-xs font-bold text-muted-foreground mb-2.5 uppercase tracking-wide">{t("checker.docs")}</p>
                         <div className="flex flex-wrap gap-2">
                           {visaResult?.docs.map((doc) => (
                             <span key={doc} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#00D69E]/10 text-[#00B386] text-sm font-semibold">
@@ -329,7 +383,7 @@ export default function Index() {
           >
             <div className="flex items-center gap-2"><Users size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">3.200+</strong> {t("trust.applications")}</span></div>
             <div className="flex items-center gap-2"><Shield size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">%96</strong> {t("trust.approval")}</span></div>
-            <div className="flex items-center gap-2"><Clock size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">24/7</strong> {t("trust.support")}</span></div>
+            <div className="flex items-center gap-2"><Clock size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">7/24</strong> {t("trust.support")}</span></div>
           </motion.div>
         </div>
       </section>
@@ -343,27 +397,21 @@ export default function Index() {
             {t("comparison.title")} <span className="text-gradient-mint">VisaPath</span>?
           </h2>
           <p className="text-center text-muted-foreground text-xl mb-14 max-w-lg mx-auto">
-            {t("comparison.subtitle").replace("3.200+ başvuru", "3.200+ " + t("trust.applications")).replace("%96 onay oranı", "%96 " + t("trust.approval"))}
+            {t("comparison.subtitle")}
           </p>
 
           <div className="grid md:grid-cols-2 gap-6 md:gap-8">
             {/* DIY — muted, grey, compact */}
             <div className="rounded-2xl border border-border bg-secondary/30 p-8 md:p-10">
-              <h3 className="text-xl font-bold text-muted-foreground mb-7 flex items-center gap-2">
-                <X size={22} className="text-muted-foreground/60" />
+              <h3 className="text-2xl font-bold text-muted-foreground mb-7 flex items-center gap-2">
+                <X size={24} className="text-muted-foreground/60" />
                 {t("comparison.diy")}
               </h3>
               <ul className="space-y-5">
-                {[
-                  "Uzun ve karmaşık resmi formlar",
-                  "Tek bir hata ret veya gecikme sebebi",
-                  "Takıldığınızda destek yok",
-                  "Hangi belge gerekli, bulmak zor",
-                  "Randevu almak saatler sürebilir",
-                ].map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-base text-muted-foreground">
-                    <X size={20} className="text-muted-foreground/40 mt-0.5 shrink-0" />
-                    <span>{item}</span>
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <li key={i} className="flex items-start gap-3 text-lg text-muted-foreground">
+                    <X size={22} className="text-muted-foreground/40 mt-0.5 shrink-0" />
+                    <span>{t(`comparison.diy.${i}`)}</span>
                   </li>
                 ))}
               </ul>
@@ -371,33 +419,31 @@ export default function Index() {
 
             {/* VisaPath — green, bigger, bold, prominent */}
             <div className="rounded-2xl border-2 border-[#00D69E]/40 p-8 md:p-10 relative" style={{ background: "linear-gradient(135deg, rgba(0,214,158,0.04) 0%, rgba(0,179,134,0.08) 100%)" }}>
-              <div className="absolute -top-3.5 right-5 btn-gradient text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md">
-                ÖNERİLEN
+              <div className="absolute -top-3.5 right-5 btn-gradient text-white text-sm font-bold px-5 py-2 rounded-full shadow-md">
+                {t("comparison.recommended")}
               </div>
               <h3 className="text-2xl font-extrabold text-[#00B386] mb-7 flex items-center gap-2">
-                <CheckCircle size={24} className="text-[#00D69E]" />
+                <CheckCircle size={26} className="text-[#00D69E]" />
                 {t("comparison.withVP")}
               </h3>
               <ul className="space-y-5">
-                {[
-                  { text: "Basit ve anlaşılır başvuru süreci", bold: "Basit ve anlaşılır" },
-                  { text: "Uzmanlar her belgeyi kontrol eder", bold: "Uzmanlar" },
-                  { text: "7/24 WhatsApp, e-posta ve telefon desteği", bold: "7/24" },
-                  { text: "Gerekli belge listesi otomatik oluşturulur", bold: "otomatik" },
-                  { text: "Randevu desteği ve takip hizmeti", bold: "Randevu desteği" },
-                ].map((item) => (
-                  <li key={item.text} className="flex items-start gap-3 text-lg text-foreground">
-                    <CheckCircle size={22} className="text-[#00D69E] mt-0.5 shrink-0" />
-                    <span>
-                      {item.text.split(item.bold).map((part, i, arr) => (
-                        <span key={i}>
-                          {part}
-                          {i < arr.length - 1 && <strong className="font-extrabold">{item.bold}</strong>}
-                        </span>
-                      ))}
-                    </span>
-                  </li>
-                ))}
+                {[0, 1, 2, 3, 4].map((i) => {
+                  const text = t(`comparison.vp.${i}.text`);
+                  const bold = t(`comparison.vp.${i}.bold`);
+                  return (
+                    <li key={i} className="flex items-start gap-3 text-lg text-foreground">
+                      <CheckCircle size={22} className="text-[#00D69E] mt-0.5 shrink-0" />
+                      <span>
+                        {text.split(bold).map((part, j, arr) => (
+                          <span key={j}>
+                            {part}
+                            {j < arr.length - 1 && <strong className="font-extrabold">{bold}</strong>}
+                          </span>
+                        ))}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>
@@ -416,24 +462,9 @@ export default function Index() {
 
           <div className="space-y-10">
             {[
-              {
-                step: "01",
-                title: "Vize gereksinimini kontrol edin",
-                desc: "Pasaportunuzu ve hedef ülkenizi girin, gerekli belgeleri anında görün.",
-                icon: Globe,
-              },
-              {
-                step: "02",
-                title: "Üye olun ve planınızı seçin",
-                desc: "Hesabınızı oluşturun, size uygun paketi seçin. 5 dakikadan az sürer.",
-                icon: FileText,
-              },
-              {
-                step: "03",
-                title: "Gerisini bize bırakın",
-                desc: "Uzman ekibimiz belgelerinizi kontrol eder, başvurunuzu takip eder ve sonuçlanana kadar yanınızda olur.",
-                icon: Zap,
-              },
+              { step: "01", icon: Globe },
+              { step: "02", icon: FileText },
+              { step: "03", icon: Zap },
             ].map((item) => (
               <motion.div
                 key={item.step}
@@ -442,12 +473,12 @@ export default function Index() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
               >
-                <div className="w-16 h-16 rounded-2xl btn-gradient flex items-center justify-center shrink-0 shadow-md">
-                  <span className="text-2xl font-extrabold text-white">{item.step}</span>
+                <div className="w-20 h-20 rounded-2xl btn-gradient flex items-center justify-center shrink-0 shadow-lg">
+                  <span className="text-3xl font-extrabold text-white">{item.step}</span>
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-xl text-navy-dark mb-2">{t(`steps.${parseInt(item.step) - 1}.title`)}</h3>
-                  <p className="text-base text-muted-foreground leading-relaxed">{t(`steps.${parseInt(item.step) - 1}.desc`)}</p>
+                  <h3 className="font-extrabold text-xl md:text-2xl text-navy-dark mb-2">{t(`steps.${parseInt(item.step) - 1}.title`)}</h3>
+                  <p className="text-base md:text-lg text-muted-foreground leading-relaxed">{t(`steps.${parseInt(item.step) - 1}.desc`)}</p>
                 </div>
               </motion.div>
             ))}
@@ -463,7 +494,7 @@ export default function Index() {
               { value: "3.200+", label: t("stats.applications") },
               { value: "%96", label: t("stats.approval") },
               { value: "7+", label: t("stats.experience") },
-              { value: "24/7", label: t("stats.support") },
+              { value: "7/24", label: t("stats.support") },
             ].map((stat) => (
               <div key={stat.label}>
                 <p className="text-4xl md:text-5xl font-extrabold text-gradient-mint">{stat.value}</p>
@@ -474,28 +505,80 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ━━━ TESTIMONIALS ━━━ */}
-      <section className="py-20 md:py-28 bg-white">
-        <div className="container mx-auto px-4 md:px-6 max-w-4xl">
+      {/* ━━━ TESTIMONIALS — Auto-sliding carousel ━━━ */}
+      <section className="py-20 md:py-28 bg-white overflow-hidden">
+        <div className="container mx-auto px-4 md:px-6 max-w-5xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-14">
             {t("testimonials.title")}
           </h2>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="bg-white border border-border rounded-2xl p-8 card-hover">
-                <div className="flex gap-0.5 mb-4">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <Star key={j} size={20} className="fill-[#facc15] text-[#facc15]" />
-                  ))}
-                </div>
-                <p className="text-base text-foreground/80 leading-relaxed mb-5">"{t(`testimonials.${i}.text`)}"</p>
-                <div>
-                  <p className="text-base font-extrabold text-navy-dark">{t(`testimonials.${i}.name`)}</p>
-                  <p className="text-sm text-muted-foreground">{t(`testimonials.${i}.city`)}</p>
-                </div>
-              </div>
-            ))}
+          <div className="relative">
+            {/* Slider Arrows */}
+            <button
+              onClick={prevSlide}
+              className="absolute -left-2 md:-left-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white shadow-lg border border-border flex items-center justify-center hover:bg-secondary transition-colors"
+              aria-label="Önceki yorumlar"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              onClick={nextSlide}
+              className="absolute -right-2 md:-right-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white shadow-lg border border-border flex items-center justify-center hover:bg-secondary transition-colors"
+              aria-label="Sonraki yorumlar"
+            >
+              <ChevronRight size={20} />
+            </button>
+
+            {/* Slider Track */}
+            <div className="overflow-hidden mx-6 md:mx-8">
+              <motion.div
+                className="flex"
+                animate={{ x: `-${currentSlide * 100}%` }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              >
+                {/* Desktop: 3 per slide, Mobile: 1 per slide — we render all and slide */}
+                {/* We group them naturally */}
+                {Array.from({ length: totalSlides }).map((_, slideIdx) => (
+                  <div key={slideIdx} className="w-full flex-shrink-0">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      {testimonials
+                        .slice(slideIdx * slidesPerView, slideIdx * slidesPerView + slidesPerView)
+                        .map((review, i) => (
+                          <div key={i} className="bg-white border border-border rounded-2xl p-8 card-hover">
+                            <div className="flex gap-0.5 mb-4">
+                              {Array.from({ length: 5 }).map((_, j) => (
+                                <Star key={j} size={20} className="fill-[#facc15] text-[#facc15]" />
+                              ))}
+                            </div>
+                            <p className="text-base md:text-lg text-foreground/80 leading-relaxed mb-5">
+                              "{review.text}"
+                            </p>
+                            <div>
+                              <p className="text-base font-extrabold text-navy-dark">{review.name}</p>
+                              <p className="text-sm text-muted-foreground">{review.city}</p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Dot indicators */}
+            <div className="flex justify-center gap-2 mt-8">
+              {Array.from({ length: totalSlides }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentSlide(i)}
+                  className={`w-3 h-3 rounded-full transition-all ${currentSlide === i
+                      ? "bg-[#00D69E] w-8"
+                      : "bg-border hover:bg-muted-foreground/30"
+                    }`}
+                  aria-label={`Slide ${i + 1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -510,7 +593,7 @@ export default function Index() {
           <Accordion type="single" collapsible className="space-y-3">
             {[0, 1, 2, 3, 4].map((i) => (
               <AccordionItem key={i} value={`faq-${i}`} className="bg-white border border-border rounded-xl px-6">
-                <AccordionTrigger className="text-base font-semibold text-left py-5 [&[data-state=open]]:text-[#00D69E]">
+                <AccordionTrigger className="text-base md:text-lg font-semibold text-left py-5 [&[data-state=open]]:text-[#00D69E]">
                   {t(`faq.${i}.q`)}
                 </AccordionTrigger>
                 <AccordionContent className="text-base text-muted-foreground leading-relaxed pb-5">
@@ -519,6 +602,33 @@ export default function Index() {
               </AccordionItem>
             ))}
           </Accordion>
+        </div>
+      </section>
+
+      {/* ━━━ NEWSLETTER ━━━ */}
+      <section className="py-20 md:py-24 bg-gradient-navy">
+        <div className="container mx-auto px-4 md:px-6 text-center max-w-2xl">
+          <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-6">
+            <Mail size={36} className="text-[#00D69E]" />
+          </div>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-white mb-4">
+            {t("newsletter.title")}
+          </h2>
+          <p
+            className="text-lg text-white/70 mb-8 max-w-md mx-auto leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: t("newsletter.subtitle") }}
+          />
+          <div className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
+            <Input
+              type="email"
+              placeholder={t("newsletter.placeholder")}
+              className="h-14 text-base bg-white/10 border-white/20 text-white placeholder:text-white/40 focus:border-[#00D69E] flex-1"
+            />
+            <Button className="btn-gradient text-white font-bold h-14 px-8 rounded-xl text-base whitespace-nowrap">
+              {t("newsletter.button")}
+            </Button>
+          </div>
+          <p className="text-sm text-white/40 mt-4">{t("newsletter.privacy")}</p>
         </div>
       </section>
 
@@ -537,11 +647,15 @@ export default function Index() {
                 {t("cta.button")} <ArrowRight size={22} className="ml-2" />
               </Button>
             </Link>
-            <Link to="/pricing">
-              <Button variant="outline" className="border-2 border-white/50 text-white hover:bg-white hover:text-navy-dark font-bold px-8 h-16 text-xl rounded-full transition-colors">
-                {t("cta.check_price")}
-              </Button>
-            </Link>
+            <Button
+              onClick={() => {
+                navigate("/pricing");
+                setTimeout(() => window.scrollTo({ top: 0, behavior: "smooth" }), 100);
+              }}
+              className="bg-transparent border-2 border-white/50 text-white hover:bg-white hover:text-navy-dark font-bold px-8 h-16 text-xl rounded-full transition-colors"
+            >
+              {t("cta.check_price")}
+            </Button>
           </div>
         </div>
       </section>

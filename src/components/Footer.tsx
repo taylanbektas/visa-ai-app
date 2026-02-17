@@ -8,10 +8,10 @@ const footerLinks = {
     { label: "Fiyatlar", to: "/pricing" },
   ],
   Kaynaklar: [
-    { label: "Bilgi Bankası", to: "/learn" },
+    { label: "Vize Rehberi", to: "/learn" },
     { label: "Vize Kontrol", to: "/visa-checker" },
     { label: "Başvuru Takip", to: "/track" },
-    { label: "SSS", to: "/pricing" },
+    { label: "SSS", to: "/#sss" },
   ],
   Şirket: [
     { label: "Hakkımızda", to: "/about" },

@@ -15,7 +15,7 @@ const categories = ["Tümü", "Schengen", "ABD", "İngiltere", "Modern Vize", "E
 const articles = [
   {
     id: "schengen-guide",
-    title: "Türk Vatandaşları İçin Eksiksiz Schengen Vize Rehberi",
+    title: "🇪🇺 Türk Vatandaşları İçin Eksiksiz Schengen Vize Rehberi",
     excerpt: "Schengen vizesi başvurusu hakkında bilmeniz gereken her şey — gerekli belgelerden yaygın ret sebeplerine kadar.",
     category: "Schengen",
     readTime: "12 dk okuma",
@@ -23,7 +23,7 @@ const articles = [
   },
   {
     id: "us-tourist-visa",
-    title: "ABD Turist Vizesi (B-1/B-2) Başvurusu — Adım Adım",
+    title: "🇺🇸 ABD Turist Vizesi (B-1/B-2) Başvurusu — Adım Adım",
     excerpt: "DS-160 formu, mülakat hazırlığı ve INA 214(b) kapsamında yaygın ret sebeplerine dair kapsamlı rehber.",
     category: "ABD",
     readTime: "15 dk okuma",
@@ -31,7 +31,7 @@ const articles = [
   },
   {
     id: "uk-visitor-visa",
-    title: "İngiltere Standart Ziyaretçi Vizesi: Bilmeniz Gereken Her Şey",
+    title: "🇬🇧 İngiltere Standart Ziyaretçi Vizesi: Bilmeniz Gereken Her Şey",
     excerpt: "UKVI üzerinden online başvuru, biyometrik kayıt, belge gereksinimleri ve işlem süreleri detaylı anlatımı.",
     category: "İngiltere",
     readTime: "10 dk okuma",
@@ -39,7 +39,7 @@ const articles = [
   },
   {
     id: "rejection-reasons",
-    title: "Vize Başvuruları Neden Reddedilir? (Ve Nasıl Önlenir)",
+    title: "⚠️ Vize Başvuruları Neden Reddedilir? (Ve Nasıl Önlenir)",
     excerpt: "Gerçek örneklerle en sık karşılaşılan 7 ret sebebi ve başvurunuzu güçlendirecek pratik çözümler.",
     category: "Seyahat İpuçları",
     readTime: "8 dk okuma",
@@ -63,7 +63,7 @@ const articles = [
   },
   {
     id: "digital-nomad",
-    title: "Dijital Göçebe Vizesi: Dünyayı Gezerek Çalışın",
+    title: "🌍 Dijital Göçebe Vizesi: Dünyayı Gezerek Çalışın",
     excerpt: "Uzaktan çalışanlar için Portekiz, İspanya ve diğer ülkelerin sunduğu vize fırsatları ve başvuru şartları.",
     category: "Modern Vize",
     readTime: "9 dk okuma",
@@ -71,7 +71,7 @@ const articles = [
   },
   {
     id: "student-visa",
-    title: "Avrupa ve Amerika'da Öğrenci Vizesi Rehberi",
+    title: "🎓 Avrupa ve Amerika'da Öğrenci Vizesi Rehberi",
     excerpt: "Okul kabulü, bloke hesap, gerekli belgeler ve çalışma izni hakkında kapsamlı rehber.",
     category: "Eğitim",
     readTime: "11 dk okuma",
@@ -98,7 +98,7 @@ export default function Learn() {
           animate={{ opacity: 1, y: 0 }}
         >
           <h1 className="text-3xl md:text-5xl font-extrabold text-navy-dark mb-4">
-            Bilgi <span className="text-gradient-mint">Bankası</span>
+            Vize <span className="text-gradient-mint">Rehberi</span>
           </h1>
           <p className="text-muted-foreground text-lg md:text-xl">
             Vize sürecini güvenle yönetmenize yardımcı olacak <strong className="text-foreground">uzman rehberler</strong> ve ipuçları.

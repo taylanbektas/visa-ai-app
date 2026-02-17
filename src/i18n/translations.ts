@@ -5,7 +5,7 @@ export const translations: Record<Locale, Record<string, string>> = {
         // Navbar
         "nav.home": "Ana Sayfa",
         "nav.pricing": "Fiyatlar",
-        "nav.learn": "Rehber",
+        "nav.learn": "Vize Rehberi",
         "nav.help": "Yardım",
         "nav.faq": "Sıkça Sorulan Sorular",
         "nav.contact": "Bize Ulaşın",
@@ -47,10 +47,31 @@ export const translations: Record<Locale, Record<string, string>> = {
         "comparison.diy": "Kendin Yap",
         "comparison.withVP": "VisaPath ile",
         "comparison.recommended": "ÖNERİLEN",
+        "comparison.diy.0": "Uzun ve karmaşık resmi formlar",
+        "comparison.diy.1": "Tek bir hata ret veya gecikme sebebi",
+        "comparison.diy.2": "Takıldığınızda destek yok",
+        "comparison.diy.3": "Hangi belge gerekli, bulmak zor",
+        "comparison.diy.4": "Randevu almak saatler sürebilir",
+        "comparison.vp.0.text": "Basit ve anlaşılır başvuru süreci",
+        "comparison.vp.0.bold": "Basit ve anlaşılır",
+        "comparison.vp.1.text": "Uzmanlar her belgeyi kontrol eder",
+        "comparison.vp.1.bold": "Uzmanlar",
+        "comparison.vp.2.text": "7/24 WhatsApp, e-posta ve telefon desteği",
+        "comparison.vp.2.bold": "7/24",
+        "comparison.vp.3.text": "Gerekli belge listesi otomatik oluşturulur",
+        "comparison.vp.3.bold": "otomatik",
+        "comparison.vp.4.text": "Randevu desteği ve takip hizmeti",
+        "comparison.vp.4.bold": "Randevu desteği",
 
         // Steps
         "steps.title": "Nasıl Çalışır?",
         "steps.subtitle": "3 basit adımda vize başvurunuzu tamamlayın.",
+        "steps.0.title": "Vize gereksinimini kontrol edin",
+        "steps.0.desc": "Pasaportunuzu ve hedef ülkenizi girin, gerekli belgeleri anında görün.",
+        "steps.1.title": "Üye olun ve planınızı seçin",
+        "steps.1.desc": "Hesabınızı oluşturun, size uygun paketi seçin. 5 dakikadan az sürer.",
+        "steps.2.title": "Gerisini bize bırakın",
+        "steps.2.desc": "Uzman ekibimiz belgelerinizi kontrol eder, başvurunuzu takip eder ve sonuçlanana kadar yanınızda olur.",
 
         // Stats
         "stats.applications": "Başarılı Başvuru",
@@ -90,6 +111,7 @@ export const translations: Record<Locale, Record<string, string>> = {
         "cta.subtitle": "Başvurunuzu bugün başlatın, uzman ekibimiz sizin için çalışsın.",
         "cta.button": "Hemen Başvurun",
         "cta.pricing": "Fiyatları Gör",
+        "cta.check_price": "Fiyatları Gör",
 
         // Footer
         "footer.tagline": "Vize başvurularında güvenilir çözüm ortağınız.",
@@ -111,27 +133,32 @@ export const translations: Record<Locale, Record<string, string>> = {
         "roi.features.vp.2": "Sıfır hata garantisi",
         "roi.features.vp.3": "Hızlı sonuç alma",
 
-        // Steps
-        "steps.0.title": "Vize gereksinimini kontrol edin",
-        "steps.0.desc": "Pasaportunuzu ve hedef ülkenizi girin, gerekli belgeleri anında görün.",
-        "steps.1.title": "Üye olun ve planınızı seçin",
-        "steps.1.desc": "Hesabınızı oluşturun, size uygun paketi seçin. 5 dakikadan az sürer.",
-        "steps.2.title": "Gerisini bize bırakın",
-        "steps.2.desc": "Uzman ekibimiz belgelerinizi kontrol eder, başvurunuzu takip eder ve sonuçlanana kadar yanınızda olur.",
-
-        // CTA
-        "cta.check_price": "Fiyatları Gör",
-
         // E-Visa Logic
         "visa.evisa_starter": "K-ETA/E-Vize için Starter Paket Al",
         "visa.get_visa": "Vizeni Al",
+        "visa.visa_free_starter": "Seyahat rehberi ve destek için Starter Paket al",
+
+        // Newsletter
+        "newsletter.title": "Vize Haberleri ve Fırsatları Kaçırmayın",
+        "newsletter.subtitle": "E-posta bültenimize abone olun, ilk siparişinizde <strong>%5 indirim kodu</strong> kazanın.",
+        "newsletter.placeholder": "E-posta adresiniz",
+        "newsletter.button": "Abone Ol ve %5 Kazan",
+        "newsletter.privacy": "Gizliliğinize saygı duyuyoruz. İstediğiniz zaman abonelikten çıkabilirsiniz.",
+
+        // Referral
+        "referral.title": "Arkadaşını Davet Et, %10 Kazan",
+        "referral.subtitle": "Arkadaşınıza özel davet linkinizi gönderin. Arkadaşınız ilk başvurusunda <strong>%10 indirim</strong> kazansın, siz de bir sonraki başvurunuzda <strong>%10 indirim</strong> kazanın.",
+        "referral.button": "Davet Linkimi Al",
+        "referral.stat1": "Davet Et",
+        "referral.stat2": "Kazan",
+        "referral.stat3": "Birlikte Büyü",
     },
 
     en: {
         // Navbar
         "nav.home": "Home",
         "nav.pricing": "Pricing",
-        "nav.learn": "Guide",
+        "nav.learn": "Visa Guide",
         "nav.help": "Help",
         "nav.faq": "FAQ",
         "nav.contact": "Contact Us",
@@ -173,10 +200,31 @@ export const translations: Record<Locale, Record<string, string>> = {
         "comparison.diy": "Do It Yourself",
         "comparison.withVP": "With VisaPath",
         "comparison.recommended": "RECOMMENDED",
+        "comparison.diy.0": "Long and complex official forms",
+        "comparison.diy.1": "A single mistake can mean rejection or delay",
+        "comparison.diy.2": "No support when you're stuck",
+        "comparison.diy.3": "Hard to find which documents are needed",
+        "comparison.diy.4": "Booking an appointment can take hours",
+        "comparison.vp.0.text": "Simple and clear application process",
+        "comparison.vp.0.bold": "Simple and clear",
+        "comparison.vp.1.text": "Experts review every document",
+        "comparison.vp.1.bold": "Experts",
+        "comparison.vp.2.text": "24/7 WhatsApp, email and phone support",
+        "comparison.vp.2.bold": "24/7",
+        "comparison.vp.3.text": "Required document list generated automatically",
+        "comparison.vp.3.bold": "automatically",
+        "comparison.vp.4.text": "Appointment support and tracking service",
+        "comparison.vp.4.bold": "Appointment support",
 
         // Steps
         "steps.title": "How It Works",
         "steps.subtitle": "Complete your visa application in 3 simple steps.",
+        "steps.0.title": "Check visa requirements",
+        "steps.0.desc": "Enter your passport and destination to see required documents instantly.",
+        "steps.1.title": "Sign up and choose your plan",
+        "steps.1.desc": "Create your account and choose the plan that suits you. Takes less than 5 minutes.",
+        "steps.2.title": "Leave the rest to us",
+        "steps.2.desc": "Our expert team checks your documents, tracks your application, and stays with you until the result.",
 
         // Stats
         "stats.applications": "Successful Applications",
@@ -216,6 +264,7 @@ export const translations: Record<Locale, Record<string, string>> = {
         "cta.subtitle": "Start your application today, let our expert team handle the rest.",
         "cta.button": "Apply Now",
         "cta.pricing": "View Pricing",
+        "cta.check_price": "See Pricing",
 
         // Footer
         "footer.tagline": "Your trusted partner for visa applications.",
@@ -237,19 +286,24 @@ export const translations: Record<Locale, Record<string, string>> = {
         "roi.features.vp.2": "Zero error guarantee",
         "roi.features.vp.3": "Fast results",
 
-        // Steps
-        "steps.0.title": "Check visa requirements",
-        "steps.0.desc": "Enter your passport and destination to see required documents instantly.",
-        "steps.1.title": "Sign up and choose your plan",
-        "steps.1.desc": "Create your account and choose the plan that suits you. Takes less than 5 minutes.",
-        "steps.2.title": "Leave the rest to us",
-        "steps.2.desc": "Our expert team checks your documents, tracks your application, and stays with you until the result.",
-
-        // CTA
-        "cta.check_price": "See Pricing",
-
         // E-Visa Logic
         "visa.evisa_starter": "Get Starter Pack for E-Visa",
         "visa.get_visa": "Get Your Visa",
+        "visa.visa_free_starter": "Get Starter Pack for travel guide & support",
+
+        // Newsletter
+        "newsletter.title": "Don't Miss Visa News & Deals",
+        "newsletter.subtitle": "Subscribe to our newsletter and get a <strong>5% discount code</strong> on your first order.",
+        "newsletter.placeholder": "Your email address",
+        "newsletter.button": "Subscribe & Get 5% Off",
+        "newsletter.privacy": "We respect your privacy. Unsubscribe anytime.",
+
+        // Referral
+        "referral.title": "Invite a Friend, Get 10% Off",
+        "referral.subtitle": "Share your unique referral link. Your friend gets <strong>10% off</strong> their first application, and you get <strong>10% off</strong> your next one.",
+        "referral.button": "Get My Referral Link",
+        "referral.stat1": "Invite",
+        "referral.stat2": "Earn",
+        "referral.stat3": "Grow Together",
     },
 };
