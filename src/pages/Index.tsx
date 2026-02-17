@@ -216,7 +216,7 @@ function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
 
   return (
     <section
-      className="py-20 md:py-28 bg-white overflow-hidden"
+      className="py-16 md:py-28 bg-white overflow-hidden"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
@@ -242,14 +242,14 @@ function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
           {/* Arrow buttons */}
           <button
             onClick={goPrev}
-            className="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white border border-border shadow-lg flex items-center justify-center hover:bg-secondary transition-colors"
+            className="absolute -left-4 md:-left-6 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white shadow-lg transition-colors hover:bg-secondary md:flex"
             aria-label="Previous"
           >
             <ChevronLeft size={22} className="text-navy-dark" />
           </button>
           <button
             onClick={goNext}
-            className="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white border border-border shadow-lg flex items-center justify-center hover:bg-secondary transition-colors"
+            className="absolute -right-4 md:-right-6 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white shadow-lg transition-colors hover:bg-secondary md:flex"
             aria-label="Next"
           >
             <ChevronRight size={22} className="text-navy-dark" />
@@ -359,10 +359,10 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen safe-bottom-pad">
 
       {/* ━━━ HERO ━━━ */}
-      <section className="relative pt-32 pb-20 md:pt-44 md:pb-32 section-gradient-light">
+      <section className="relative pt-24 pb-14 md:pt-40 md:pb-24 section-gradient-light">
         <div className="container mx-auto px-4 md:px-6 max-w-5xl text-center">
           {/* Hidden sizer — measures widest word to prevent layout shifts */}
           <span ref={sizerRef} className="text-5xl sm:text-6xl md:text-7xl font-extrabold invisible absolute" aria-hidden="true" style={{ lineHeight: 1.15 }}>
@@ -394,7 +394,7 @@ export default function Index() {
           </motion.h1>
 
           <motion.p
-            className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-xl mx-auto leading-relaxed"
+            className="text-lg md:text-2xl text-muted-foreground mb-10 md:mb-12 max-w-xl mx-auto leading-relaxed"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
@@ -403,7 +403,7 @@ export default function Index() {
 
           {/* Visa Checker Widget */}
           <motion.div
-            className="bg-white rounded-2xl shadow-xl border border-border/40 p-6 md:p-8 max-w-2xl mx-auto"
+            className="bg-white rounded-2xl shadow-xl border border-border/40 p-5 sm:p-6 md:p-8 max-w-2xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
@@ -541,7 +541,7 @@ export default function Index() {
 
           {/* Trust Row */}
           <motion.div
-            className="flex flex-wrap justify-center gap-6 md:gap-10 mt-10 text-lg text-muted-foreground"
+            className="flex flex-wrap justify-center gap-4 md:gap-10 mt-8 md:mt-10 text-sm md:text-lg text-muted-foreground"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
@@ -556,7 +556,7 @@ export default function Index() {
 
 
       {/* ━━━ COMPARISON — left muted, right green & bigger ━━━ */}
-      < section className="py-20 md:py-28 section-gradient-light" >
+      < section className="py-16 md:py-28 section-gradient-light" >
         <div className="container mx-auto px-4 md:px-6 max-w-5xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-4">
             {t("comparison.title")} <span className="text-gradient-mint">VisaPath</span>?
@@ -616,7 +616,7 @@ export default function Index() {
       </section >
 
       {/* ━━━ 3 STEPS ━━━ */}
-      < section className="py-20 md:py-28 bg-white" >
+      < section className="py-16 md:py-28 bg-white" >
         <div className="container mx-auto px-4 md:px-6 max-w-3xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-4">
             {t("steps.title")}
@@ -658,7 +658,7 @@ export default function Index() {
       < TestimonialsCarousel t={t} />
 
       {/* ━━━ FAQs ━━━ */}
-      < section className="py-20 md:py-28 section-gradient-light" id="sss" >
+      < section className="py-16 md:py-28 section-gradient-light" id="sss" >
         <div className="container mx-auto px-4 md:px-6 max-w-2xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-center text-navy-dark mb-14">
             {t("faq.title")}
@@ -680,7 +680,7 @@ export default function Index() {
       </section >
 
       {/* ━━━ NEWSLETTER ━━━ */}
-      < section className="py-20 md:py-24 bg-gradient-navy" >
+      < section className="py-16 md:py-24 bg-gradient-navy" >
         <div className="container mx-auto px-4 md:px-6 text-center max-w-2xl">
           <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-6">
             <Mail size={36} className="text-[#00D69E]" />
@@ -707,7 +707,7 @@ export default function Index() {
       </section >
 
       {/* ━━━ CTA BANNER ━━━ */}
-      < section className="py-20 md:py-24 bg-gradient-navy" >
+      < section className="py-16 md:py-24 bg-gradient-navy" >
         <div className="container mx-auto px-4 md:px-6 text-center max-w-2xl">
           <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-5">
             {t("cta.title")} <span className="text-gradient-mint">{t("cta.highlight")}</span> {t("cta.titleSuffix")}

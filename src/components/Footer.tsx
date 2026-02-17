@@ -1,31 +1,40 @@
 import { Link } from "react-router-dom";
+import { Mail, MessageCircle, Phone } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 export function Footer() {
   const { t } = useLanguage();
 
-  const footerLinks = {
-    [t("footer.quickLinks")]: [
-      { label: t("nav.learn"), to: "/learn" },
-      { label: t("nav.track"), to: "/track" },
-      { label: t("nav.faq"), to: "/pricing#sss" },
-    ],
-    [t("footer.support")]: [
-      { label: t("nav.contact"), to: "/contact" },
-      { label: t("nav.whatsapp"), to: "https://wa.me/905XXXXXXXXX" },
-    ],
-    [t("footer.legal")]: [
-      { label: "Privacy Policy", to: "/privacy" },
-      { label: "Terms of Service", to: "/terms" },
-    ],
-  };
+  const footerLinks = [
+    {
+      title: t("footer.quickLinks"),
+      links: [
+        { label: t("nav.learn"), to: "/learn" },
+        { label: t("nav.track"), to: "/track" },
+        { label: t("nav.faq"), to: "/pricing#sss" },
+      ],
+    },
+    {
+      title: t("footer.support"),
+      links: [
+        { label: t("nav.contact"), to: "/contact" },
+        { label: t("nav.whatsapp"), to: "https://wa.me/905XXXXXXXXX", external: true },
+      ],
+    },
+    {
+      title: t("footer.legal"),
+      links: [
+        { label: "Privacy Policy", to: "/privacy" },
+        { label: "Terms of Service", to: "/terms" },
+      ],
+    },
+  ];
 
   return (
     <footer className="border-t border-border bg-white">
-      <div className="container mx-auto px-4 md:px-6 py-14">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
-          {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
+      <div className="container mx-auto px-4 md:px-6 py-10 md:py-14">
+        <div className="grid gap-10 md:grid-cols-4 md:gap-12">
+          <div className="md:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-4">
               <span className="text-2xl">✈️</span>
               <span className="text-xl font-extrabold tracking-tight">
@@ -36,13 +45,36 @@ export function Footer() {
             <p className="text-sm text-muted-foreground leading-relaxed mb-5">
               {t("footer.tagline")}
             </p>
+
+            <div className="mb-5 grid grid-cols-3 gap-2">
+              <a
+                href="https://wa.me/905XXXXXXXXX"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1 rounded-lg border border-border px-2 py-2 text-xs font-semibold text-foreground/80 transition-colors hover:bg-secondary"
+              >
+                <MessageCircle size={14} /> WhatsApp
+              </a>
+              <a
+                href="tel:+902125550000"
+                className="inline-flex items-center justify-center gap-1 rounded-lg border border-border px-2 py-2 text-xs font-semibold text-foreground/80 transition-colors hover:bg-secondary"
+              >
+                <Phone size={14} /> Ara
+              </a>
+              <a
+                href="mailto:info@visapath.com.tr"
+                className="inline-flex items-center justify-center gap-1 rounded-lg border border-border px-2 py-2 text-xs font-semibold text-foreground/80 transition-colors hover:bg-secondary"
+              >
+                <Mail size={14} /> E-posta
+              </a>
+            </div>
+
             <div className="text-sm text-muted-foreground space-y-1.5 mb-5">
               <p>📍 İstanbul, Türkiye</p>
               <p>📧 info@visapath.com.tr</p>
               <p>📞 +90 (212) 555 00 00</p>
             </div>
 
-            {/* Social */}
             <div className="flex gap-3">
               <a
                 href="https://instagram.com/visapath"
@@ -69,28 +101,40 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Links */}
-          {Object.entries(footerLinks).map(([title, links]) => (
-            <div key={title}>
-              <h4 className="font-bold text-sm mb-4 text-foreground">{title}</h4>
-              <ul className="space-y-3">
-                {links.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      to={link.to}
-                      className="text-sm text-muted-foreground hover:text-[#00D69E] transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:col-span-3">
+            {footerLinks.map((section) => (
+              <div key={section.title}>
+                <h4 className="mb-4 text-sm font-bold text-foreground">{section.title}</h4>
+                <ul className="space-y-3">
+                  {section.links.map((link) => (
+                    <li key={link.label}>
+                      {link.external ? (
+                        <a
+                          href={link.to}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-muted-foreground transition-colors hover:text-[#00D69E]"
+                        >
+                          {link.label}
+                        </a>
+                      ) : (
+                        <Link
+                          to={link.to}
+                          className="text-sm text-muted-foreground transition-colors hover:text-[#00D69E]"
+                        >
+                          {link.label}
+                        </Link>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="border-t border-border mt-12 pt-6 text-center">
-          <p className="text-xs text-muted-foreground">
+        <div className="border-t border-border mt-10 md:mt-12 pt-6 text-center">
+          <p className="text-xs leading-relaxed text-muted-foreground">
             © 2026 VisaPath. {t("footer.rights")} VisaPath bir vize danışmanlık hizmetidir ve resmi konsolosluk temsilcisi değildir.
           </p>
         </div>

@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AIChatBot } from "@/components/AIChatBot";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
@@ -57,12 +58,12 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/contact" element={<Contact />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <Footer />
+            <MobileBottomNav />
             <AIChatBot />
           </LanguageProvider>
         </AuthProvider>

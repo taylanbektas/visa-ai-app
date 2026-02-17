@@ -38,7 +38,7 @@ export default function VisaChecker() {
   const result = destination ? visaData[destination] : null;
 
   return (
-    <div className="min-h-screen pt-28 pb-20">
+    <div className="page-shell section-gradient-light">
       <div className="container mx-auto px-4 md:px-6 max-w-2xl">
         <motion.div
           className="text-center mb-10"
@@ -54,12 +54,12 @@ export default function VisaChecker() {
 
         {/* Checker Widget */}
         <motion.div
-          className="bg-white border border-border rounded-2xl p-6 mb-6"
+          className="bg-white border border-border rounded-2xl p-5 md:p-6 mb-6 shadow-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             {/* Passport — locked */}
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Pasaportunuz</label>
@@ -92,7 +92,7 @@ export default function VisaChecker() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="bg-white border border-border rounded-2xl p-6 space-y-6"
+              className="bg-white border border-border rounded-2xl p-5 md:p-6 space-y-6 shadow-sm"
             >
               {/* Status */}
               <div className="flex items-center justify-between">
@@ -141,7 +141,7 @@ export default function VisaChecker() {
               {/* CTA */}
               {result.visa === "Gerekli" && (
                 <Link to="/apply">
-                  <Button className="w-full bg-[#00D69E] hover:bg-[#00B386] text-white font-semibold h-12 rounded-lg">
+                  <Button className="w-full btn-gradient text-white font-semibold h-12 rounded-lg">
                     Başvuruya Başla <ArrowRight size={16} className="ml-2" />
                   </Button>
                 </Link>

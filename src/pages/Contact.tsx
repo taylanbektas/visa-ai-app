@@ -24,7 +24,7 @@ export default function Contact() {
     };
 
     return (
-        <div className="min-h-screen pt-28 pb-20">
+        <div className="page-shell section-gradient-light">
             <div className="container mx-auto px-4 md:px-6 max-w-6xl">
                 {/* Header */}
                 <motion.div
@@ -40,10 +40,10 @@ export default function Contact() {
                     </p>
                 </motion.div>
 
-                <div className="grid md:grid-cols-5 gap-8 md:gap-12">
+                <div className="grid gap-6 md:grid-cols-5 md:gap-10">
                     {/* Contact Form */}
                     <motion.div
-                        className="md:col-span-3 bg-white border border-border rounded-2xl p-8 shadow-sm"
+                        className="md:col-span-3 bg-white border border-border rounded-2xl p-5 sm:p-7 md:p-8 shadow-sm"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
@@ -117,7 +117,7 @@ export default function Contact() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 }}
                     >
-                        <div className="bg-white border border-border rounded-2xl p-7 shadow-sm">
+                        <div className="bg-white border border-border rounded-2xl p-5 sm:p-7 shadow-sm">
                             <h3 className="text-lg font-bold text-navy-dark mb-5">{t("contact.info.title")}</h3>
                             <div className="space-y-5">
                                 <div className="flex items-start gap-3">
@@ -162,7 +162,7 @@ export default function Contact() {
                             </div>
                         </div>
 
-                        <div className="bg-white border border-border rounded-2xl p-7 shadow-sm">
+                        <div className="bg-white border border-border rounded-2xl p-5 sm:p-7 shadow-sm">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 rounded-xl bg-[#00D69E]/10 flex items-center justify-center shrink-0">
                                     <Clock size={20} className="text-[#00D69E]" />

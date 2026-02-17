@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, Bot, Sparkles } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Message {
     role: "user" | "bot";
@@ -33,6 +35,8 @@ export function AIChatBot() {
     const [input, setInput] = useState("");
     const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const location = useLocation();
+    const isMobile = useIsMobile();
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -53,6 +57,24 @@ export function AIChatBot() {
         }, 800 + Math.random() * 600);
     };
 
+    const hasMobileBottomNav =
+        isMobile &&
+        !["/login", "/admin", "/dashboard"].some((prefix) =>
+            location.pathname.startsWith(prefix)
+        );
+    const mobileBottomOffset = hasMobileBottomNav
+        ? "calc(env(safe-area-inset-bottom, 0px) + 5.2rem)"
+        : "calc(env(safe-area-inset-bottom, 0px) + 1rem)";
+    const chatWindowClass = isMobile
+        ? "fixed inset-x-3 z-50 flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-2xl"
+        : "fixed bottom-24 right-5 z-50 w-[380px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-border bg-white shadow-2xl";
+    const chatWindowStyle = isMobile
+        ? {
+            top: "calc(env(safe-area-inset-top, 0px) + 4.25rem)",
+            bottom: mobileBottomOffset,
+        }
+        : undefined;
+
     return (
         <>
             {/* Chat Window */}
@@ -62,7 +84,8 @@ export function AIChatBot() {
                         initial={{ opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className="fixed bottom-24 right-5 z-50 w-[380px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-border overflow-hidden"
+                        className={chatWindowClass}
+                        style={chatWindowStyle}
                     >
                         {/* Header */}
                         <div className="btn-gradient px-5 py-4 flex items-center justify-between">
@@ -84,7 +107,7 @@ export function AIChatBot() {
                         </div>
 
                         {/* Messages */}
-                        <div className="h-80 overflow-y-auto p-4 space-y-3 bg-secondary/30">
+                        <div className={`${isMobile ? "flex-1 min-h-0" : "h-80"} overflow-y-auto p-4 space-y-3 bg-secondary/30`}>
                             {messages.map((msg, i) => (
                                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                                     <div
@@ -113,7 +136,7 @@ export function AIChatBot() {
 
                         {/* Quick Replies */}
                         {messages.length <= 2 && (
-                            <div className="px-4 py-3 border-t border-border bg-white">
+                            <div className="border-t border-border bg-white px-4 py-3">
                                 <div className="flex flex-wrap gap-2">
                                     {quickReplies.map((q) => (
                                         <button
@@ -129,7 +152,7 @@ export function AIChatBot() {
                         )}
 
                         {/* Input */}
-                        <div className="p-3 border-t border-border bg-white">
+                        <div className="border-t border-border bg-white p-3">
                             <form
                                 onSubmit={(e) => {
                                     e.preventDefault();
@@ -155,8 +178,11 @@ export function AIChatBot() {
             {/* Floating Button */}
             <motion.button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`fixed bottom-5 right-5 z-50 w-16 h-16 rounded-full flex items-center justify-center shadow-xl transition-all ${isOpen ? "bg-secondary text-foreground/70" : "btn-gradient text-white"
+                className={`fixed right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-xl transition-all md:h-16 md:w-16 md:right-5 ${isOpen ? "bg-secondary text-foreground/70" : "btn-gradient text-white"
                     }`}
+                style={{
+                    bottom: isMobile ? mobileBottomOffset : "1.25rem",
+                }}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
             >
@@ -176,7 +202,7 @@ export function AIChatBot() {
 
             {/* Tooltip when closed */}
             <AnimatePresence>
-                {!isOpen && (
+                {!isOpen && !isMobile && (
                     <motion.div
                         initial={{ opacity: 0, x: 10 }}
                         animate={{ opacity: 1, x: 0 }}

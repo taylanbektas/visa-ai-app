@@ -48,10 +48,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-20 section-gradient-light flex items-center justify-center">
+    <div className="page-shell section-gradient-light flex items-center justify-center">
       <div className="container mx-auto px-4 md:px-6 max-w-md">
         <motion.div
-          className="bg-white rounded-2xl border border-border p-8 md:p-10 shadow-lg"
+          className="bg-white rounded-2xl border border-border p-6 sm:p-8 md:p-10 shadow-lg"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
@@ -77,21 +77,21 @@ export default function Login() {
             {mode === "register" && (
               <div>
                 <label className="text-sm font-semibold text-foreground mb-2 block">Ad Soyad</label>
-                <Input className="h-13 text-[15px]" placeholder="Adınız Soyadınız" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                <Input className="h-12 text-[15px]" placeholder="Adınız Soyadınız" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
               </div>
             )}
             <div>
               <label className="text-sm font-semibold text-foreground mb-2 block">E-posta</label>
-              <Input className="h-13 text-[15px]" type="email" placeholder="ornek@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Input className="h-12 text-[15px]" type="email" placeholder="ornek@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div>
               <label className="text-sm font-semibold text-foreground mb-2 block">Şifre</label>
-              <Input className="h-13 text-[15px]" type="password" placeholder="En az 8 karakter" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <Input className="h-12 text-[15px]" type="password" placeholder="En az 8 karakter" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
             {mode === "register" && (
               <div>
                 <label className="text-sm font-semibold text-foreground mb-2 block">Telefon</label>
-                <Input className="h-13 text-[15px]" type="tel" placeholder="+90 5XX XXX XX XX" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                <Input className="h-12 text-[15px]" type="tel" placeholder="+90 5XX XXX XX XX" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
             )}
 

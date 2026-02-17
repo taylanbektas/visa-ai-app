@@ -60,7 +60,7 @@ export default function Learn() {
   });
 
   return (
-    <div className="min-h-screen pt-24 pb-20 section-gradient-light">
+    <div className="page-shell section-gradient-light">
       <div className="container mx-auto px-4 md:px-6">
         <motion.div
           className="text-center mb-14 max-w-2xl mx-auto"
@@ -86,12 +86,12 @@ export default function Learn() {
               className="pl-11 h-14 text-base bg-white border-border"
             />
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2.5 rounded-full text-sm font-semibold transition-all ${activeCategory === cat
+                className={`shrink-0 px-4 py-2.5 rounded-full text-sm font-semibold transition-all ${activeCategory === cat
                   ? "btn-gradient text-white shadow-md"
                   : "bg-white border border-border text-muted-foreground hover:border-[#00D69E]/40 hover:text-[#00D69E]"
                   }`}
@@ -115,7 +115,7 @@ export default function Learn() {
                 className="block bg-white border border-border rounded-2xl overflow-hidden card-hover h-full group"
               >
                 {/* Image */}
-                <div className="h-48 overflow-hidden bg-gray-100">
+                <div className="h-44 md:h-48 overflow-hidden bg-gray-100">
                   <img
                     src={article.image}
                     alt={article.title}

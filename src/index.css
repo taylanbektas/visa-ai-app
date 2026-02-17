@@ -55,6 +55,8 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .dark {
@@ -106,10 +108,37 @@
     scroll-behavior: smooth;
   }
 
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-size: 17px;
-    line-height: 1.75;
+    font-size: 16px;
+    line-height: 1.65;
+    overflow-x: hidden;
+    text-rendering: optimizeLegibility;
+  }
+
+  @media (min-width: 768px) {
+    body {
+      font-size: 17px;
+      line-height: 1.75;
+    }
+  }
+
+  a,
+  button {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
   }
 
   h1,
@@ -223,5 +252,26 @@
 
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  .page-shell {
+    @apply min-h-screen pt-20 md:pt-24;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6rem);
+  }
+
+  @media (min-width: 768px) {
+    .page-shell {
+      padding-bottom: 5rem;
+    }
+  }
+
+  .safe-bottom-pad {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 5.25rem);
+  }
+
+  @media (min-width: 768px) {
+    .safe-bottom-pad {
+      padding-bottom: 0;
+    }
   }
 }

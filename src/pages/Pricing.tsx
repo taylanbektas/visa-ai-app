@@ -153,7 +153,7 @@ export default function Pricing() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-20 section-gradient-light">
+    <div className="page-shell section-gradient-light">
       <div className="container mx-auto px-4 md:px-6">
         {/* Header */}
         <div className="text-center mb-14">
@@ -187,12 +187,16 @@ export default function Pricing() {
                     {t("pricing.quiz.question")} {currentQ + 1} / {questions.length}
                   </p>
                   <p className="font-semibold text-[15px] mb-5">{questions[currentQ].q}</p>
-                  <div className="flex gap-3">
+                  <div
+                    className={`grid gap-3 ${
+                      questions[currentQ].options.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2"
+                    }`}
+                  >
                     {questions[currentQ].options.map((opt) => (
                       <Button
                         key={opt.value}
                         variant="outline"
-                        className="flex-1 h-12 font-semibold text-[15px] hover:bg-[#00D69E]/5 hover:border-[#00D69E] hover:text-[#00B386] rounded-xl"
+                        className="h-12 w-full font-semibold text-[15px] hover:bg-[#00D69E]/5 hover:border-[#00D69E] hover:text-[#00B386] rounded-xl"
                         onClick={() => handleAnswer(opt.value)}
                       >
                         {opt.label}
@@ -213,7 +217,7 @@ export default function Pricing() {
                   <p className="text-sm text-muted-foreground mb-5">
                     {t(`pricing.quiz.result.${recommendation}`)}
                   </p>
-                  <div className="flex gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row">
                     <Link to="/apply" className="flex-1">
                       <Button className="w-full btn-gradient text-white font-bold h-12 rounded-xl text-[15px]">
                         {t("pricing.quiz.btnStartPlan")} {t(`pricing.plan.${recommendation}.id`)}
@@ -285,7 +289,7 @@ export default function Pricing() {
 
                 <Link to="/apply">
                   <Button
-                    className={`w-full font-bold h-13 text-base rounded-xl ${plan.popular || isRecommended
+                    className={`w-full font-bold h-12 text-base rounded-xl ${plan.popular || isRecommended
                       ? "btn-gradient text-white"
                       : "bg-secondary text-foreground hover:bg-secondary/80"
                       }`}

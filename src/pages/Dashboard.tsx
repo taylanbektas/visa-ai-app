@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
-  Bell, FileText, User, Settings, Upload, ArrowRight, CheckCircle, Clock, AlertCircle, LogOut,
+  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -19,7 +19,7 @@ const notifications = [
   { text: "VisaPath'e hoş geldiniz! Hesabınız başarıyla oluşturuldu.", time: "3 gün önce", type: "success" },
 ];
 
-const statusIcons: Record<string, any> = {
+const statusIcons: Record<string, LucideIcon> = {
   "İnceleniyor": Clock,
   "Onaylandı": CheckCircle,
   "İşlem Gerekli": AlertCircle,
@@ -46,9 +46,9 @@ export default function Dashboard() {
   const displayName = profile?.full_name || user.email?.split("@")[0] || "Kullanıcı";
 
   return (
-    <div className="min-h-screen pt-24 pb-20">
+    <div className="page-shell">
       <div className="container mx-auto px-4 md:px-6 max-w-5xl">
-        <motion.div className="mb-8 flex items-center justify-between" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <motion.div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div>
             <h1 className="text-2xl font-bold mb-1">Hoş geldiniz, {displayName}</h1>
             <p className="text-muted-foreground">Vize başvurularınızın genel görünümü.</p>
@@ -58,7 +58,7 @@ export default function Dashboard() {
           </Button>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2 space-y-6">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <h2 className="font-semibold mb-4 flex items-center gap-2"><FileText size={18} /> Başvurularınız</h2>
@@ -67,7 +67,7 @@ export default function Dashboard() {
                   const StatusIcon = statusIcons[app.status] || Clock;
                   return (
                     <div key={app.id} className="bg-card border rounded-xl p-5">
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <span className="font-mono text-xs text-muted-foreground">{app.id}</span>
                           <h3 className="font-semibold">{app.destination} — {app.type}</h3>
@@ -76,11 +76,11 @@ export default function Dashboard() {
                           <StatusIcon size={12} /> {app.status}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
+                      <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2 text-muted-foreground"><User size={14} /><span>Danışman: {app.advisor}</span></div>
                         <span className="text-xs text-muted-foreground">{app.date}</span>
                       </div>
-                      <div className="mt-4 flex gap-2">
+                      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                         <Link to="/track"><Button size="sm" variant="outline" className="text-xs">Durumu Takip Et</Button></Link>
                         <Button size="sm" variant="ghost" className="text-xs"><Upload size={12} className="mr-1" /> Belge Yükle</Button>
                       </div>

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -18,7 +17,6 @@ import {
 } from "@/components/ui/sheet";
 import {
   Eye,
-  Settings,
   Users,
 } from "lucide-react";
 
@@ -46,14 +44,13 @@ const statusColors: Record<string, string> = {
 
 export default function Admin() {
   const [apps, setApps] = useState(initialApps);
-  const [selectedApp, setSelectedApp] = useState<typeof initialApps[0] | null>(null);
 
   const updateStatus = (id: string, newStatus: string) => {
     setApps((prev) => prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a)));
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-20">
+    <div className="page-shell">
       <div className="container mx-auto px-4 md:px-6">
         <motion.div
           className="flex items-center justify-between mb-8"
@@ -76,7 +73,71 @@ export default function Admin() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="overflow-x-auto">
+          <div className="space-y-3 p-3 md:hidden">
+            {apps.map((app) => (
+              <div key={app.id} className="rounded-xl border border-border bg-white p-4">
+                <div className="mb-2 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-mono text-xs text-muted-foreground">{app.id}</p>
+                    <p className="text-sm font-semibold text-foreground">{app.name}</p>
+                  </div>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusColors[app.status] || ""}`}>
+                    {app.status}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {app.destination} · {app.type} · {app.plan}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">Tarih: {app.date}</p>
+
+                <div className="mt-3 space-y-2">
+                  <Select value={app.status} onValueChange={(v) => updateStatus(app.id, v)}>
+                    <SelectTrigger className="h-10 w-full text-xs">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColors[app.status] || ""}`}>
+                        {app.status}
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((s) => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full text-xs">
+                        <Eye size={14} className="mr-1.5" /> Detaylari Gor
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent>
+                      <SheetHeader>
+                        <SheetTitle>Başvuru {app.id}</SheetTitle>
+                      </SheetHeader>
+                      <div className="mt-6 space-y-4">
+                        {[
+                          { label: "Ad Soyad", value: app.name },
+                          { label: "E-posta", value: app.email },
+                          { label: "Hedef Ülke", value: app.destination },
+                          { label: "Vize Türü", value: app.type },
+                          { label: "Plan", value: app.plan },
+                          { label: "Durum", value: app.status },
+                          { label: "Gönderim Tarihi", value: app.date },
+                        ].map((item) => (
+                          <div key={item.label}>
+                            <p className="text-xs text-muted-foreground">{item.label}</p>
+                            <p className="text-sm font-medium">{item.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
@@ -116,7 +177,7 @@ export default function Admin() {
                     <td className="p-4">
                       <Sheet>
                         <SheetTrigger asChild>
-                          <Button variant="ghost" size="sm" onClick={() => setSelectedApp(app)}>
+                          <Button variant="ghost" size="sm">
                             <Eye size={14} />
                           </Button>
                         </SheetTrigger>

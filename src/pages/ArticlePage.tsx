@@ -6,10 +6,20 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { articles, articleImages } from "@/data/articles";
 
 /* ── Helper: Calculate reading time ─────────────────────── */
-function calcReadTime(text: string, t: any): string {
+function calcReadTime(text: string, t: (key: string) => string): string {
   const wordCount = text.split(/\s+/).filter(Boolean).length;
   const minutes = Math.max(1, Math.round(wordCount / 150));
   return `${minutes} ${t("article.readTime")}`;
+}
+
+function toAnchorId(text: string): string {
+  return text
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\p{L}\p{N}\s-]/gu, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-");
 }
 
 /* ── Helper: Render markdown-like content to JSX ─────────── */
@@ -24,12 +34,7 @@ function renderContent(content: string) {
     // Heading
     if (block.startsWith("## ")) {
       const headingText = block.replace("## ", "");
-      // Strip emoji for id
-      const id = headingText
-        .replace(/[\u{1F600}-\u{1F9FF}\u{2600}-\u{2B55}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu, "")
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "-");
+      const id = toAnchorId(headingText);
       elements.push(
         <h2
           key={i}
@@ -43,15 +48,15 @@ function renderContent(content: string) {
     }
 
     // Unordered list (lines starting with * or -)
-    if (/^[*\-]\s+/.test(block) || /^\*\s{3}/.test(block)) {
+    if (/^[-*]\s+/.test(block) || /^\*\s{3}/.test(block)) {
       const items = block
         .split("\n")
-        .filter((line) => /^[*\-]\s+/.test(line.trim()) || /^\*\s{3}/.test(line.trim()));
+        .filter((line) => /^[-*]\s+/.test(line.trim()) || /^\*\s{3}/.test(line.trim()));
       elements.push(
         <ul key={i} className="list-disc list-inside space-y-2 text-base md:text-lg pl-2">
           {items.map((item, j) => (
             <li key={j}>
-              {renderInline(item.replace(/^[*\-]\s+/, "").replace(/^\*\s{3}/, "").trim())}
+              {renderInline(item.replace(/^[-*]\s+/, "").replace(/^\*\s{3}/, "").trim())}
             </li>
           ))}
         </ul>
@@ -124,7 +129,7 @@ export default function ArticlePage() {
 
   if (!article) {
     return (
-      <div className="min-h-screen pt-24 pb-20 flex items-center justify-center">
+      <div className="page-shell flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-2">{t("article.notFound")}</h1>
           <Link to="/learn">
@@ -138,7 +143,7 @@ export default function ArticlePage() {
   const readTime = calcReadTime(article.content, t);
 
   return (
-    <div className="min-h-screen pt-24 pb-20">
+    <div className="page-shell">
       <div className="container mx-auto px-4 md:px-6">
         <div className="max-w-4xl mx-auto">
           <Link
@@ -159,7 +164,30 @@ export default function ArticlePage() {
             </div>
           )}
 
-          <div className="grid md:grid-cols-4 gap-8">
+          {article.toc.length > 0 && (
+            <div className="mb-6 rounded-xl border border-border bg-white p-4 md:hidden">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("article.tableOfContents")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {article.toc.map((item) => {
+                  const anchorId = toAnchorId(item);
+
+                  return (
+                    <a
+                      key={item}
+                      href={`#${anchorId}`}
+                      className="rounded-full border border-border bg-secondary/40 px-3 py-1.5 text-xs font-semibold text-foreground/80"
+                    >
+                      {item}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="grid gap-6 md:grid-cols-4 md:gap-8">
             {/* Sidebar TOC */}
             <aside className="hidden md:block">
               <div className="sticky top-24">
@@ -168,14 +196,7 @@ export default function ArticlePage() {
                 </h4>
                 <nav className="space-y-2">
                   {article.toc.map((item) => {
-                    const anchorId = item
-                      .replace(
-                        /[\u{1F600}-\u{1F9FF}\u{2600}-\u{2B55}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]/gu,
-                        ""
-                      )
-                      .trim()
-                      .toLowerCase()
-                      .replace(/\s+/g, "-");
+                    const anchorId = toAnchorId(item);
                     return (
                       <a
                         key={item}
@@ -214,7 +235,7 @@ export default function ArticlePage() {
               </div>
 
               {/* CTA */}
-              <div className="mt-12 p-8 md:p-10 rounded-2xl bg-gradient-navy text-primary-foreground">
+              <div className="mt-12 rounded-2xl bg-gradient-navy p-6 text-primary-foreground md:p-10">
                 <h3 className="font-extrabold text-xl mb-3">
                   {t("article.ctaTitle")}
                 </h3>
@@ -222,7 +243,7 @@ export default function ArticlePage() {
                   {t("article.ctaDescription")}
                 </p>
                 <Link to="/apply">
-                  <Button className="btn-gradient text-white font-bold h-13 px-8 text-base rounded-xl">
+                  <Button className="btn-gradient text-white font-bold h-12 px-8 text-base rounded-xl">
                     {t("article.ctaButton")} <ArrowRight size={18} className="ml-2" />
                   </Button>
                 </Link>

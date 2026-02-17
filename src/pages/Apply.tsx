@@ -21,6 +21,22 @@ import {
   Mail,
 } from "lucide-react";
 
+type ApplyDraft = {
+  step: number;
+  selectedPassport: string;
+  destination: string;
+  visaType: string;
+  selectedPlan: string;
+  quizDone: boolean;
+  quizQ: number;
+  quizAnswers: string[];
+  recommendation: string | null;
+  isLoggedIn: boolean;
+  authMode: "login" | "register";
+};
+
+const APPLY_DRAFT_KEY = "visapath.apply-draft.v1";
+
 /* ── Passport options ────────────────────────────────────── */
 const passportOptions = [
   { code: "TR", label: "Türkiye", flag: "🇹🇷" },
@@ -57,9 +73,10 @@ function getRecommendation(answers: string[]): string {
 
 export default function Apply() {
   const location = useLocation();
+  const preselectedDestination = location.state?.destination as string | undefined;
   const [step, setStep] = useState(1);
   const [selectedPassport, setSelectedPassport] = useState("TR");
-  const [destination, setDestination] = useState(location.state?.destination || "");
+  const [destination, setDestination] = useState(preselectedDestination || "");
   const [visaType, setVisaType] = useState("");
   const [selectedPlan, setSelectedPlan] = useState("");
 
@@ -72,6 +89,57 @@ export default function Apply() {
   // Auth state (simulated)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authMode, setAuthMode] = useState<"login" | "register">("register");
+
+  useEffect(() => {
+    const rawDraft = localStorage.getItem(APPLY_DRAFT_KEY);
+    if (!rawDraft) return;
+
+    try {
+      const draft: Partial<ApplyDraft> = JSON.parse(rawDraft);
+      setStep(draft.step ?? 1);
+      setSelectedPassport(draft.selectedPassport ?? "TR");
+      setDestination(preselectedDestination || draft.destination || "");
+      setVisaType(draft.visaType ?? "");
+      setSelectedPlan(draft.selectedPlan ?? "");
+      setQuizDone(Boolean(draft.quizDone));
+      setQuizQ(draft.quizQ ?? 0);
+      setQuizAnswers(draft.quizAnswers ?? []);
+      setRecommendation(draft.recommendation ?? null);
+      setIsLoggedIn(Boolean(draft.isLoggedIn));
+      setAuthMode(draft.authMode === "login" ? "login" : "register");
+    } catch {
+      localStorage.removeItem(APPLY_DRAFT_KEY);
+    }
+  }, [preselectedDestination]);
+
+  useEffect(() => {
+    const draft: ApplyDraft = {
+      step,
+      selectedPassport,
+      destination,
+      visaType,
+      selectedPlan,
+      quizDone,
+      quizQ,
+      quizAnswers,
+      recommendation,
+      isLoggedIn,
+      authMode,
+    };
+    localStorage.setItem(APPLY_DRAFT_KEY, JSON.stringify(draft));
+  }, [
+    step,
+    selectedPassport,
+    destination,
+    visaType,
+    selectedPlan,
+    quizDone,
+    quizQ,
+    quizAnswers,
+    recommendation,
+    isLoggedIn,
+    authMode,
+  ]);
 
   const currentPassport = passportOptions.find((p) => p.code === selectedPassport)!;
 
@@ -91,7 +159,7 @@ export default function Apply() {
   const stepTitles = ["Seyahat Bilgileri", "Plan Seçimi", "Hesap & Ödeme"];
 
   return (
-    <div className="min-h-screen pt-24 pb-20 section-gradient-light">
+    <div className="page-shell section-gradient-light">
       <div className="container mx-auto px-4 md:px-6 max-w-3xl">
         <h1 className="text-3xl md:text-4xl font-extrabold text-navy-dark text-center mb-4">
           Vize <span className="text-gradient-mint">Başvurusu</span>
@@ -99,30 +167,50 @@ export default function Apply() {
         <p className="text-center text-muted-foreground text-lg mb-12">
           <strong className="text-foreground">3 basit adımda</strong> başvurunuzu tamamlayın.
         </p>
+        <p className="mb-8 text-center text-xs font-medium text-muted-foreground">
+          İlerlemeniz otomatik kaydedilir, istediğiniz zaman kaldığınız yerden devam edebilirsiniz.
+        </p>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-center gap-3 mb-12">
+        <div className="mb-10">
+          <div className="grid grid-cols-3 gap-2">
           {stepTitles.map((title, i) => {
             const stepNum = i + 1;
             const isActive = step === stepNum;
             const isDone = step > stepNum;
             return (
-              <div key={i} className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
+                <div
+                  key={i}
+                  className={`rounded-xl border px-2 py-2 text-center transition-colors ${
+                    isActive || isDone ? "border-accent/30 bg-accent/5" : "border-border bg-white"
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2">
                   <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${isDone ? "btn-gradient text-white" : isActive ? "btn-gradient text-white" : "bg-secondary text-muted-foreground"
-                      }`}
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${
+                      isDone || isActive ? "btn-gradient text-white" : "bg-secondary text-muted-foreground"
+                    }`}
                   >
                     {isDone ? <CheckCircle size={16} /> : stepNum}
                   </div>
-                  <span className={`hidden sm:inline text-sm font-medium ${isActive ? "text-navy-dark" : "text-muted-foreground"}`}>
+                    <span
+                      className={`text-[11px] font-semibold leading-tight ${
+                        isActive ? "text-navy-dark" : "text-muted-foreground"
+                      }`}
+                    >
                     {title}
                   </span>
                 </div>
-                {i < 2 && <div className={`w-8 md:w-12 h-0.5 ${step > stepNum ? "btn-gradient" : "bg-border"}`} />}
               </div>
             );
           })}
+          </div>
+          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
+            <div
+              className="h-full bg-gradient-mint transition-all duration-300"
+              style={{ width: `${(step / stepTitles.length) * 100}%` }}
+            />
+          </div>
         </div>
 
         {/* Step Content */}
@@ -130,14 +218,14 @@ export default function Apply() {
           {/* ── STEP 1: Trip Details ── */}
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="bg-white rounded-2xl border border-border p-7 md:p-10 shadow-sm">
+              <div className="bg-white rounded-2xl border border-border p-5 sm:p-7 md:p-10 shadow-sm">
                 <h2 className="text-xl font-extrabold text-navy-dark mb-8">Seyahat Bilgileriniz</h2>
 
                 <div className="space-y-6">
                   <div>
                     <label className="text-sm font-semibold text-foreground mb-2 block">Pasaportunuz</label>
                     <Select onValueChange={setSelectedPassport} value={selectedPassport}>
-                      <SelectTrigger className="h-13 text-[15px] font-medium">
+                      <SelectTrigger className="h-12 text-[15px] font-medium">
                         <SelectValue>
                           <span className="flex items-center gap-2">
                             <span className="text-lg">{currentPassport.flag}</span>
@@ -158,7 +246,7 @@ export default function Apply() {
                   <div>
                     <label className="text-sm font-semibold text-foreground mb-2 block">Hedef Ülke</label>
                     <Select onValueChange={setDestination} value={destination}>
-                      <SelectTrigger className="h-13 text-[15px]">
+                      <SelectTrigger className="h-12 text-[15px]">
                         <SelectValue placeholder="Ülke seçin" />
                       </SelectTrigger>
                       <SelectContent>
@@ -172,7 +260,7 @@ export default function Apply() {
                   <div>
                     <label className="text-sm font-semibold text-foreground mb-2 block">Vize Türü</label>
                     <Select onValueChange={setVisaType} value={visaType}>
-                      <SelectTrigger className="h-13 text-[15px]">
+                      <SelectTrigger className="h-12 text-[15px]">
                         <SelectValue placeholder="Vize türü seçin" />
                       </SelectTrigger>
                       <SelectContent>
@@ -198,7 +286,7 @@ export default function Apply() {
           {/* ── STEP 2: Plan Selection ── */}
           {step === 2 && (
             <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="bg-white rounded-2xl border border-border p-7 md:p-10 shadow-sm">
+              <div className="bg-white rounded-2xl border border-border p-5 sm:p-7 md:p-10 shadow-sm">
                 <h2 className="text-xl font-extrabold text-navy-dark mb-8">Planınızı Seçin</h2>
 
                 {/* Quiz */}
@@ -212,7 +300,7 @@ export default function Apply() {
                       Soru {quizQ + 1} / {questions.length}
                     </p>
                     <p className="font-semibold text-[15px] mb-4">{questions[quizQ].q}</p>
-                    <div className="flex gap-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
                       {questions[quizQ].options.map((opt) => (
                         <Button
                           key={opt.value}
@@ -252,8 +340,8 @@ export default function Apply() {
                           : "border-border hover:border-[#00D69E]/30"
                           }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <div>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-base">{plan.name}</span>
                               {plan.popular && (
@@ -265,7 +353,7 @@ export default function Apply() {
                             </div>
                             <p className="text-sm text-muted-foreground mt-0.5">{plan.desc}</p>
                           </div>
-                          <div className="text-right">
+                          <div className="text-left sm:text-right">
                             <span className="text-2xl font-extrabold text-navy-dark">{plan.price}</span>
                           </div>
                         </div>
@@ -274,8 +362,8 @@ export default function Apply() {
                   })}
                 </div>
 
-                <div className="flex gap-3 mt-8">
-                  <Button variant="outline" className="font-semibold h-13 rounded-xl" onClick={() => setStep(1)}>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <Button variant="outline" className="font-semibold h-12 rounded-xl" onClick={() => setStep(1)}>
                     Geri
                   </Button>
                   <Button
@@ -293,7 +381,7 @@ export default function Apply() {
           {/* ── STEP 3: Account & Payment ── */}
           {step === 3 && (
             <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-              <div className="bg-white rounded-2xl border border-border p-7 md:p-10 shadow-sm">
+              <div className="bg-white rounded-2xl border border-border p-5 sm:p-7 md:p-10 shadow-sm">
                 {!isLoggedIn ? (
                   <>
                     <h2 className="text-xl font-extrabold text-navy-dark mb-2">
@@ -309,21 +397,21 @@ export default function Apply() {
                       {authMode === "register" && (
                         <div>
                           <label className="text-sm font-semibold text-foreground mb-2 block">Ad Soyad</label>
-                          <Input className="h-13 text-[15px]" placeholder="Adınız Soyadınız" />
+                          <Input className="h-12 text-[15px]" placeholder="Adınız Soyadınız" />
                         </div>
                       )}
                       <div>
                         <label className="text-sm font-semibold text-foreground mb-2 block">E-posta</label>
-                        <Input className="h-13 text-[15px]" type="email" placeholder="ornek@email.com" />
+                        <Input className="h-12 text-[15px]" type="email" placeholder="ornek@email.com" />
                       </div>
                       <div>
                         <label className="text-sm font-semibold text-foreground mb-2 block">Şifre</label>
-                        <Input className="h-13 text-[15px]" type="password" placeholder="En az 8 karakter" />
+                        <Input className="h-12 text-[15px]" type="password" placeholder="En az 8 karakter" />
                       </div>
                       {authMode === "register" && (
                         <div>
                           <label className="text-sm font-semibold text-foreground mb-2 block">Telefon</label>
-                          <Input className="h-13 text-[15px]" type="tel" placeholder="+90 5XX XXX XX XX" />
+                          <Input className="h-12 text-[15px]" type="tel" placeholder="+90 5XX XXX XX XX" />
                         </div>
                       )}
                     </div>
@@ -384,16 +472,16 @@ export default function Apply() {
                     <div className="space-y-5">
                       <div>
                         <label className="text-sm font-semibold text-foreground mb-2 block">Kart Numarası</label>
-                        <Input className="h-13 text-[15px]" placeholder="1234 5678 9012 3456" />
+                        <Input className="h-12 text-[15px]" placeholder="1234 5678 9012 3456" />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                           <label className="text-sm font-semibold text-foreground mb-2 block">Son Kullanma</label>
-                          <Input className="h-13 text-[15px]" placeholder="AA/YY" />
+                          <Input className="h-12 text-[15px]" placeholder="AA/YY" />
                         </div>
                         <div>
                           <label className="text-sm font-semibold text-foreground mb-2 block">CVV</label>
-                          <Input className="h-13 text-[15px]" placeholder="123" />
+                          <Input className="h-12 text-[15px]" placeholder="123" />
                         </div>
                       </div>
                     </div>
@@ -409,8 +497,8 @@ export default function Apply() {
                   </>
                 )}
 
-                <div className="flex gap-3 mt-6">
-                  <Button variant="outline" className="font-semibold h-13 rounded-xl" onClick={() => { setStep(2); setIsLoggedIn(false); }}>
+                <div className="mt-6 flex gap-3">
+                  <Button variant="outline" className="font-semibold h-12 rounded-xl" onClick={() => { setStep(2); setIsLoggedIn(false); }}>
                     Geri
                   </Button>
                 </div>
