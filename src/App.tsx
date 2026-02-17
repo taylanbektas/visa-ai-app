@@ -18,6 +18,10 @@ import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
+import Contact from "./pages/Contact";
+import About from "./pages/About";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,24 +33,28 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-        <LanguageProvider>
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/visa-checker" element={<VisaChecker />} />
-            <Route path="/apply" element={<Apply />} />
-            <Route path="/track" element={<Track />} />
-            <Route path="/learn" element={<Learn />} />
-            <Route path="/learn/:id" element={<ArticlePage />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Footer />
-          <AIChatBot />
-        </LanguageProvider>
+          <LanguageProvider>
+            <Navbar />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/visa-checker" element={<VisaChecker />} />
+              <Route path="/apply" element={<Apply />} />
+              <Route path="/track" element={<Track />} />
+              <Route path="/learn" element={<Learn />} />
+              <Route path="/learn/:id" element={<ArticlePage />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Footer />
+            <AIChatBot />
+          </LanguageProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

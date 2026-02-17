@@ -28,6 +28,8 @@ import {
   X,
   Check,
   Mail,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -38,81 +40,76 @@ const longestWord = "smartest"; // used to size the container - using longest EN
 
 /* ── Passport options — ordered by target audience ─────── */
 const passportOptions = [
-  { code: "TR", label: "Türkiye", flag: "🇹🇷" },
-  { code: "DE", label: "Almanya", flag: "🇩🇪" },
-  { code: "NL", label: "Hollanda", flag: "🇳🇱" },
-  { code: "FR", label: "Fransa", flag: "🇫🇷" },
-  { code: "GB", label: "İngiltere", flag: "🇬🇧" },
-  { code: "US", label: "ABD", flag: "🇺🇸" },
-  { code: "RU", label: "Rusya", flag: "🇷🇺" },
-  { code: "AZ", label: "Azerbaycan", flag: "🇦🇿" },
-  { code: "IR", label: "İran", flag: "🇮🇷" },
-  { code: "UZ", label: "Özbekistan", flag: "🇺🇿" },
-  { code: "TM", label: "Türkmenistan", flag: "🇹🇲" },
-  { code: "KG", label: "Kırgızistan", flag: "🇰🇬" },
-  { code: "EG", label: "Mısır", flag: "🇪🇬" },
-  { code: "IQ", label: "Irak", flag: "🇮🇶" },
-  { code: "SY", label: "Suriye", flag: "🇸🇾" },
-  { code: "AF", label: "Afganistan", flag: "🇦🇫" },
+  { code: "TR", labelKey: "country.turkey", flag: "🇹🇷" },
+  { code: "DE", labelKey: "country.germany", flag: "🇩🇪" },
+  { code: "NL", labelKey: "country.netherlands", flag: "🇳🇱" },
+  { code: "FR", labelKey: "country.france", flag: "🇫🇷" },
+  { code: "GB", labelKey: "country.uk", flag: "🇬🇧" },
+  { code: "US", labelKey: "country.usa", flag: "🇺🇸" },
+  { code: "RU", labelKey: "country.russia", flag: "🇷🇺" },
+  { code: "AZ", labelKey: "country.azerbaijan", flag: "🇦🇿" },
+  { code: "IR", labelKey: "country.iran", flag: "🇮🇷" },
+  { code: "UZ", labelKey: "country.uzbekistan", flag: "🇺🇿" },
+  { code: "TM", labelKey: "country.turkmenistan", flag: "🇹🇲" },
+  { code: "KG", labelKey: "country.kyrgyzstan", flag: "🇰🇬" },
+  { code: "EG", labelKey: "country.egypt", flag: "🇪🇬" },
+  { code: "IQ", labelKey: "country.iraq", flag: "🇮🇶" },
+  { code: "SY", labelKey: "country.syria", flag: "🇸🇾" },
+  { code: "AF", labelKey: "country.afghanistan", flag: "🇦🇫" },
 ];
 
 /* ── Destination list with flags ─────────────────────────── */
 const destinations = [
-  { name: "Almanya", flag: "🇩🇪" },
-  { name: "Fransa", flag: "🇫🇷" },
-  { name: "İtalya", flag: "🇮🇹" },
-  { name: "İspanya", flag: "🇪🇸" },
-  { name: "Hollanda", flag: "🇳🇱" },
-  { name: "Belçika", flag: "🇧🇪" },
-  { name: "Avusturya", flag: "🇦🇹" },
-  { name: "İsviçre", flag: "🇨🇭" },
-  { name: "Portekiz", flag: "🇵🇹" },
-  { name: "Yunanistan", flag: "🇬🇷" },
-  { name: "ABD", flag: "🇺🇸" },
-  { name: "İngiltere", flag: "🇬🇧" },
-  { name: "Kanada", flag: "🇨🇦" },
-  { name: "Japonya", flag: "🇯🇵" },
-  { name: "Güney Kore", flag: "🇰🇷" },
+  { key: "germany", flag: "🇩🇪" },
+  { key: "france", flag: "🇫🇷" },
+  { key: "italy", flag: "🇮🇹" },
+  { key: "spain", flag: "🇪🇸" },
+  { key: "netherlands", flag: "🇳🇱" },
+  { key: "belgium", flag: "🇧🇪" },
+  { key: "austria", flag: "🇦🇹" },
+  { key: "switzerland", flag: "🇨🇭" },
+  { key: "portugal", flag: "🇵🇹" },
+  { key: "greece", flag: "🇬🇷" },
+  { key: "usa", flag: "🇺🇸" },
+  { key: "uk", flag: "🇬🇧" },
+  { key: "canada", flag: "🇨🇦" },
+  { key: "japan", flag: "🇯🇵" },
+  { key: "south_korea", flag: "🇰🇷" },
 ];
 
-/* ── Visa-free map: passport → visa-free destinations ──── */
+/* ── Visa-free map: passport → visa-free destination keys ──── */
 const visaFreeMap: Record<string, string[]> = {
-  // EU/EEA passports → free in Schengen + UK
-  DE: ["Almanya", "Fransa", "İtalya", "İspanya", "Hollanda", "Belçika", "Avusturya", "İsviçre", "Portekiz", "Yunanistan", "İngiltere", "Japonya", "Güney Kore", "Kanada", "ABD"],
-  FR: ["Almanya", "Fransa", "İtalya", "İspanya", "Hollanda", "Belçika", "Avusturya", "İsviçre", "Portekiz", "Yunanistan", "İngiltere", "Japonya", "Güney Kore", "Kanada", "ABD"],
-  NL: ["Almanya", "Fransa", "İtalya", "İspanya", "Hollanda", "Belçika", "Avusturya", "İsviçre", "Portekiz", "Yunanistan", "İngiltere", "Japonya", "Güney Kore", "Kanada", "ABD"],
-  GB: ["Almanya", "Fransa", "İtalya", "İspanya", "Hollanda", "Belçika", "Avusturya", "İsviçre", "Portekiz", "Yunanistan", "Japonya", "Güney Kore", "Kanada", "ABD"],
-  US: ["Almanya", "Fransa", "İtalya", "İspanya", "Hollanda", "Belçika", "Avusturya", "İsviçre", "Portekiz", "Yunanistan", "İngiltere", "Japonya", "Güney Kore", "Kanada", "ABD"],
-  // Turkish passport → limited visa-free
-  TR: ["Güney Kore", "Japonya"],
-  // Azerbaijani
-  AZ: ["Güney Kore"],
-  // Russian
-  RU: ["Güney Kore"],
-  // Other passports → generally visa required everywhere
+  DE: ["germany", "france", "italy", "spain", "netherlands", "belgium", "austria", "switzerland", "portugal", "greece", "uk", "japan", "south_korea", "canada", "usa"],
+  FR: ["germany", "france", "italy", "spain", "netherlands", "belgium", "austria", "switzerland", "portugal", "greece", "uk", "japan", "south_korea", "canada", "usa"],
+  NL: ["germany", "france", "italy", "spain", "netherlands", "belgium", "austria", "switzerland", "portugal", "greece", "uk", "japan", "south_korea", "canada", "usa"],
+  GB: ["germany", "france", "italy", "spain", "netherlands", "belgium", "austria", "switzerland", "portugal", "greece", "japan", "south_korea", "canada", "usa"],
+  US: ["germany", "france", "italy", "spain", "netherlands", "belgium", "austria", "switzerland", "portugal", "greece", "uk", "japan", "south_korea", "canada", "usa"],
+  TR: ["south_korea", "japan"],
+  AZ: ["south_korea"],
+  RU: ["south_korea"],
   SY: [], IQ: [], IR: [], AF: [], UZ: [], TM: [], KG: [], EG: [],
 };
 
 /* ── E-Visa destinations (need an e-visa even if "visa-free" for some) ──── */
-const eVisaDestinations = ["Güney Kore"]; // K-ETA required
+const eVisaDestinations = ["south_korea"]; // K-ETA required
 
-/* ── Visa data by destination ─────────────────────────── */
-const visaData: Record<string, { type: string; docs: string[]; duration: string; fee: string }> = {
-  "Almanya": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Otel rezervasyonu", "Uçak bileti"], duration: "10-15 iş günü", fee: "€90" },
-  "Fransa": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Konaklama belgesi", "Uçak bileti"], duration: "10-15 iş günü", fee: "€90" },
-  "İtalya": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Otel rezervasyonu"], duration: "10-15 iş günü", fee: "€90" },
-  "İspanya": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Konaklama belgesi"], duration: "10-15 iş günü", fee: "€90" },
-  "Hollanda": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Davet mektubu veya otel"], duration: "10-15 iş günü", fee: "€90" },
-  "Belçika": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Otel / davet"], duration: "10-15 iş günü", fee: "€90" },
-  "Avusturya": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Otel rezervasyonu"], duration: "10-15 iş günü", fee: "€90" },
-  "İsviçre": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Otel / davet"], duration: "10-15 iş günü", fee: "€90" },
-  "Portekiz": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Konaklama"], duration: "10-15 iş günü", fee: "€90" },
-  "Yunanistan": { type: "Schengen Vizesi", docs: ["Pasaport", "Banka hesap özeti", "Seyahat sigortası", "Otel"], duration: "10-15 iş günü", fee: "€90" },
-  "ABD": { type: "B1/B2 Turist Vizesi", docs: ["Pasaport", "DS-160 Formu", "Banka hesap özeti", "İş/Okul belgesi", "Fotoğraf"], duration: "Mülakata bağlı (30-90 gün)", fee: "$185" },
-  "İngiltere": { type: "Standard Visitor Visa", docs: ["Pasaport", "Banka hesap özeti", "Konaklama belgesi", "Seyahat planı"], duration: "15-20 iş günü", fee: "£115" },
-  "Kanada": { type: "Visitor Visa (TRV)", docs: ["Pasaport", "Banka hesap özeti", "Seyahat geçmişi", "Davet mektubu (varsa)"], duration: "20-30 iş günü", fee: "CAD $100" },
-  "Japonya": { type: "Tourist Visa", docs: ["Pasaport", "Başvuru formu", "Fotoğraf", "Uçak bileti", "Otel"], duration: "5-7 iş günü", fee: "Ücretsiz" },
-  "Güney Kore": { type: "K-ETA veya Vizesiz", docs: ["Pasaport", "K-ETA başvurusu (online)"], duration: "1-3 gün", fee: "₩10,000 (~€7)" },
+/* ── Visa data by destination key ─────────────────────────── */
+const visaData: Record<string, { typeKey: string; docKeys: string[]; durationKey: string; fee: string }> = {
+  "germany": { typeKey: "visa_type.schengen", docKeys: ["doc.passport", "doc.bank_statement", "doc.travel_insurance", "doc.hotel_reservation", "doc.flight_ticket"], durationKey: "duration.10_15", fee: "€90" },
+  "france": { typeKey: "visa_type.schengen", docKeys: ["doc.passport", "doc.bank_statement", "doc.travel_insurance", "doc.accommodation", "doc.flight_ticket"], durationKey: "duration.10_15", fee: "€90" },
+  "italy": { typeKey: "visa_type.schengen", docKeys: ["doc.passport", "doc.bank_statement", "doc.travel_insurance", "doc.hotel_reservation"], durationKey: "duration.10_15", fee: "€90" },
+  "spain": { typeKey: "visa_type.schengen", docKeys: ["doc.passport", "doc.bank_statement", "doc.travel_insurance", "doc.accommodation"], durationKey: "duration.10_15", fee: "€90" },
+  "netherlands": { typeKey: "visa_type.schengen", docKeys: ["doc.passport", "doc.bank_statement", "doc.travel_insurance", "doc.invitation_or_hotel"], durationKey: "duration.10_15", fee: "€90" },
+  "belgium": { typeKey: "visa_type.schengen", docKeys: ["doc.passport", "doc.bank_statement", "doc.travel_insurance", "doc.hotel_or_invitation"], durationKey: "duration.10_15", fee: "€90" },
+  "austria": { typeKey: "visa_type.schengen", docKeys: ["doc.passport", "doc.bank_statement", "doc.travel_insurance", "doc.hotel_reservation"], durationKey: "duration.10_15", fee: "€90" },
+  "switzerland": { typeKey: "visa_type.schengen", docKeys: ["doc.passport", "doc.bank_statement", "doc.travel_insurance", "doc.hotel_or_invitation"], durationKey: "duration.10_15", fee: "€90" },
+  "portugal": { typeKey: "visa_type.schengen", docKeys: ["doc.passport", "doc.bank_statement", "doc.travel_insurance", "doc.accommodation_short"], durationKey: "duration.10_15", fee: "€90" },
+  "greece": { typeKey: "visa_type.schengen", docKeys: ["doc.passport", "doc.bank_statement", "doc.travel_insurance", "doc.hotel"], durationKey: "duration.10_15", fee: "€90" },
+  "usa": { typeKey: "visa_type.b1b2", docKeys: ["doc.passport", "doc.ds160", "doc.bank_statement", "doc.work_school", "doc.photo"], durationKey: "duration.interview", fee: "$185" },
+  "uk": { typeKey: "visa_type.standard_visitor", docKeys: ["doc.passport", "doc.bank_statement", "doc.accommodation", "doc.travel_plan"], durationKey: "duration.15_20", fee: "£115" },
+  "canada": { typeKey: "visa_type.trv", docKeys: ["doc.passport", "doc.bank_statement", "doc.travel_history", "doc.invitation_if_any"], durationKey: "duration.20_30", fee: "CAD $100" },
+  "japan": { typeKey: "visa_type.tourist", docKeys: ["doc.passport", "doc.application_form", "doc.photo", "doc.flight_ticket", "doc.hotel"], durationKey: "duration.5_7", fee: "Ücretsiz" },
+  "south_korea": { typeKey: "visa_type.keta", docKeys: ["doc.passport", "doc.keta"], durationKey: "duration.1_3", fee: "₩10,000 (~€7)" },
 };
 
 /* ── Testimonials data — realistic reviews ────────────── */
@@ -178,6 +175,142 @@ function StatsSection({ t }: { t: (key: string) => string }) {
           <AnimatedCounter target={96} prefix="%" label={t("stats.approval")} />
           <AnimatedCounter target={7} suffix="+" label={t("stats.experience")} />
           <AnimatedCounter target={150} suffix="+" label={t("stats.countries") || "Ülke desteği"} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── iVisa-style Testimonials Carousel ─────────────────── */
+function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Number of cards visible at once: 1 on mobile, 3 on md+
+  const getVisibleCount = () => (typeof window !== "undefined" && window.innerWidth >= 768 ? 3 : 1);
+  const [visibleCount, setVisibleCount] = useState(getVisibleCount());
+
+  useEffect(() => {
+    const handleResize = () => setVisibleCount(getVisibleCount());
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const maxIndex = Math.max(0, testimonials.length - visibleCount);
+
+  // Auto-advance every 5 seconds
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [isPaused, maxIndex]);
+
+  const goTo = (idx: number) => setCurrentIndex(Math.max(0, Math.min(idx, maxIndex)));
+  const goPrev = () => goTo(currentIndex <= 0 ? maxIndex : currentIndex - 1);
+  const goNext = () => goTo(currentIndex >= maxIndex ? 0 : currentIndex + 1);
+
+  // Dot indicators — group pages
+  const totalDots = maxIndex + 1;
+
+  return (
+    <section
+      className="py-20 md:py-28 bg-white overflow-hidden"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      <div className="container mx-auto px-4 md:px-6 max-w-6xl">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-5xl font-extrabold text-navy-dark mb-4">
+            {t("testimonials.title")}
+          </h2>
+          <div className="flex items-center justify-center gap-2 text-lg text-muted-foreground">
+            <div className="flex gap-0.5">
+              {Array.from({ length: 5 }).map((_, j) => (
+                <Star key={j} size={20} className="fill-[#facc15] text-[#facc15]" />
+              ))}
+            </div>
+            <span className="font-bold text-foreground">4.9/5</span>
+            <span>— {testimonials.length}+ {t("testimonials.reviews")}</span>
+          </div>
+        </div>
+
+        {/* Carousel container */}
+        <div className="relative">
+          {/* Arrow buttons */}
+          <button
+            onClick={goPrev}
+            className="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white border border-border shadow-lg flex items-center justify-center hover:bg-secondary transition-colors"
+            aria-label="Previous"
+          >
+            <ChevronLeft size={22} className="text-navy-dark" />
+          </button>
+          <button
+            onClick={goNext}
+            className="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 z-10 w-11 h-11 rounded-full bg-white border border-border shadow-lg flex items-center justify-center hover:bg-secondary transition-colors"
+            aria-label="Next"
+          >
+            <ChevronRight size={22} className="text-navy-dark" />
+          </button>
+
+          {/* Cards rail */}
+          <div className="overflow-hidden">
+            <motion.div
+              className="flex gap-5"
+              animate={{ x: `-${currentIndex * (100 / visibleCount + (5 * (visibleCount - 1)) / visibleCount)}%` }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              style={{ width: `${(testimonials.length / visibleCount) * 100}%` }}
+            >
+              {testimonials.map((review, i) => (
+                <div
+                  key={i}
+                  className="flex-shrink-0 bg-white border border-border rounded-2xl p-7 shadow-sm hover:shadow-md transition-shadow select-none"
+                  style={{ width: `calc(${100 / testimonials.length * visibleCount}% - ${5 * (visibleCount - 1) / visibleCount * (testimonials.length / visibleCount)}px)` }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: review.rating }).map((_, j) => (
+                        <Star key={j} size={16} className="fill-[#facc15] text-[#facc15]" />
+                      ))}
+                      {Array.from({ length: 5 - review.rating }).map((_, j) => (
+                        <Star key={`e${j}`} size={16} className="text-border" />
+                      ))}
+                    </div>
+                    <span className="text-xs text-muted-foreground">{review.date}</span>
+                  </div>
+                  <p className="text-sm md:text-base text-foreground/80 leading-relaxed mb-5 min-h-[80px]">
+                    "{review.text}"
+                  </p>
+                  <div className="flex items-center gap-3 pt-3 border-t border-border">
+                    <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-sm">
+                      {review.name.split(" ").map(n => n[0]).join("")}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-navy-dark">{review.name}</p>
+                      <p className="text-xs text-muted-foreground">{review.city} · {review.country}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Dot indicators */}
+        <div className="flex justify-center gap-2 mt-8">
+          {Array.from({ length: totalDots }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === currentIndex
+                ? "bg-[#00D69E] w-7"
+                : "bg-border hover:bg-muted-foreground/30"
+                }`}
+              aria-label={`Go to slide ${i + 1}`}
+            />
+          ))}
         </div>
       </div>
     </section>
@@ -284,7 +417,7 @@ export default function Index() {
                     <SelectValue>
                       <span className="flex items-center gap-2">
                         <span className="text-xl">{currentPassport.flag}</span>
-                        <span>{currentPassport.label}</span>
+                        <span>{t(currentPassport.labelKey)}</span>
                       </span>
                     </SelectValue>
                   </SelectTrigger>
@@ -292,7 +425,7 @@ export default function Index() {
                     {passportOptions.map((p) => (
                       <SelectItem key={p.code} value={p.code}>
                         <span className="flex items-center gap-2">
-                          <span>{p.flag}</span> {p.label}
+                          <span>{p.flag}</span> {t(p.labelKey)}
                         </span>
                       </SelectItem>
                     ))}
@@ -309,10 +442,10 @@ export default function Index() {
                   </SelectTrigger>
                   <SelectContent>
                     {destinations.map((country) => (
-                      <SelectItem key={country.name} value={country.name}>
+                      <SelectItem key={country.key} value={country.key}>
                         <span className="flex items-center gap-2">
                           <span className="text-lg">{country.flag}</span>
-                          <span>{country.name}</span>
+                          <span>{t("country." + country.key)}</span>
                         </span>
                       </SelectItem>
                     ))}
@@ -351,7 +484,7 @@ export default function Index() {
                       {isEVisa && visaResult ? (
                         <div className="mt-4">
                           <p className="text-lg text-muted-foreground mb-4">
-                            {visaResult.type} gereklidir.
+                            {t(visaResult.typeKey)} gereklidir.
                           </p>
                           <Link to="/apply" state={{ destination: selectedDestination }}>
                             <Button className="btn-gradient text-white font-bold h-14 px-8 rounded-xl text-base">
@@ -361,14 +494,9 @@ export default function Index() {
                         </div>
                       ) : (
                         <div className="mt-4">
-                          <p className="text-lg text-muted-foreground mb-4">
-                            <strong className="text-foreground">{currentPassport.label}</strong> {t("checker.visaFreeDesc")} <strong className="text-foreground">{selectedDestination}</strong> {t("checker.visaFreeFor")}
+                          <p className="text-lg text-muted-foreground">
+                            <strong className="text-foreground">{t(currentPassport.labelKey)}</strong> {t("checker.visaFreeDesc")} <strong className="text-foreground">{t("country." + selectedDestination)}</strong> {t("checker.visaFreeFor")}
                           </p>
-                          <Link to="/apply" state={{ destination: selectedDestination }}>
-                            <Button className="bg-secondary text-foreground hover:bg-secondary/80 font-bold h-14 px-8 rounded-xl text-base">
-                              {t("visa.visa_free_starter")} <ArrowRight size={18} className="ml-2" />
-                            </Button>
-                          </Link>
                         </div>
                       )}
                     </div>
@@ -378,11 +506,11 @@ export default function Index() {
                       <div className="grid sm:grid-cols-3 gap-4 text-left">
                         <div>
                           <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">{t("checker.visaType")}</p>
-                          <p className="font-bold text-base">{visaResult?.type}</p>
+                          <p className="font-bold text-base">{visaResult ? t(visaResult.typeKey) : ""}</p>
                         </div>
                         <div>
                           <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">{t("checker.duration")}</p>
-                          <p className="font-bold text-base">{visaResult?.duration}</p>
+                          <p className="font-bold text-base">{visaResult ? t(visaResult.durationKey) : ""}</p>
                         </div>
                         <div>
                           <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">{t("checker.fee")}</p>
@@ -392,9 +520,9 @@ export default function Index() {
                       <div className="mt-5">
                         <p className="text-xs font-bold text-muted-foreground mb-2.5 uppercase tracking-wide">{t("checker.docs")}</p>
                         <div className="flex flex-wrap gap-2">
-                          {visaResult?.docs.map((doc) => (
-                            <span key={doc} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#00D69E]/10 text-[#00B386] text-sm font-semibold">
-                              <FileText size={13} /> {doc}
+                          {visaResult?.docKeys.map((docKey) => (
+                            <span key={docKey} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#00D69E]/10 text-[#00B386] text-sm font-semibold">
+                              <FileText size={13} /> {t(docKey)}
                             </span>
                           ))}
                         </div>
@@ -420,7 +548,7 @@ export default function Index() {
           >
             <div className="flex items-center gap-2"><Users size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">3.200+</strong> {t("trust.applications")}</span></div>
             <div className="flex items-center gap-2"><Shield size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">%96</strong> {t("trust.approval")}</span></div>
-            <div className="flex items-center gap-2"><Clock size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">7/24</strong> {t("trust.support")}</span></div>
+            <div className="flex items-center gap-2"><Clock size={22} className="text-[#00D69E]" /> <span><strong className="text-foreground font-extrabold">{t("trust.supportTime")}</strong> {t("trust.support")}</span></div>
           </motion.div>
         </div>
       </section>
@@ -526,74 +654,8 @@ export default function Index() {
       {/* ━━━ STATS — Animated Counters ━━━ */}
       <StatsSection t={t} />
 
-      {/* ━━━ TESTIMONIALS — Draggable scroll ━━━ */}
-      <section className="py-20 md:py-28 bg-white overflow-hidden">
-        <div className="container mx-auto px-4 md:px-6 max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-5xl font-extrabold text-navy-dark mb-4">
-              {t("testimonials.title")}
-            </h2>
-            <div className="flex items-center justify-center gap-2 text-lg text-muted-foreground">
-              <div className="flex gap-0.5">
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <Star key={j} size={20} className="fill-[#facc15] text-[#facc15]" />
-                ))}
-              </div>
-              <span className="font-bold text-foreground">4.9/5</span>
-              <span>— {testimonials.length}+ değerlendirme</span>
-            </div>
-          </div>
-
-          {/* Draggable horizontal scroll */}
-          <div
-            className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide cursor-grab active:cursor-grabbing"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
-            onMouseDown={(e) => {
-              const el = e.currentTarget;
-              const startX = e.pageX - el.offsetLeft;
-              const scrollLeft = el.scrollLeft;
-              const onMove = (ev: MouseEvent) => {
-                const x = ev.pageX - el.offsetLeft;
-                el.scrollLeft = scrollLeft - (x - startX);
-              };
-              const onUp = () => {
-                document.removeEventListener("mousemove", onMove);
-                document.removeEventListener("mouseup", onUp);
-              };
-              document.addEventListener("mousemove", onMove);
-              document.addEventListener("mouseup", onUp);
-            }}
-          >
-            {testimonials.map((review, i) => (
-              <div key={i} className="min-w-[320px] md:min-w-[380px] snap-start flex-shrink-0 bg-white border border-border rounded-2xl p-7 shadow-sm hover:shadow-md transition-shadow select-none">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: review.rating }).map((_, j) => (
-                      <Star key={j} size={16} className="fill-[#facc15] text-[#facc15]" />
-                    ))}
-                    {Array.from({ length: 5 - review.rating }).map((_, j) => (
-                      <Star key={j} size={16} className="text-border" />
-                    ))}
-                  </div>
-                  <span className="text-xs text-muted-foreground">{review.date}</span>
-                </div>
-                <p className="text-sm md:text-base text-foreground/80 leading-relaxed mb-5 line-clamp-4">
-                  "{review.text}"
-                </p>
-                <div className="flex items-center gap-3 pt-3 border-t border-border">
-                  <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-sm">
-                    {review.name.split(" ").map(n => n[0]).join("")}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-navy-dark">{review.name}</p>
-                    <p className="text-xs text-muted-foreground">{review.city} · {review.country}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ━━━ TESTIMONIALS — iVisa-style carousel ━━━ */}
+      <TestimonialsCarousel t={t} />
 
       {/* ━━━ FAQs ━━━ */}
       <section className="py-20 md:py-28 section-gradient-light" id="sss">
