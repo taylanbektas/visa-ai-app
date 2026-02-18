@@ -190,6 +190,79 @@ export default function Dashboard() {
                 <p className="text-sm font-medium text-muted-foreground">+ Yeni Başvuru Oluştur</p>
               </div>
             </Link>
+
+            {/* Developer Tools for Testing */}
+            <div className="pt-8 border-t mt-8">
+              <h3 className="text-sm font-mono font-bold text-muted-foreground mb-4">Geliştirici Araçları (Test)</h3>
+              <div className="bg-muted/30 p-4 rounded-lg border border-dashed">
+                <p className="text-xs font-mono mb-2 text-muted-foreground">User ID: {user.id}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-600 border-red-200"
+                    onClick={async () => {
+                      try {
+                        const { error } = await supabase.from('user_roles').insert({
+                          user_id: user.id,
+                          role: 'admin'
+                        });
+                        if (error) throw error;
+                        alert("Admin rolü başarıyla atandı! Sayfayı yenileyin.");
+                        window.location.reload();
+                      } catch (e: any) {
+                        console.error(e);
+                        alert("Hata: " + (e.message || "Bilinmeyen hata") + "\n\nBu hatayı alıyorsanız, Supabase panelinden SQL editörüne gidip şunu çalıştırın:\n\nINSERT INTO user_roles (user_id, role) VALUES ('" + user.id + "', 'admin');");
+                      }
+                    }}
+                  >
+                    Admin Yap
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 border-blue-200"
+                    onClick={async () => {
+                      try {
+                        // First role
+                        const { error: roleError } = await supabase.from('user_roles').insert({
+                          user_id: user.id,
+                          role: 'moderator'
+                        });
+                        if (roleError && !roleError.message.includes('duplicate')) throw roleError;
+
+                        // Then advisor record
+                        const { error: advError } = await supabase.from('advisors').insert({
+                          user_id: user.id
+                        });
+                        if (advError && !advError.message.includes('duplicate')) throw advError;
+
+                        alert("Danışman rolü başarıyla atandı! Sayfayı yenileyin.");
+                        window.location.reload();
+                      } catch (e: any) {
+                        console.error(e);
+                        alert("Hata: " + (e.message || "Bilinmeyen hata") + "\n\nBu hatayı alıyorsanız, Supabase panelinden SQL editörüne gidip şunu çalıştırın:\n\nINSERT INTO user_roles (user_id, role) VALUES ('" + user.id + "', 'moderator');\nINSERT INTO advisors (user_id) VALUES ('" + user.id + "');");
+                      }
+                    }}
+                  >
+                    Danışman Yap
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`INSERT INTO user_roles (user_id, role) VALUES ('${user.id}', 'admin');`);
+                      alert("SQL kopyalandı!");
+                    }}
+                  >
+                    SQL Kopyala
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-6">
