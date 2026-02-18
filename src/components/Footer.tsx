@@ -20,6 +20,7 @@ export function Footer() {
       title: t("footer.support"),
       links: [
         { label: t("nav.contact"), to: "/contact" },
+        { label: t("footer.joinAdvisor"), to: "/join-advisor" },
         { label: t("nav.whatsapp"), to: "https://wa.me/905XXXXXXXXX", external: true },
         { label: t("footer.helpCenter"), to: "/learn" },
         { label: t("footer.videoGuides"), to: "/learn" },

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, LogIn, Lock, Loader2 } from "lucide-react";
+import { User, LogIn, Lock, Loader2, Mail, CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
@@ -12,9 +12,12 @@ export default function Login() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+
   const { signIn, signUp } = useAuth();
   const { getPanelPath, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
@@ -37,21 +40,65 @@ export default function Login() {
         }, 500);
       }
     } else {
-      if (password.length < 8) {
-        toast({ title: "Hata", description: "Şifre en az 8 karakter olmalıdır.", variant: "destructive" });
+      // Registration Validation
+      if (!fullName.trim() || !phone.trim()) {
+        toast({ title: "Eksik Bilgi", description: "Lütfen tüm alanları doldurun.", variant: "destructive" });
         setIsLoading(false);
         return;
       }
+      if (password.length < 8) {
+        toast({ title: "Zayıf Şifre", description: "Şifre en az 8 karakter olmalıdır.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast({ title: "Hata", description: "Şifreler eşleşmiyor.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+
       const { error } = await signUp(email, password, fullName, phone);
       if (error) {
         toast({ title: "Kayıt başarısız", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "Hesabınız oluşturuldu!", description: "Giriş yapıldı." });
-        navigate(getPanelPath());
+        // Show email verification screen instead of auto-login
+        setShowEmailVerification(true);
       }
     }
     setIsLoading(false);
   };
+
+  if (showEmailVerification) {
+    return (
+      <div className="page-shell section-gradient-light flex items-center justify-center">
+        <div className="container mx-auto px-4 md:px-6 max-w-md">
+          <motion.div
+            className="bg-white rounded-2xl border border-border p-6 sm:p-8 md:p-10 shadow-lg text-center"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Mail className="w-8 h-8 text-green-600" />
+            </div>
+            <h1 className="text-2xl font-extrabold text-navy-dark mb-4">E-postanızı Kontrol Edin</h1>
+            <p className="text-muted-foreground mb-8">
+              Kayıt işlemini tamamlamak için <strong>{email}</strong> adresine gönderdiğimiz doğrulama bağlantısına tıklayın.
+            </p>
+            <Button
+              variant="outline"
+              className="w-full h-12 rounded-xl font-semibold"
+              onClick={() => {
+                setShowEmailVerification(false);
+                setMode("login");
+              }}
+            >
+              Giriş Ekranına Dön
+            </Button>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-shell section-gradient-light flex items-center justify-center">
@@ -79,29 +126,35 @@ export default function Login() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "register" && (
               <div>
-                <label className="text-sm font-semibold text-foreground mb-2 block">Ad Soyad</label>
-                <Input className="h-12 text-[15px]" placeholder="Adınız Soyadınız" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                <label className="text-sm font-semibold text-foreground mb-1 block">Ad Soyad</label>
+                <Input className="h-11 text-[15px]" placeholder="Adınız Soyadınız" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
               </div>
             )}
             <div>
-              <label className="text-sm font-semibold text-foreground mb-2 block">E-posta</label>
-              <Input className="h-12 text-[15px]" type="email" placeholder="ornek@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <label className="text-sm font-semibold text-foreground mb-1 block">E-posta</label>
+              <Input className="h-11 text-[15px]" type="email" placeholder="ornek@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div>
-              <label className="text-sm font-semibold text-foreground mb-2 block">Şifre</label>
-              <Input className="h-12 text-[15px]" type="password" placeholder="En az 8 karakter" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <label className="text-sm font-semibold text-foreground mb-1 block">Şifre</label>
+              <Input className="h-11 text-[15px]" type="password" placeholder="En az 8 karakter" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
             {mode === "register" && (
-              <div>
-                <label className="text-sm font-semibold text-foreground mb-2 block">Telefon</label>
-                <Input className="h-12 text-[15px]" type="tel" placeholder="+90 5XX XXX XX XX" value={phone} onChange={(e) => setPhone(e.target.value)} />
-              </div>
+              <>
+                <div>
+                  <label className="text-sm font-semibold text-foreground mb-1 block">Şifre Tekrar</label>
+                  <Input className="h-11 text-[15px]" type="password" placeholder="Şifrenizi doğrulayın" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-foreground mb-1 block">Telefon</label>
+                  <Input className="h-11 text-[15px]" type="tel" placeholder="+90 5XX XXX XX XX" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                </div>
+              </>
             )}
 
-            <Button type="submit" disabled={isLoading} className="w-full btn-gradient text-white font-bold h-14 text-base rounded-xl mt-3">
+            <Button type="submit" disabled={isLoading} className="w-full btn-gradient text-white font-bold h-14 text-base rounded-xl mt-4">
               {isLoading ? (
                 <Loader2 size={18} className="mr-2 animate-spin" />
               ) : mode === "login" ? (

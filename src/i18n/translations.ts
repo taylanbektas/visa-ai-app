@@ -120,6 +120,7 @@ export const translations: Record<Locale, Record<string, string>> = {
         // Footer
         "footer.tagline": "Vize başvurularında güvenilir çözüm ortağınız.",
         "footer.quickLinks": "Hızlı Bağlantılar",
+        "footer.joinAdvisor": "Danışman Ol",
         "footer.support": "Destek",
         "footer.legal": "Yasal",
         "footer.rights": "Tüm hakları saklıdır.",
@@ -531,6 +532,7 @@ export const translations: Record<Locale, Record<string, string>> = {
         // Footer
         "footer.tagline": "Your trusted partner for visa applications.",
         "footer.quickLinks": "Quick Links",
+        "footer.joinAdvisor": "Become an Advisor",
         "footer.support": "Support",
         "footer.legal": "Legal",
         "footer.rights": "All rights reserved.",

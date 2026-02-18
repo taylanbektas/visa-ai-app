@@ -11,16 +11,17 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
-import VisaChecker from "./pages/VisaChecker";
+// import VisaChecker from "./pages/VisaChecker";
 import Apply from "./pages/Apply";
 import Track from "./pages/Track";
 import Learn from "./pages/Learn";
-import ArticlePage from "./pages/ArticlePage";
+// import ArticlePage from "./pages/ArticlePage";
 import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import AdvisorPanel from "./pages/AdvisorPanel";
 import Login from "./pages/Login";
+import JoinAdvisor from "./pages/JoinAdvisor";
 import Contact from "./pages/Contact";
 
 import Privacy from "./pages/Privacy";
@@ -55,17 +56,18 @@ const App = () => (
             <Navbar />
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/visa-checker" element={<VisaChecker />} />
+              {/* <Route path="/visa-checker" element={<VisaChecker />} /> */}
               <Route path="/apply" element={<Apply />} />
               <Route path="/track" element={<Track />} />
               <Route path="/learn" element={<Learn />} />
-              <Route path="/learn/:id" element={<ArticlePage />} />
+              {/* <Route path="/learn/:id" element={<ArticlePage />} /> */}
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/advisor" element={<AdvisorPanel />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/join-advisor" element={<JoinAdvisor />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="*" element={<NotFound />} />

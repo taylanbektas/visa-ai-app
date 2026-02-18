@@ -19,8 +19,11 @@ import {
   User,
   LogIn,
   Mail,
+  Loader2,
 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import {
   passportOptions as rawPassportOptions,
   destinations as rawDestinations,
@@ -37,7 +40,6 @@ type ApplyDraft = {
   quizQ: number;
   quizAnswers: string[];
   recommendation: string | null;
-  isLoggedIn: boolean;
   authMode: "login" | "register";
 };
 
@@ -68,6 +70,8 @@ function getRecommendation(answers: string[]): string {
 export default function Apply() {
   const { t } = useLanguage();
   const location = useLocation();
+  const { user, signIn, signUp } = useAuth();
+  const { toast } = useToast();
 
   // Map data to include translated labels, compatible with existing logic
   const passportOptions = rawPassportOptions.map(p => ({
@@ -98,9 +102,15 @@ export default function Apply() {
   const [quizAnswers, setQuizAnswers] = useState<string[]>([]);
   const [recommendation, setRecommendation] = useState<string | null>(null);
 
-  // Auth state (simulated)
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Auth local state
   const [authMode, setAuthMode] = useState<"login" | "register">("register");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
 
   useEffect(() => {
     const rawDraft = localStorage.getItem(APPLY_DRAFT_KEY);
@@ -127,7 +137,6 @@ export default function Apply() {
       setQuizQ(draft.quizQ ?? 0);
       setQuizAnswers(draft.quizAnswers ?? []);
       setRecommendation(draft.recommendation ?? null);
-      setIsLoggedIn(Boolean(draft.isLoggedIn));
       setAuthMode(draft.authMode === "login" ? "login" : "register");
     } catch {
       localStorage.removeItem(APPLY_DRAFT_KEY);
@@ -153,7 +162,6 @@ export default function Apply() {
       quizQ,
       quizAnswers,
       recommendation,
-      isLoggedIn,
       authMode,
     };
     localStorage.setItem(APPLY_DRAFT_KEY, JSON.stringify(draft));
@@ -167,7 +175,6 @@ export default function Apply() {
     quizQ,
     quizAnswers,
     recommendation,
-    isLoggedIn,
     authMode,
   ]);
 
@@ -191,6 +198,45 @@ export default function Apply() {
       setSelectedPlan(rec);
       setQuizDone(true);
     }
+  };
+
+  const handleAuthSubmit = async () => {
+    setIsLoading(true);
+    if (authMode === "login") {
+      const { error } = await signIn(email, password);
+      if (error) {
+        toast({ title: "Giriş başarısız", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Giriş yapıldı" });
+        // User state will update automatically via useAuth, causing re-render and showing payment
+      }
+    } else {
+      // Registration Validation
+      if (!fullName.trim() || !phone.trim()) {
+        toast({ title: "Eksik Bilgi", description: "Lütfen tüm alanları doldurun.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+      if (password.length < 8) {
+        toast({ title: "Zayıf Şifre", description: "Şifre en az 8 karakter olmalıdır.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast({ title: "Hata", description: "Şifreler eşleşmiyor.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+      }
+
+      const { error } = await signUp(email, password, fullName, phone);
+      if (error) {
+        toast({ title: "Kayıt başarısız", description: error.message, variant: "destructive" });
+      } else {
+        // Show verification screen
+        setShowEmailVerification(true);
+      }
+    }
+    setIsLoading(false);
   };
 
   const stepTitles = ["Seyahat Bilgileri", "Plan Seçimi", "Hesap & Ödeme"];
@@ -440,59 +486,83 @@ export default function Apply() {
           {step === 3 && (
             <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
               <div className="bg-white rounded-2xl border border-border p-5 sm:p-7 md:p-10 shadow-sm">
-                {!isLoggedIn ? (
-                  <>
-                    <h2 className="text-xl font-extrabold text-navy-dark mb-2">
-                      {authMode === "register" ? "Hesap Oluşturun" : "Giriş Yapın"}
-                    </h2>
-                    <p className="text-[15px] text-muted-foreground mb-8">
-                      {authMode === "register"
-                        ? "Başvurunuzu takip edebilmek ve belgelerinizi güvenle yükleyebilmek için hesap oluşturun."
-                        : "Mevcut hesabınızla giriş yapın."}
-                    </p>
-
-                    <div className="space-y-5">
-                      {authMode === "register" && (
-                        <div>
-                          <label className="text-sm font-semibold text-foreground mb-2 block">Ad Soyad</label>
-                          <Input className="h-12 text-[15px]" placeholder="Adınız Soyadınız" />
-                        </div>
-                      )}
-                      <div>
-                        <label className="text-sm font-semibold text-foreground mb-2 block">E-posta</label>
-                        <Input className="h-12 text-[15px]" type="email" placeholder="ornek@email.com" />
+                {!user ? (
+                  showEmailVerification ? (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Mail className="w-8 h-8 text-green-600" />
                       </div>
-                      <div>
-                        <label className="text-sm font-semibold text-foreground mb-2 block">Şifre</label>
-                        <Input className="h-12 text-[15px]" type="password" placeholder="En az 8 karakter" />
-                      </div>
-                      {authMode === "register" && (
-                        <div>
-                          <label className="text-sm font-semibold text-foreground mb-2 block">Telefon</label>
-                          <Input className="h-12 text-[15px]" type="tel" placeholder="+90 5XX XXX XX XX" />
-                        </div>
-                      )}
+                      <h2 className="text-2xl font-extrabold text-navy-dark mb-4">E-postanızı Kontrol Edin</h2>
+                      <p className="text-muted-foreground mb-8">
+                        Kayıt işlemini tamamlamak için <strong>{email}</strong> adresine gönderdiğimiz doğrulama bağlantısına tıklayın.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Doğruladıktan sonra <button onClick={() => setAuthMode("login")} className="text-accent font-semibold hover:underline">Giriş Yapın</button> ve başvurunuza devam edin.
+                      </p>
                     </div>
+                  ) : (
+                    <>
+                      <h2 className="text-xl font-extrabold text-navy-dark mb-2">
+                        {authMode === "register" ? "Hesap Oluşturun" : "Giriş Yapın"}
+                      </h2>
+                      <p className="text-[15px] text-muted-foreground mb-8">
+                        {authMode === "register"
+                          ? "Başvurunuzu takip edebilmek ve belgelerinizi güvenle yükleyebilmek için hesap oluşturun."
+                          : "Mevcut hesabınızla giriş yapın."}
+                      </p>
 
-                    <Button
-                      className="w-full btn-gradient text-white font-bold h-14 text-base rounded-xl mt-8"
-                      onClick={() => setIsLoggedIn(true)}
-                    >
-                      {authMode === "register" ? (
-                        <><User size={18} className="mr-2" /> Hesap Oluştur ve Ödemeye Geç</>
-                      ) : (
-                        <><LogIn size={18} className="mr-2" /> Giriş Yap ve Ödemeye Geç</>
-                      )}
-                    </Button>
+                      <div className="space-y-5">
+                        {authMode === "register" && (
+                          <div>
+                            <label className="text-sm font-semibold text-foreground mb-1 block">Ad Soyad</label>
+                            <Input className="h-12 text-[15px]" placeholder="Adınız Soyadınız" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                          </div>
+                        )}
+                        <div>
+                          <label className="text-sm font-semibold text-foreground mb-1 block">E-posta</label>
+                          <Input className="h-12 text-[15px]" type="email" placeholder="ornek@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                        </div>
+                        <div>
+                          <label className="text-sm font-semibold text-foreground mb-1 block">Şifre</label>
+                          <Input className="h-12 text-[15px]" type="password" placeholder="En az 8 karakter" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                        </div>
+                        {authMode === "register" && (
+                          <>
+                            <div>
+                              <label className="text-sm font-semibold text-foreground mb-1 block">Şifre Tekrar</label>
+                              <Input className="h-12 text-[15px]" type="password" placeholder="Şifrenizi doğrulayın" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                            </div>
+                            <div>
+                              <label className="text-sm font-semibold text-foreground mb-1 block">Telefon</label>
+                              <Input className="h-12 text-[15px]" type="tel" placeholder="+90 5XX XXX XX XX" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                            </div>
+                          </>
+                        )}
+                      </div>
 
-                    <p className="text-center text-sm text-muted-foreground mt-5">
-                      {authMode === "register" ? (
-                        <>Zaten hesabınız var mı? <button onClick={() => setAuthMode("login")} className="text-[#00D69E] font-semibold hover:underline">Giriş Yapın</button></>
-                      ) : (
-                        <>Hesabınız yok mu? <button onClick={() => setAuthMode("register")} className="text-[#00D69E] font-semibold hover:underline">Üye Olun</button></>
-                      )}
-                    </p>
-                  </>
+                      <Button
+                        className="w-full btn-gradient text-white font-bold h-14 text-base rounded-xl mt-8"
+                        onClick={handleAuthSubmit}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <Loader2 size={18} className="mr-2 animate-spin" />
+                        ) : authMode === "register" ? (
+                          <><User size={18} className="mr-2" /> Hesap Oluştur ve Ödemeye Geç</>
+                        ) : (
+                          <><LogIn size={18} className="mr-2" /> Giriş Yap ve Ödemeye Geç</>
+                        )}
+                      </Button>
+
+                      <p className="text-center text-sm text-muted-foreground mt-5">
+                        {authMode === "register" ? (
+                          <>Zaten hesabınız var mı? <button onClick={() => setAuthMode("login")} className="text-[#00D69E] font-semibold hover:underline">Giriş Yapın</button></>
+                        ) : (
+                          <>Hesabınız yok mu? <button onClick={() => setAuthMode("register")} className="text-[#00D69E] font-semibold hover:underline">Üye Olun</button></>
+                        )}
+                      </p>
+                    </>
+                  )
                 ) : (
                   <>
                     <h2 className="text-xl font-extrabold text-navy-dark mb-8">Ödeme Bilgileri</h2>
@@ -558,7 +628,13 @@ export default function Apply() {
                 )}
 
                 <div className="mt-6 flex gap-3">
-                  <Button variant="outline" className="font-semibold h-12 rounded-xl" onClick={() => { setStep(2); setIsLoggedIn(false); }}>
+                  <Button variant="outline" className="font-semibold h-12 rounded-xl" onClick={() => {
+                    // If user is logged in, going back might need to log them out if they want to switch accounts?
+                    // Or just go back to step 2.
+                    // The user said "login yapılmış olduktan sonra vizeni al diyince login istiyor".
+                    // So we keep them logged in.
+                    setStep(2);
+                  }}>
                     Geri
                   </Button>
                 </div>
