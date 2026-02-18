@@ -1,45 +1,125 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, type LucideIcon,
+  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-
-const applications = [
-  { id: "VP-A1B2", destination: "Fransa", type: "Schengen Turist", status: "İnceleniyor", advisor: "Zeynep Kaya", date: "10 Şubat 2026" },
-  { id: "VP-X9Z8", destination: "İngiltere", type: "Standart Ziyaretçi", status: "İşlem Gerekli", advisor: "Emre Aksoy", date: "25 Ocak 2026" },
-];
-
-const notifications = [
-  { text: "Fransa vize başvurunuzun belgeleri incelendi.", time: "2 saat önce", type: "info" },
-  { text: "İşlem gerekli: Lütfen İngiltere başvurunuz için güncel banka hesap özeti yükleyin.", time: "1 gün önce", type: "warning" },
-  { text: "VisaPath'e hoş geldiniz! Hesabınız başarıyla oluşturuldu.", time: "3 gün önce", type: "success" },
-];
 
 const statusIcons: Record<string, LucideIcon> = {
   "İnceleniyor": Clock,
   "Onaylandı": CheckCircle,
   "İşlem Gerekli": AlertCircle,
+  "Alındı": Clock,
+  "Gönderildi": Clock,
+  "Reddedildi": AlertCircle,
 };
 
 const statusColors: Record<string, string> = {
   "İnceleniyor": "bg-gold/10 text-gold-dark",
   "Onaylandı": "bg-success/10 text-success",
   "İşlem Gerekli": "bg-orange-500/10 text-orange-700",
+  "Alındı": "bg-muted text-muted-foreground",
+  "Gönderildi": "bg-blue-500/10 text-blue-700",
+  "Reddedildi": "bg-destructive/10 text-destructive",
 };
+
+interface AppWithAdvisor {
+  id: string;
+  reference_id: string;
+  destination: string;
+  visa_type: string;
+  plan: string;
+  status: string;
+  travel_date: string | null;
+  created_at: string;
+  advisorName: string | null;
+}
 
 export default function Dashboard() {
   const { user, profile, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const [applications, setApplications] = useState<AppWithAdvisor[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
       navigate("/login");
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchApplications();
+  }, [user]);
+
+  const fetchApplications = async () => {
+    if (!user) return;
+
+    const { data: apps } = await supabase
+      .from("applications")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (!apps || apps.length === 0) {
+      setApplications([]);
+      setDataLoading(false);
+      return;
+    }
+
+    // Get assignments for these applications
+    const appIds = apps.map((a) => a.id);
+    const { data: assignments } = await supabase
+      .from("advisor_assignments")
+      .select("application_id, advisor_id")
+      .in("application_id", appIds);
+
+    // Get advisor profiles
+    let advisorMap = new Map<string, string>();
+    if (assignments && assignments.length > 0) {
+      const advisorIds = [...new Set(assignments.map((a) => a.advisor_id))];
+      const { data: advisors } = await supabase
+        .from("advisors")
+        .select("id, user_id")
+        .in("id", advisorIds);
+
+      if (advisors) {
+        const userIds = advisors.map((a) => a.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", userIds);
+
+        const profileMap = new Map(profiles?.map((p) => [p.user_id, p.full_name]) ?? []);
+        advisors.forEach((adv) => {
+          advisorMap.set(adv.id, profileMap.get(adv.user_id) || "Danışman");
+        });
+      }
+    }
+
+    const assignmentMap = new Map(assignments?.map((a) => [a.application_id, a.advisor_id]) ?? []);
+
+    setApplications(
+      apps.map((app) => ({
+        id: app.id,
+        reference_id: app.reference_id,
+        destination: app.destination,
+        visa_type: app.visa_type,
+        plan: app.plan,
+        status: app.status || "Alındı",
+        travel_date: app.travel_date,
+        created_at: app.created_at,
+        advisorName: assignmentMap.has(app.id)
+          ? advisorMap.get(assignmentMap.get(app.id)!) || null
+          : null,
+      }))
+    );
+
+    setDataLoading(false);
+  };
 
   if (loading || !user) return null;
 
@@ -62,32 +142,47 @@ export default function Dashboard() {
           <div className="md:col-span-2 space-y-6">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <h2 className="font-semibold mb-4 flex items-center gap-2"><FileText size={18} /> Başvurularınız</h2>
-              <div className="space-y-4">
-                {applications.map((app) => {
-                  const StatusIcon = statusIcons[app.status] || Clock;
-                  return (
-                    <div key={app.id} className="bg-card border rounded-xl p-5">
-                      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <span className="font-mono text-xs text-muted-foreground">{app.id}</span>
-                          <h3 className="font-semibold">{app.destination} — {app.type}</h3>
+
+              {dataLoading ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="animate-spin text-muted-foreground" size={24} />
+                </div>
+              ) : applications.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground">
+                  <p>Henüz başvurunuz bulunmuyor.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {applications.map((app) => {
+                    const StatusIcon = statusIcons[app.status] || Clock;
+                    return (
+                      <div key={app.id} className="bg-card border rounded-xl p-5">
+                        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <span className="font-mono text-xs text-muted-foreground">{app.reference_id}</span>
+                            <h3 className="font-semibold">{app.destination} — {app.visa_type}</h3>
+                          </div>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[app.status] || ""}`}>
+                            <StatusIcon size={12} /> {app.status}
+                          </span>
                         </div>
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[app.status] || ""}`}>
-                          <StatusIcon size={12} /> {app.status}
-                        </span>
+                        <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <User size={14} />
+                            <span>Danışman: {app.advisorName || "Henüz atanmadı"}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(app.created_at).toLocaleDateString("tr-TR")}
+                          </span>
+                        </div>
+                        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                          <Link to="/track"><Button size="sm" variant="outline" className="text-xs">Durumu Takip Et</Button></Link>
+                        </div>
                       </div>
-                      <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-2 text-muted-foreground"><User size={14} /><span>Danışman: {app.advisor}</span></div>
-                        <span className="text-xs text-muted-foreground">{app.date}</span>
-                      </div>
-                      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                        <Link to="/track"><Button size="sm" variant="outline" className="text-xs">Durumu Takip Et</Button></Link>
-                        <Button size="sm" variant="ghost" className="text-xs"><Upload size={12} className="mr-1" /> Belge Yükle</Button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </motion.div>
 
             <Link to="/apply" className="block">
@@ -99,18 +194,6 @@ export default function Dashboard() {
 
           <div className="space-y-6">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <h2 className="font-semibold mb-4 flex items-center gap-2"><Bell size={18} /> Bildirimler</h2>
-              <div className="bg-card border rounded-xl divide-y">
-                {notifications.map((n, i) => (
-                  <div key={i} className="p-4">
-                    <p className="text-xs leading-relaxed">{n.text}</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">{n.time}</p>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
               <h2 className="font-semibold mb-4 flex items-center gap-2"><Settings size={18} /> Hesap</h2>
               <div className="bg-card border rounded-xl p-5 space-y-3">
                 <div>

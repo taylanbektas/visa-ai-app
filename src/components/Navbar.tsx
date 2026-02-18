@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import type { Locale } from "@/i18n/translations";
 
 const navLinks = [
@@ -42,6 +43,7 @@ export function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { locale, setLocale, t } = useLanguage();
   const { user, profile, signOut, loading } = useAuth();
+  const { getPanelPath } = useUserRole();
   const location = useLocation();
   const navigate = useNavigate();
   const helpRef = useRef<HTMLDivElement>(null);
@@ -251,7 +253,7 @@ export function Navbar() {
                         className="absolute right-0 top-full z-50 mt-2 w-52 rounded-xl border border-border bg-white py-2 shadow-lg"
                       >
                         <Link
-                          to="/dashboard"
+                          to={getPanelPath()}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-colors hover:bg-secondary hover:text-accent"
                         >
                           <LayoutDashboard size={16} /> Panelim
@@ -386,7 +388,7 @@ export function Navbar() {
                   <div className="space-y-3">
                     <p className="text-sm font-semibold text-foreground">{displayName}</p>
                     <Link
-                      to="/dashboard"
+                      to={getPanelPath()}
                       className="block rounded-lg border border-border bg-white px-3 py-2.5 text-sm font-semibold text-foreground/80"
                     >
                       Panelim

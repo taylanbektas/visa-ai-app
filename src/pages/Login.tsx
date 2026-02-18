@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User, LogIn, Lock, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
@@ -15,6 +16,7 @@ export default function Login() {
   const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
+  const { getPanelPath, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -28,7 +30,11 @@ export default function Login() {
         toast({ title: "Giriş başarısız", description: error.message, variant: "destructive" });
       } else {
         toast({ title: "Hoş geldiniz!" });
-        navigate("/dashboard");
+        // Role-based redirect will happen after roles load
+        // Use a small delay to let role hook update
+        setTimeout(() => {
+          navigate(getPanelPath());
+        }, 500);
       }
     } else {
       if (password.length < 8) {
@@ -41,7 +47,7 @@ export default function Login() {
         toast({ title: "Kayıt başarısız", description: error.message, variant: "destructive" });
       } else {
         toast({ title: "Hesabınız oluşturuldu!", description: "Giriş yapıldı." });
-        navigate("/dashboard");
+        navigate(getPanelPath());
       }
     }
     setIsLoading(false);
