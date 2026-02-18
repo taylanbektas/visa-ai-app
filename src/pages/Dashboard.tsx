@@ -1,11 +1,13 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, type LucideIcon,
+  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, MessageSquare, type LucideIcon,
 } from "lucide-react";
+import { MessageCenter } from "@/components/MessageCenter";
 import { useAuth } from "@/hooks/useAuth";
 
 const statusIcons: Record<string, LucideIcon> = {
@@ -36,6 +38,7 @@ interface AppWithAdvisor {
   travel_date: string | null;
   created_at: string;
   advisorName: string | null;
+  advisorId: string | null;
 }
 
 export default function Dashboard() {
@@ -78,7 +81,9 @@ export default function Dashboard() {
       .in("application_id", appIds);
 
     // Get advisor profiles
-    let advisorMap = new Map<string, string>();
+    let advisorMap = new Map<string, string>(); // advisor.id -> advisor name
+    let advisorUserMap = new Map<string, string>(); // advisor.id -> advisor.user_id (for messaging)
+
     if (assignments && assignments.length > 0) {
       const advisorIds = [...new Set(assignments.map((a) => a.advisor_id))];
       const { data: advisors } = await supabase
@@ -96,6 +101,7 @@ export default function Dashboard() {
         const profileMap = new Map(profiles?.map((p) => [p.user_id, p.full_name]) ?? []);
         advisors.forEach((adv) => {
           advisorMap.set(adv.id, profileMap.get(adv.user_id) || "Danışman");
+          advisorUserMap.set(adv.id, adv.user_id);
         });
       }
     }
@@ -103,19 +109,21 @@ export default function Dashboard() {
     const assignmentMap = new Map(assignments?.map((a) => [a.application_id, a.advisor_id]) ?? []);
 
     setApplications(
-      apps.map((app) => ({
-        id: app.id,
-        reference_id: app.reference_id,
-        destination: app.destination,
-        visa_type: app.visa_type,
-        plan: app.plan,
-        status: app.status || "Alındı",
-        travel_date: app.travel_date,
-        created_at: app.created_at,
-        advisorName: assignmentMap.has(app.id)
-          ? advisorMap.get(assignmentMap.get(app.id)!) || null
-          : null,
-      }))
+      apps.map((app) => {
+        const advisorId = assignmentMap.get(app.id);
+        return {
+          id: app.id,
+          reference_id: app.reference_id,
+          destination: app.destination,
+          visa_type: app.visa_type,
+          plan: app.plan,
+          status: app.status || "Alındı",
+          travel_date: app.travel_date,
+          created_at: app.created_at,
+          advisorName: advisorId ? advisorMap.get(advisorId) || null : null,
+          advisorId: advisorId ? advisorUserMap.get(advisorId) || null : null,
+        }
+      })
     );
 
     setDataLoading(false);
@@ -140,6 +148,25 @@ export default function Dashboard() {
 
         <div className="grid gap-6 md:grid-cols-3">
           <div className="md:col-span-2 space-y-6">
+
+            {/* Messages Section - NEW */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <h2 className="font-semibold mb-4 flex items-center gap-2"><MessageSquare size={18} /> Mesajlarınız</h2>
+              <div className="h-[400px] bg-white rounded-xl border shadow-sm overflow-hidden">
+                {applications.length > 0 && (applications[0].advisorId || applications[0].advisorName) ? (
+                  <MessageCenter
+                    currentUserId={user!.id}
+                    targetUserId={applications[0].advisorId || "placeholder"}
+                    targetUserName={applications[0].advisorName || "Danışman"}
+                  />
+                ) : (
+                  <div className="h-full flex items-center justify-center text-center p-6 text-muted-foreground">
+                    <p>Henüz atanmış bir danışmanınız yok. Başvurunuz incelendiğinde danışman atanacaktır.</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <h2 className="font-semibold mb-4 flex items-center gap-2"><FileText size={18} /> Başvurularınız</h2>
 

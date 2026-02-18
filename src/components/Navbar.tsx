@@ -110,15 +110,18 @@ export function Navbar() {
 
   return (
     <nav
-      className={`fixed left-0 right-0 top-0 z-50 pt-[env(safe-area-inset-top,0px)] transition-all duration-300 ${
-        scrolled ? "border-b border-border/60 bg-white/95 shadow-sm backdrop-blur-md" : "bg-transparent"
-      }`}
+      className={`fixed left-0 right-0 top-0 z-50 pt-[env(safe-area-inset-top,0px)] transition-all duration-300 ${scrolled ? "border-b border-border/60 bg-white/95 shadow-sm backdrop-blur-md" : "bg-transparent"
+        }`}
       role="navigation"
       aria-label="Ana navigasyon"
     >
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex h-16 items-center justify-between md:h-20">
-          <Link to="/" className="flex items-center gap-2.5">
+          <Link
+            to="/"
+            className="flex items-center gap-2.5"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          >
             <span className="text-2xl md:text-3xl">✈️</span>
             <span className="text-xl font-extrabold tracking-tight md:text-2xl">
               <span className="text-navy-dark">Visa</span>
@@ -131,9 +134,11 @@ export function Navbar() {
               <Link
                 key={link.to}
                 to={link.to}
-                className={`text-lg font-bold transition-colors hover:text-accent ${
-                  isLinkActive(link.to) ? "text-accent" : "text-foreground/90"
-                }`}
+                className={`text-lg font-bold transition-colors hover:text-accent ${isLinkActive(link.to) ? "text-accent" : "text-foreground/90"
+                  }`}
+                onClick={() => {
+                  if (link.to === "/") window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
               >
                 {t(link.labelKey)}
               </Link>
@@ -221,9 +226,8 @@ export function Navbar() {
                           setLocale(lang.code as Locale);
                           setLangOpen(false);
                         }}
-                        className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-secondary ${
-                          locale === lang.code ? "font-semibold text-accent" : "text-foreground/80"
-                        }`}
+                        className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-secondary ${locale === lang.code ? "font-semibold text-accent" : "text-foreground/80"
+                          }`}
                       >
                         <span className="text-lg">{lang.flag}</span> {lang.label}
                       </button>
@@ -315,22 +319,20 @@ export function Navbar() {
                   <Link
                     key={link.to}
                     to={link.to}
-                    className={`block rounded-xl border px-4 py-3 text-base font-semibold transition-colors ${
-                      isLinkActive(link.to)
-                        ? "border-accent/30 bg-accent/5 text-accent"
-                        : "border-border text-foreground/80 hover:bg-secondary"
-                    }`}
+                    className={`block rounded-xl border px-4 py-3 text-base font-semibold transition-colors ${isLinkActive(link.to)
+                      ? "border-accent/30 bg-accent/5 text-accent"
+                      : "border-border text-foreground/80 hover:bg-secondary"
+                      }`}
                   >
                     {t(link.labelKey)}
                   </Link>
                 ))}
                 <Link
                   to="/track"
-                  className={`block rounded-xl border px-4 py-3 text-base font-semibold transition-colors ${
-                    isLinkActive("/track")
-                      ? "border-accent/30 bg-accent/5 text-accent"
-                      : "border-border text-foreground/80 hover:bg-secondary"
-                  }`}
+                  className={`block rounded-xl border px-4 py-3 text-base font-semibold transition-colors ${isLinkActive("/track")
+                    ? "border-accent/30 bg-accent/5 text-accent"
+                    : "border-border text-foreground/80 hover:bg-secondary"
+                    }`}
                 >
                   {t("nav.track")}
                 </Link>
@@ -371,11 +373,10 @@ export function Navbar() {
                     <button
                       key={lang.code}
                       onClick={() => setLocale(lang.code as Locale)}
-                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-semibold ${
-                        locale === lang.code
-                          ? "border-accent/30 bg-accent/5 text-accent"
-                          : "border-border text-foreground/70"
-                      }`}
+                      className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-sm font-semibold ${locale === lang.code
+                        ? "border-accent/30 bg-accent/5 text-accent"
+                        : "border-border text-foreground/70"
+                        }`}
                     >
                       {lang.flag} {lang.label}
                     </button>

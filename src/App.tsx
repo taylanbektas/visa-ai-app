@@ -20,6 +20,7 @@ import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import AdvisorPanel from "./pages/AdvisorPanel";
+import AdvisorProfile from "./pages/AdvisorProfile";
 import Login from "./pages/Login";
 import JoinAdvisor from "./pages/JoinAdvisor";
 import Contact from "./pages/Contact";
@@ -38,6 +39,15 @@ function ScrollToTop() {
   return null;
 }
 
+const PublicLayout = ({ children }: { children: React.ReactNode }) => (
+  <>
+    <Navbar />
+    {children}
+    <Footer />
+    {/* <AIChatBot /> */}
+  </>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -53,28 +63,126 @@ const App = () => (
             >
               Ana içeriğe geç
             </a>
-            <Navbar />
             <Routes>
-              <Route path="/" element={<Index />} />
-              {/* <Route path="/visa-checker" element={<VisaChecker />} /> */}
-              <Route path="/apply" element={<Apply />} />
-              <Route path="/track" element={<Track />} />
-              <Route path="/learn" element={<Learn />} />
-              {/* <Route path="/learn/:id" element={<ArticlePage />} /> */}
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              {/* Public Routes with Navbar & Footer */}
+              <Route
+                path="/"
+                element={
+                  <PublicLayout>
+                    <Index />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/apply"
+                element={
+                  <PublicLayout>
+                    <Apply />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/track"
+                element={
+                  <PublicLayout>
+                    <Track />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/learn"
+                element={
+                  <PublicLayout>
+                    <Learn />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/pricing"
+                element={
+                  <PublicLayout>
+                    <Pricing />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/login"
+                element={
+                  <PublicLayout>
+                    <Login />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/contact"
+                element={
+                  <PublicLayout>
+                    <Contact />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/join-advisor"
+                element={
+                  <PublicLayout>
+                    <JoinAdvisor />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/privacy"
+                element={
+                  <PublicLayout>
+                    <Privacy />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/terms"
+                element={
+                  <PublicLayout>
+                    <Terms />
+                  </PublicLayout>
+                }
+              />
+
+              {/* Dashboard Layout (Usually has its own nav or uses public one? Assuming public for now based on user request "navbar ile iç içe durumda" implying admin shouldn't have it, but dashboard might) */}
+              {/* User didn't explicitly say remove from Dashboard, but usually Dashboards have their own. For now, I'll keep Dashboard in PublicLayout as it was sharing it, but Admin/Advisor will have their own. */}
+              {/* Actually, user said "admin panel navbar ile iç içe durumda bunu düzelt". So Admin/Advisor should NOT have it. Dashboard? Let's keep it in Public for now or give it a simple wrapper. The user complaint was specific to Admin Panel nesting. */}
+
+              <Route
+                path="/dashboard"
+                element={
+                  <PublicLayout>
+                    <Dashboard />
+                  </PublicLayout>
+                }
+              />
+
+              {/* Admin & Advisor Routes - NO Public Navbar/Footer */}
               <Route path="/admin" element={<Admin />} />
               <Route path="/advisor" element={<AdvisorPanel />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/join-advisor" element={<JoinAdvisor />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="*" element={<NotFound />} />
+
+              <Route
+                path="/advisor-profile/:id"
+                element={
+                  <PublicLayout>
+                    <AdvisorProfile />
+                  </PublicLayout>
+                }
+              />
+
+              {/* 404 */}
+              <Route
+                path="*"
+                element={
+                  <PublicLayout>
+                    <NotFound />
+                  </PublicLayout>
+                }
+              />
             </Routes>
-            <Footer />
             <MobileBottomNav />
-            {/* <AIChatBot /> */}
           </LanguageProvider>
         </AuthProvider>
       </BrowserRouter>
