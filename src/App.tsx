@@ -19,6 +19,7 @@ import ArticlePage from "./pages/ArticlePage";
 import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
+import AdvisorPanel from "./pages/AdvisorPanel";
 import Login from "./pages/Login";
 import Contact from "./pages/Contact";
 
@@ -63,6 +64,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/advisor" element={<AdvisorPanel />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />

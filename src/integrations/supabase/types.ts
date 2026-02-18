@@ -14,6 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
+      advisor_assignments: {
+        Row: {
+          advisor_id: string
+          application_id: string
+          assigned_at: string | null
+          assigned_by: string | null
+          id: string
+        }
+        Insert: {
+          advisor_id: string
+          application_id: string
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+        }
+        Update: {
+          advisor_id?: string
+          application_id?: string
+          assigned_at?: string | null
+          assigned_by?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_assignments_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_assignments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: true
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advisors: {
+        Row: {
+          bio: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          max_clients: number | null
+          specializations: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_clients?: number | null
+          specializations?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_clients?: number | null
+          specializations?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      applications: {
+        Row: {
+          created_at: string | null
+          destination: string
+          id: string
+          notes: string | null
+          plan: string
+          reference_id: string
+          status: string | null
+          travel_date: string | null
+          updated_at: string | null
+          user_id: string
+          visa_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          destination: string
+          id?: string
+          notes?: string | null
+          plan: string
+          reference_id: string
+          status?: string | null
+          travel_date?: string | null
+          updated_at?: string | null
+          user_id: string
+          visa_type: string
+        }
+        Update: {
+          created_at?: string | null
+          destination?: string
+          id?: string
+          notes?: string | null
+          plan?: string
+          reference_id?: string
+          status?: string | null
+          travel_date?: string | null
+          updated_at?: string | null
+          user_id?: string
+          visa_type?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
