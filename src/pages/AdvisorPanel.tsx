@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -21,7 +22,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Users, Eye, Clock, CheckCircle, AlertCircle, FileText, LogOut, Loader2 } from "lucide-react";
+import { Users, Eye, Clock, CheckCircle, AlertCircle, FileText, LogOut, Loader2, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const statusOptions = ["Alındı", "İnceleniyor", "Gönderildi", "Onaylandı", "Reddedildi", "İşlem Gerekli"];
@@ -54,22 +55,68 @@ export default function AdvisorPanel() {
   const { isModerator, isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
+
   const [applications, setApplications] = useState<AssignedApplication[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
 
-  useEffect(() => {
-    if (authLoading || roleLoading) return;
-    if (!user) { navigate("/login"); return; }
-    if (!isModerator && !isAdmin) { navigate("/dashboard"); return; }
-  }, [user, authLoading, roleLoading, isModerator, isAdmin, navigate]);
+  // State for non-advisors
+  const [advisorAppStatus, setAdvisorAppStatus] = useState<'none' | 'pending' | 'rejected' | 'approved'>('none');
+  const [checkingApp, setCheckingApp] = useState(true);
 
+  // Check auth
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) { navigate("/login"); return; }
+  }, [user, authLoading, navigate]);
+
+  // Main Logic Split
   useEffect(() => {
     if (!user || roleLoading) return;
-    fetchAssignedApplications();
-  }, [user, roleLoading]);
+
+    const init = async () => {
+      // 1. If active advisor (moderator/admin), load panel data
+      if (isModerator || isAdmin) {
+        setAdvisorAppStatus('approved');
+        await fetchAssignedApplications();
+        setCheckingApp(false);
+      } else {
+        // 2. If user, check if they have an advisor application
+        await checkAdvisorApplication();
+      }
+    };
+
+    init();
+  }, [user, roleLoading, isModerator, isAdmin]);
+
+  const checkAdvisorApplication = async () => {
+    if (!user) return;
+    setCheckingApp(true);
+    try {
+      const { data, error } = await supabase
+        .from('advisor_applications')
+        .select('status')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (data) {
+        setAdvisorAppStatus(data.status as any);
+      } else {
+        setAdvisorAppStatus('none');
+      }
+    } catch (e) {
+      console.error("Error checking advisor app:", e);
+      setAdvisorAppStatus('none');
+    } finally {
+      setCheckingApp(false);
+    }
+  };
 
   const fetchAssignedApplications = async () => {
+    // ... (Existing fetch logic)
     if (!user) return;
+    setDataLoading(true);
 
     // Get advisor record for current user
     const { data: advisor } = await supabase
@@ -80,7 +127,7 @@ export default function AdvisorPanel() {
 
     if (!advisor) {
       setDataLoading(false);
-      return;
+      return; // Should theoretically not happen if isModerator is true, but safe guard
     }
 
     // Get assigned application IDs
@@ -125,6 +172,7 @@ export default function AdvisorPanel() {
     setDataLoading(false);
   };
 
+  // ... (Existing updates)
   const updateStatus = async (appId: string, newStatus: string) => {
     const { error } = await supabase
       .from("applications")
@@ -157,7 +205,9 @@ export default function AdvisorPanel() {
     }
   };
 
-  if (authLoading || roleLoading || dataLoading) {
+
+  // RENDER LOADING
+  if (authLoading || roleLoading || (checkingApp && !isModerator && !isAdmin)) {
     return (
       <div className="page-shell flex items-center justify-center">
         <Loader2 className="animate-spin text-muted-foreground" size={32} />
@@ -165,6 +215,74 @@ export default function AdvisorPanel() {
     );
   }
 
+  // RENDER NON-ADVISOR VIEWS
+  if (!isModerator && !isAdmin) {
+    return (
+      <div className="page-shell section-gradient-light flex items-center justify-center py-20">
+        <div className="max-w-xl w-full mx-auto px-4">
+
+          {/* STATUS: NONE (Hasn't applied) */}
+          {advisorAppStatus === 'none' && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-xl border p-8 text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Users className="w-8 h-8 text-blue-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-navy-dark mb-4">Danışman Paneline Erişim</h1>
+              <p className="text-muted-foreground mb-8">
+                Bu alana sadece onaylı vize danışmanları erişebilir. Siz de danışman ağımıza katılmak ve gelir elde etmek ister misiniz?
+              </p>
+              <div className="flex flex-col gap-3">
+                <Button onClick={() => navigate("/join-advisor")} className="btn-gradient text-white h-12 text-base w-full">
+                  Danışmanlık Başvurusu Yap <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/dashboard")} className="h-12 w-full">
+                  Ana Sayfaya Dön
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* STATUS: PENDING */}
+          {advisorAppStatus === 'pending' && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-xl border p-8 text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Clock className="w-8 h-8 text-yellow-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-navy-dark mb-4">Başvurunuz İnceleniyor</h1>
+              <p className="text-muted-foreground mb-8">
+                Danışmanlık başvurunuz başarıyla alındı ve ekibimiz tarafından inceleniyor. Sonuçlandığında size e-posta ile bilgi vereceğiz.
+              </p>
+              <Button variant="outline" onClick={() => navigate("/dashboard")} className="h-12 w-full">
+                Ana Sayfaya Dön
+              </Button>
+            </motion.div>
+          )}
+
+          {/* STATUS: REJECTED */}
+          {advisorAppStatus === 'rejected' && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-xl border p-8 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertCircle className="w-8 h-8 text-red-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-navy-dark mb-4">Başvurunuz Onaylanmadı</h1>
+              <p className="text-muted-foreground mb-8">
+                Maalesef danışmanlık başvurunuz şu an için kabul edilemedi. Detaylı bilgi için destek ekibimizle iletişime geçebilirsiniz.
+              </p>
+              <Button variant="outline" onClick={() => navigate("/contact")} className="h-12 w-full mb-3">
+                Destek ile İletişime Geç
+              </Button>
+              <Button variant="ghost" onClick={() => navigate("/dashboard")} className="h-12 w-full">
+                Ana Sayfaya Dön
+              </Button>
+            </motion.div>
+          )}
+
+        </div>
+      </div>
+    );
+  }
+
+  // RENDER ADVISOR PANEL (Existing UI)
   return (
     <div className="page-shell">
       <div className="container mx-auto px-4 md:px-6 max-w-5xl">
@@ -198,6 +316,7 @@ export default function AdvisorPanel() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
               >
+                {/* ... existing card content ... */}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-3">
                   <div>
                     <span className="font-mono text-xs text-muted-foreground">{app.reference_id}</span>
