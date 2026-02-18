@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, MessageSquare, type LucideIcon,
+  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, MessageSquare, Briefcase, type LucideIcon,
 } from "lucide-react";
 import { MessageCenter } from "@/components/MessageCenter";
 import { useAuth } from "@/hooks/useAuth";
@@ -46,6 +46,7 @@ export default function Dashboard() {
   const { user, profile, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [applications, setApplications] = useState<AppWithAdvisor[]>([]);
+  const [assignedAdvisor, setAssignedAdvisor] = useState<any>(null);
   const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
@@ -58,6 +59,38 @@ export default function Dashboard() {
     if (!user) return;
     fetchApplications();
   }, [user]);
+
+  useEffect(() => {
+    const fetchAdvisor = async () => {
+      const advisorId = (profile as any)?.assigned_advisor_id;
+      if (advisorId) {
+        // 1. Get Advisor Table Details
+        const { data: advisorData } = await supabase
+          .from('advisors')
+          .select('*')
+          .eq('id', advisorId)
+          .single();
+
+        if (advisorData) {
+          // 2. Get Advisor User Profile (for name/photo if not in advisor table)
+          const { data: userData } = await supabase
+            .from('profiles')
+            .select('full_name, avatar_url')
+            .eq('user_id', advisorData.user_id)
+            .single();
+
+          setAssignedAdvisor({
+            ...advisorData,
+            full_name: userData?.full_name || 'Danışman',
+            avatar_url: userData?.avatar_url,
+            rating: advisorData.rating || 5.0,
+            review_count: advisorData.review_count || 0
+          });
+        }
+      }
+    };
+    fetchAdvisor();
+  }, [profile]);
 
   const fetchApplications = async () => {
     if (!user) return;
@@ -85,13 +118,6 @@ export default function Dashboard() {
     let advisorMap = new Map<string, string>(); // advisor.id -> advisor name
     let advisorUserMap = new Map<string, string>(); // advisor.id -> advisor.user_id (for messaging)
     let advisorPhotoMap = new Map<string, string>(); // advisor.id -> photo_url
-
-    // Also fetch advisor assignment from profiles! 
-    // The previous logic only checked applications. But we now have direct assignment in 'profiles'.
-    // Let's defer that or mix it? The user is viewing 'applications'.
-    // If we want to show the advisor assigned to the USER generally, we should check profile assignment first.
-
-    // For now, let's keep application-based logic BUT verify if we can get photo.
 
     if (assignments && assignments.length > 0) {
       const advisorIds = [...new Set(assignments.map((a) => a.advisor_id))];
@@ -171,6 +197,14 @@ export default function Dashboard() {
                     targetUserName={applications[0].advisorName || "Danışman"}
                     targetUserPhoto={applications[0].advisorPhoto}
                   />
+                ) : assignedAdvisor ? (
+                  // If we have a global advisor but no application-specific one, show messaging with global advisor
+                  <MessageCenter
+                    currentUserId={user!.id}
+                    targetUserId={assignedAdvisor.user_id}
+                    targetUserName={assignedAdvisor.full_name}
+                    targetUserPhoto={assignedAdvisor.photo_url || assignedAdvisor.avatar_url}
+                  />
                 ) : (
                   <div className="h-full flex items-center justify-center text-center p-6 text-muted-foreground">
                     <p>Henüz atanmış bir danışmanınız yok. Başvurunuz incelendiğinde danışman atanacaktır.</p>
@@ -208,7 +242,7 @@ export default function Dashboard() {
                         <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <User size={14} />
-                            <span>Danışman: {app.advisorName || "Henüz atanmadı"}</span>
+                            <span>Danışman: {app.advisorName || assignedAdvisor?.full_name || "Henüz atanmadı"}</span>
                           </div>
                           <span className="text-xs text-muted-foreground">
                             {new Date(app.created_at).toLocaleDateString("tr-TR")}
@@ -305,6 +339,57 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-6">
+
+            {/* ADVISOR CARD - NEW */}
+            {assignedAdvisor && (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                <h2 className="font-semibold mb-4 flex items-center gap-2"><Briefcase size={18} /> Danışmanınız</h2>
+                <div className="bg-white border rounded-xl p-6 shadow-sm relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-3 opacity-5">
+                    <Briefcase size={80} />
+                  </div>
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-20 h-20 rounded-full bg-gray-100 mb-4 overflow-hidden border-2 border-white shadow-md">
+                      {assignedAdvisor.photo_url || assignedAdvisor.avatar_url ? (
+                        <img src={assignedAdvisor.photo_url || assignedAdvisor.avatar_url} alt={assignedAdvisor.full_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <User size={32} />
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="font-bold text-lg text-navy-dark">{assignedAdvisor.full_name}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">Vize Uzmanı</p>
+
+                    <div className="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-full text-yellow-700 text-sm font-medium mb-4">
+                      <span>★</span>
+                      <span>{assignedAdvisor.rating?.toFixed(1) || "5.0"}</span>
+                      <span className="text-yellow-700/60 text-xs">({assignedAdvisor.review_count || 12} değerlendirme)</span>
+                    </div>
+
+                    <div className="w-full grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-4">
+                      <div className="bg-slate-50 p-2 rounded">
+                        <span className="block font-bold text-slate-700">60dk</span>
+                        Ort. Yanıt
+                      </div>
+                      <div className="bg-slate-50 p-2 rounded">
+                        <span className="block font-bold text-slate-700">%98</span>
+                        Başarı
+                      </div>
+                    </div>
+
+                    <Button className="w-full bg-navy hover:bg-navy-light text-white" size="sm" onClick={() => {
+                      // Scroll to messages or open chat
+                      // For now just scroll to top where messages are
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}>
+                      <MessageSquare size={14} className="mr-2" /> Mesaj Gönder
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <h2 className="font-semibold mb-4 flex items-center gap-2"><Settings size={18} /> Hesap</h2>
               <div className="bg-card border rounded-xl p-5 space-y-3">

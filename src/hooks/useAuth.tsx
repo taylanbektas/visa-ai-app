@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  profile: { full_name: string | null; phone: string | null } | null;
+  profile: { full_name: string | null; phone: string | null; assigned_advisor_id: string | null } | null;
   signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<{ full_name: string | null; phone: string | null } | null>(null);
+  const [profile, setProfile] = useState<{ full_name: string | null; phone: string | null; assigned_advisor_id: string | null } | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, phone")
+      .select("full_name, phone, assigned_advisor_id")
       .eq("user_id", userId)
       .single();
     if (data) setProfile(data);

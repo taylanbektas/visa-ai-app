@@ -144,6 +144,8 @@ export default function Admin() {
 
   const [selectedUser, setSelectedUser] = useState<any>(null); // For assignment dialog
   const [assignmentOpen, setAssignmentOpen] = useState(false);
+  const [selectedAdvisor, setSelectedAdvisor] = useState<any>(null);
+  const [editAdvisorOpen, setEditAdvisorOpen] = useState(false);
 
   useEffect(() => {
     if (authLoading || roleLoading) return;
@@ -169,33 +171,57 @@ export default function Admin() {
       .order("created_at", { ascending: false });
 
     if (apps) {
-      setApplications(apps as any[]); // Casting for simplicity if types mismatch
+      setApplications(apps as any[]);
       setStats(prev => ({ ...prev, totalApplications: apps.length, pendingReview: apps.filter(a => a.status === 'pending_review').length }));
     }
 
-    // 2. Fetch Advisors (mock for now or from DB if table exists/populated)
-    // For now, let's just count users with moderator role
-    // This part in previous code WAS fetching users and checking roles.
+    // 2. Fetch Active Advisors (Real Table)
+    const { data: realAdvisors } = await supabase
+      .from("advisors")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    let advisorMap = new Map();
+
+    if (realAdvisors && realAdvisors.length > 0) {
+      const userIds = realAdvisors.map(a => a.user_id);
+      const { data: advProfiles } = await supabase.from('profiles').select('user_id, full_name, phone, email').in('user_id', userIds);
+
+      const mergedAdvisors = realAdvisors.map(adv => {
+        const p = advProfiles?.find(p => p.user_id === adv.user_id);
+        const fullAdvisor = {
+          ...adv,
+          full_name: p?.full_name || 'Danışman',
+          email: p?.email || adv.email || '-',
+          phone: p?.phone || adv.phone || '-',
+          status: adv.is_active ? 'Aktif' : 'Pasif',
+          active_applications: 0 // calc later if needed
+        };
+        advisorMap.set(adv.id, fullAdvisor);
+        return fullAdvisor;
+      });
+      setActiveAdvisorsList(mergedAdvisors as any);
+      setStats(prev => ({ ...prev, activeAdvisors: mergedAdvisors.filter(a => a.is_active).length }));
+    } else {
+      setActiveAdvisorsList([]);
+    }
 
     // 3. Fetch Users (Profiles)
     const { data: profiles } = await supabase
       .from("profiles")
-      .select(`
-        *,
-        advisor:advisors!profiles_assigned_advisor_id_fkey(
-           id, 
-           user_id
-        )
-      `)
+      .select("*")
       .order("created_at", { ascending: false });
 
     if (profiles) {
-      // Need to fetchadvisor names separately or via join if relations set up perfectly
-      // For now, let's just get the users list.
-      // To get advisor details, we might need a join. 
-      // The types might be tricky with the new relation if not fully generated.
-      // Let's rely on the raw data for now.
-      setUsersList(profiles as any);
+      // Map advisor details to users
+      const usersWithAdvisors = profiles.map((p: any) => {
+        if (p.assigned_advisor_id && advisorMap.has(p.assigned_advisor_id)) {
+          return { ...p, advisor: advisorMap.get(p.assigned_advisor_id) };
+        }
+        return p;
+      });
+
+      setUsersList(usersWithAdvisors);
       setStats(prev => ({ ...prev, totalUsers: profiles.length }));
     }
 
@@ -209,38 +235,8 @@ export default function Admin() {
       setAdvisorApplications(advApps as unknown as AdvisorApplication[]);
     }
 
-    // 4. Fetch Active Advisors (Real Table)
-    const { data: realAdvisors } = await supabase
-      .from("advisors")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    // We need their names from profiles
-    if (realAdvisors && realAdvisors.length > 0) {
-      const userIds = realAdvisors.map(a => a.user_id);
-      const { data: advProfiles } = await supabase.from('profiles').select('user_id, full_name, phone, email').in('user_id', userIds);
-
-      const mergedAdvisors = realAdvisors.map(adv => {
-        const p = advProfiles?.find(p => p.user_id === adv.user_id);
-        return {
-          ...adv,
-          full_name: p?.full_name || 'Danışman',
-          email: p?.email || adv.email || '-',
-          phone: p?.phone || adv.phone || '-',
-          status: adv.is_active ? 'Aktif' : 'Pasif',
-          active_applications: 0 // calc later if needed
-        };
-      });
-      setActiveAdvisorsList(mergedAdvisors as any);
-      setStats(prev => ({ ...prev, activeAdvisors: mergedAdvisors.filter(a => a.is_active).length }));
-    } else {
-      setActiveAdvisorsList([]);
-    }
-
     setLoadingApps(false);
   };
-
-
 
   const handleAssignAdvisor = async (userId: string, advisorId: string) => {
     const { error } = await supabase
@@ -257,24 +253,30 @@ export default function Admin() {
     }
   };
 
+  const handleUpdateAdvisorStatus = async (advisorId: string, isActive: boolean) => {
+    const { error } = await supabase
+      .from('advisors')
+      .update({ is_active: isActive })
+      .eq('id', advisorId);
+
+    if (error) {
+      toast({ title: "Hata", description: "Güncelleme başarısız: " + error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Başarılı", description: "Danışman durumu güncellendi." });
+      setEditAdvisorOpen(false);
+      fetchData();
+    }
+  };
+
   const generateDummyData = async () => {
-    // Dummy Applications
     const dummyApps = [
       { applicant_name: "Ahmet Yılmaz", passport_type: "TR", destination_country: "Almanya", visa_type: "Turistik", status: "pending_review", created_at: new Date().toISOString() },
       { applicant_name: "Ayşe Kaya", passport_type: "TR", destination_country: "Fransa", visa_type: "Ogrenci", status: "pending_documents", created_at: new Date(Date.now() - 86400000).toISOString() },
       { applicant_name: "Mehmet Demir", passport_type: "TR", destination_country: "İtalya", visa_type: "Ticari", status: "completed", created_at: new Date(Date.now() - 172800000).toISOString() },
     ];
 
-    // We can't insert into 'applications' table if it doesn't match schema exactly or if RLS blocks. 
-    // But user asked for dummy data for VIEWING. 
-    // Since we are mocking the view in some places, let's just set state for visual confirmation if DB insert is hard.
-    // However, user said "dummy örnek veriler ekle onları sileriz sonra".
-    // I will try to insert if the table exists, otherwise I'll just update local state for demo.
-
-    // Local state update for demo purposes as requested
     setApplications(dummyApps.map((a, i) => ({ ...a, id: `mock-${i}` } as any)));
 
-    // Dummy Advisor Apps
     const dummyAdvApps = [
       { id: 'mock-adv-1', full_name: 'Canan Uzman', email: 'canan@example.com', phone: '5559998877', status: 'pending', created_at: new Date().toISOString(), bio: '5 yıllık deneyim', linkedin_url: '#', resume_url: '#' },
       { id: 'mock-adv-2', full_name: 'Burak Danışman', email: 'burak@example.com', phone: '5551112233', status: 'rejected', created_at: new Date(Date.now() - 100000000).toISOString(), bio: 'Yeni mezun', linkedin_url: '#', resume_url: '#' },
@@ -871,7 +873,37 @@ export default function Admin() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost">Düzenle</Button>
+                        <Sheet open={editAdvisorOpen} onOpenChange={setEditAdvisorOpen}>
+                          <SheetTrigger asChild>
+                            <Button size="sm" variant="ghost" onClick={() => { setSelectedAdvisor(adv); setEditAdvisorOpen(true); }}>Düzenle</Button>
+                          </SheetTrigger>
+                          <SheetContent>
+                            <SheetHeader>
+                              <SheetTitle>Danışman Düzenle</SheetTitle>
+                            </SheetHeader>
+                            <div className="py-6 space-y-4">
+                              <p className="text-sm text-muted-foreground">
+                                <span className="font-bold">Danışman:</span> {selectedAdvisor?.full_name}
+                              </p>
+                              <div>
+                                <label className="text-sm font-medium mb-2 block">Hesap Durumu</label>
+                                <Select
+                                  defaultValue={selectedAdvisor?.is_active ? "active" : "passive"}
+                                  onValueChange={(val) => handleUpdateAdvisorStatus(selectedAdvisor?.id, val === "active")}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="active">Aktif</SelectItem>
+                                    <SelectItem value="passive">Pasif (Gizle)</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <Button className="w-full mt-4" onClick={() => setEditAdvisorOpen(false)}>Kapat</Button>
+                            </div>
+                          </SheetContent>
+                        </Sheet>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -907,17 +939,18 @@ export default function Admin() {
                       <TableCell>{new Date(usr.created_at).toLocaleDateString('tr-TR')}</TableCell>
                       <TableCell>
                         {usr.advisor ? (
-                          <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                            Atandı (ID: {usr.advisor.id.substring(0, 6)}...)
-                          </Badge>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm text-navy-dark">{usr.advisor.full_name}</span>
+                            <span className="text-xs text-muted-foreground">ID: {usr.advisor.id.substring(0, 6)}...</span>
+                          </div>
                         ) : (
                           <span className="text-muted-foreground text-xs">Atanmadı</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Sheet>
+                        <Sheet open={assignmentOpen} onOpenChange={setAssignmentOpen}>
                           <SheetTrigger asChild>
-                            <Button size="sm" variant="outline" onClick={() => setSelectedUser(usr)}>Atama Yap</Button>
+                            <Button size="sm" variant="outline" onClick={() => { setSelectedUser(usr); setAssignmentOpen(true); }}>Atama Yap</Button>
                           </SheetTrigger>
                           <SheetContent>
                             <SheetHeader>
@@ -928,7 +961,7 @@ export default function Admin() {
                                 <span className="font-bold text-navy-dark">{selectedUser?.full_name}</span> adlı kullanıcıya danışman atayın.
                               </p>
                               <div className="space-y-2">
-                                {advisors.map(adv => (
+                                {activeAdvisorsList.map(adv => (
                                   <div key={adv.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
                                     onClick={() => handleAssignAdvisor(selectedUser?.id, adv.id)}>
                                     <div>

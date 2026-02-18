@@ -23,7 +23,14 @@ export function useUserRole() {
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id);
-      setRoles(data?.map((r) => r.role) ?? []);
+
+      let dbRoles = data?.map((r) => r.role) ?? [];
+      // Default to 'user' role if authenticated
+      if (!dbRoles.includes("admin") && !dbRoles.includes("moderator") && !dbRoles.includes("user")) {
+        dbRoles = [...dbRoles, "user"];
+      }
+
+      setRoles(dbRoles);
       setLoading(false);
     };
 
