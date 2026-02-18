@@ -20,11 +20,13 @@ type Message = {
 export function MessageCenter({
     currentUserId,
     targetUserId,
-    targetUserName
+    targetUserName,
+    targetUserPhoto
 }: {
     currentUserId: string;
     targetUserId: string;
     targetUserName?: string;
+    targetUserPhoto?: string | null;
 }) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState("");
@@ -125,12 +127,16 @@ export function MessageCenter({
         <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="p-4 border-b bg-gray-50 flex items-center gap-3">
                 <Avatar className="h-8 w-8">
-                    <AvatarImage src={`https://ui-avatars.com/api/?name=${targetUserName || 'User'}`} />
+                    <AvatarImage src={targetUserPhoto || `https://ui-avatars.com/api/?name=${targetUserName || 'User'}`} />
                     <AvatarFallback><User /></AvatarFallback>
                 </Avatar>
                 <div>
                     <h3 className="font-bold text-sm text-navy-dark">{targetUserName || "Sohbet"}</h3>
-                    <p className="text-xs text-green-600 flex items-center gap-1"><span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Çevrimiçi</p>
+                    {/* User requested to remove fake online status in Advisor page, but kept generic here? 
+                        The request "sahte çevrimiçi mesajını gösterme" was under "advisor sayfasında atanan başvurular kısmı kolpa olmasın" context. 
+                        But also "advisor sayfasında... sahte çevrimiçi mesajını gösterme".
+                        Since this component is shared, maybe we should make it optional or real.
+                        For now, removing the "Çevrimiçi" text if it's fake. */}
                 </div>
             </div>
 

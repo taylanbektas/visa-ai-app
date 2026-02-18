@@ -29,7 +29,7 @@ export function Footer() {
     {
       title: t("footer.about"),
       links: [
-        { label: t("footer.aboutUs"), to: "/about" },
+        { label: "Vizyon & Misyon", to: "/about" }, // Changed from generic About Us
         { label: "Kariyer", to: "/join-advisor" },
         { label: t("footer.privacy"), to: "/privacy" },
         { label: t("footer.terms"), to: "/terms" },

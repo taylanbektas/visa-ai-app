@@ -51,6 +51,7 @@ type Application = {
   created_at: string;
   assigned_to?: string;
   user_id: string; // Needed for messaging
+  phone?: string | null;
 };
 
 export default function AdvisorPanel() {
@@ -89,30 +90,64 @@ export default function AdvisorPanel() {
   const fetchData = async () => {
     setLoading(true);
 
-    const { data: apps, error } = await (supabase as any)
-      .from("applications")
+    // Fetch assigned users from profiles
+    const { data: assignedUsers, error } = await supabase
+      .from("profiles")
       .select("*")
-      .eq("assigned_to", user?.id || "");
+      .eq("assigned_advisor_id", user?.id);
 
-    if (apps) {
-      const typedApps = apps as any[];
-      setApplications(typedApps);
+    if (assignedUsers) {
+      // detailed info not in applications table anymore for strict separation? 
+      // User said "vize satın almamış olsa bile". So we list USERS from profiles.
+      // We map profiles to the structure we use or separate list.
+      // Let's use a new state or repurpose 'applications'.
+      // The previous code used 'applications' table. 
+      // The requirement is: "admin panelden tüm eşleşmeleri ayarlayabilmeliyim... vize satın almamış olsa bile"
+      // So Advisor should see USERS assigned to them.
+
+      const mappedApps = assignedUsers.map(p => ({
+        id: p.id,
+        applicant_name: p.full_name || 'İsimsiz',
+        passport_type: '-', // not in profile
+        destination_country: '-',
+        visa_type: '-',
+        status: 'Atandı',
+        created_at: p.created_at,
+        user_id: p.user_id,
+        phone: p.phone
+      }));
+      setApplications(mappedApps as any);
       setStats({
-        assigned: typedApps.length,
-        completed: typedApps.filter(a => a.status === 'completed').length,
-        pending: typedApps.filter(a => a.status !== 'completed' && a.status !== 'rejected').length
+        assigned: assignedUsers.length,
+        completed: 0,
+        pending: assignedUsers.length
       });
-    } else {
-      if (!error || error) {
-        const dummyApps = [
-          { id: 'adv-1', applicant_name: "Can Demo", passport_type: "TR", destination_country: "Almanya", visa_type: "Turistik", status: "pending_review", created_at: new Date().toISOString(), user_id: 'demo-user' },
-        ];
-        setApplications(dummyApps as any);
-        setStats({ assigned: 1, completed: 0, pending: 1 });
-      }
     }
 
     setLoading(false);
+  };
+
+  const handleUpdateProfile = async (e: any) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const updates = {
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      about_me: formData.get('about_me'),
+      photo_url: formData.get('photo_url'),
+    };
+
+    const { error } = await supabase
+      .from('advisors')
+      .update(updates as any)
+      .eq('user_id', user!.id);
+
+    if (error) {
+      // toast error
+      alert("Hata: " + error.message);
+    } else {
+      alert("Profil güncellendi!");
+    }
   };
 
   const handleSignOut = async () => {
@@ -242,7 +277,7 @@ export default function AdvisorPanel() {
                           <div className="text-xs text-muted-foreground">{app.visa_type}</div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{app.status}</Badge>
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">{app.status}</Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button size="sm" variant="outline" onClick={() => {
@@ -251,6 +286,11 @@ export default function AdvisorPanel() {
                           }}>
                             Mesaj At
                           </Button>
+                          {app.phone && (
+                            <Button size="sm" variant="ghost" className="ml-2" onClick={() => window.open(`tel:${app.phone}`)}>
+                              Tel
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -311,7 +351,27 @@ export default function AdvisorPanel() {
             <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-500">
               <div className="bg-white p-8 rounded-2xl shadow-sm border text-center">
                 <h2 className="text-2xl font-bold text-navy-dark">{user?.user_metadata?.full_name || 'Danışman'}</h2>
-                <p className="text-muted-foreground">Profil ayarları...</p>
+                <p className="text-muted-foreground mb-6">Profil Bilgileri</p>
+
+                <form onSubmit={handleUpdateProfile} className="space-y-4 text-left max-w-md mx-auto">
+                  <div>
+                    <label className="text-sm font-medium">Fotoğraf URL</label>
+                    <input name="photo_url" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="https://..." />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Email (İletişim)</label>
+                    <input name="email" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="contact@example.com" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Telefon</label>
+                    <input name="phone" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="+90..." />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Hakkımda</label>
+                    <textarea name="about_me" className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Danışanlarınıza kendinizi tanıtın..." />
+                  </div>
+                  <Button type="submit" className="w-full">Kaydet</Button>
+                </form>
               </div>
             </div>
           )}

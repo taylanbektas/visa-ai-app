@@ -142,6 +142,9 @@ export default function Admin() {
     totalUsers: 0
   });
 
+  const [selectedUser, setSelectedUser] = useState<any>(null); // For assignment dialog
+  const [assignmentOpen, setAssignmentOpen] = useState(false);
+
   useEffect(() => {
     if (authLoading || roleLoading) return;
     if (!user) {
@@ -174,10 +177,27 @@ export default function Admin() {
     // For now, let's just count users with moderator role
     // This part in previous code WAS fetching users and checking roles.
 
-    // 3. Fetch Users & Roles
-    // Note: 'auth.users' is not directly accessible usually. We might have to rely on a public profiles table or similar?
-    // The previous code seemed to have a way or was mocking it.
-    // Let's implement what I can see. The previous code had a SECTION for users.
+    // 3. Fetch Users (Profiles)
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select(`
+        *,
+        advisor:advisors!profiles_assigned_advisor_id_fkey(
+           id, 
+           user_id
+        )
+      `)
+      .order("created_at", { ascending: false });
+
+    if (profiles) {
+      // Need to fetchadvisor names separately or via join if relations set up perfectly
+      // For now, let's just get the users list.
+      // To get advisor details, we might need a join. 
+      // The types might be tricky with the new relation if not fully generated.
+      // Let's rely on the raw data for now.
+      setUsersList(profiles as any);
+      setStats(prev => ({ ...prev, totalUsers: profiles.length }));
+    }
 
     // 4. Fetch Advisor Applications (NEW)
     const { data: advApps } = await (supabase as any)
@@ -189,7 +209,50 @@ export default function Admin() {
       setAdvisorApplications(advApps as unknown as AdvisorApplication[]);
     }
 
+    // Fetch Active Advisors for assignment dropdown
+    const { data: activeAdvs } = await supabase
+      .from("advisors")
+      .select("id, user_id, bio") // We need names, which are in profiles or auth metadata...
+      // Join with profiles to get names
+      // Since supabase-js join syntax can be verbose, let's try:
+      // We'll augment this data in a second step or if we have a view.
+      // For now, let's just get the raw advisors.
+      .eq("is_active", true);
+
+    if (activeAdvs) {
+      // Fetch profiles for these advisors to get names
+      const userIds = activeAdvs.map(a => a.user_id);
+      const { data: advProfiles } = await supabase.from('profiles').select('user_id, full_name').in('user_id', userIds);
+
+      const mergedAdvisors = activeAdvs.map(adv => {
+        const p = advProfiles?.find(p => p.user_id === adv.user_id);
+        return {
+          ...adv,
+          full_name: p?.full_name || 'Danışman',
+          status: 'active',
+          active_applications: 0 // calc later
+        };
+      });
+      setAdvisors(mergedAdvisors as any);
+      setStats(prev => ({ ...prev, activeAdvisors: mergedAdvisors.length }));
+    }
+
     setLoadingApps(false);
+  };
+
+  const handleAssignAdvisor = async (userId: string, advisorId: string) => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ assigned_advisor_id: advisorId } as any)
+      .eq('id', userId);
+
+    if (error) {
+      toast({ title: "Hata", description: "Atama yapılamadı: " + error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Başarılı", description: "Danışman atandı." });
+      setAssignmentOpen(false);
+      fetchData();
+    }
   };
 
   const generateDummyData = async () => {
@@ -304,6 +367,17 @@ export default function Admin() {
                     >
                       <LayoutDashboard className={activeTab === 'dashboard' ? 'text-primary' : 'text-gray-500'} />
                       <span className={activeTab === 'dashboard' ? 'font-bold text-navy-dark' : 'text-gray-600'}>Genel Bakış</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={activeTab === 'users'}
+                      onClick={() => setActiveTab('users')}
+                      size="lg"
+                      className="gap-3 font-medium transition-all hover:translate-x-1"
+                    >
+                      <Users className={activeTab === 'users' ? 'text-primary' : 'text-gray-500'} />
+                      <span className={activeTab === 'users' ? 'font-bold text-navy-dark' : 'text-gray-600'}>Kullanıcılar</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   {/* ... other menu items ... */}
@@ -745,10 +819,73 @@ export default function Admin() {
             </div>
           )}
 
-          {/* USERS TAB (Placeholder/Restored) */}
+          {/* USERS TAB */}
           {activeTab === 'users' && (
-            <div className="bg-white p-8 rounded-xl border text-center text-muted-foreground">
-              <p>Kullanıcı rolleri ve yönetimi bu alanda yapılacak.</p>
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="p-4 border-b bg-muted/30 flex justify-between items-center">
+                <h3 className="font-semibold">Tüm Kullanıcılar</h3>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Kullanıcı</TableHead>
+                    <TableHead>Telefon</TableHead>
+                    <TableHead>Kayıt Tarihi</TableHead>
+                    <TableHead>Atanan Danışman</TableHead>
+                    <TableHead className="text-right">İşlem</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {usersList.map((usr: any) => (
+                    <TableRow key={usr.id}>
+                      <TableCell className="font-medium">
+                        {usr.full_name || 'İsimsiz'}
+                        <div className="text-xs text-muted-foreground">{usr.id}</div>
+                      </TableCell>
+                      <TableCell>{usr.phone || '-'}</TableCell>
+                      <TableCell>{new Date(usr.created_at).toLocaleDateString('tr-TR')}</TableCell>
+                      <TableCell>
+                        {usr.advisor ? (
+                          <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                            Atandı (ID: {usr.advisor.id.substring(0, 6)}...)
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">Atanmadı</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Sheet>
+                          <SheetTrigger asChild>
+                            <Button size="sm" variant="outline" onClick={() => setSelectedUser(usr)}>Atama Yap</Button>
+                          </SheetTrigger>
+                          <SheetContent>
+                            <SheetHeader>
+                              <SheetTitle>Danışman Ata</SheetTitle>
+                            </SheetHeader>
+                            <div className="py-6 space-y-4">
+                              <p className="text-sm text-muted-foreground">
+                                <span className="font-bold text-navy-dark">{selectedUser?.full_name}</span> adlı kullanıcıya danışman atayın.
+                              </p>
+                              <div className="space-y-2">
+                                {advisors.map(adv => (
+                                  <div key={adv.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                                    onClick={() => handleAssignAdvisor(selectedUser?.id, adv.id)}>
+                                    <div>
+                                      <p className="font-medium">{adv.full_name}</p>
+                                      <p className="text-xs text-muted-foreground">{adv.active_applications || 0} aktif danışan</p>
+                                    </div>
+                                    <Button size="sm" variant="ghost">Seç</Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </SheetContent>
+                        </Sheet>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
 

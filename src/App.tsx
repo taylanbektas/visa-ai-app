@@ -10,6 +10,7 @@ import { AIChatBot } from "@/components/AIChatBot";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import { AuthProvider } from "@/hooks/useAuth";
+import { RoleRoute } from "./components/RoleRoute"; // Fixed import
 import Index from "./pages/Index";
 // import VisaChecker from "./pages/VisaChecker";
 import Apply from "./pages/Apply";
@@ -150,27 +151,38 @@ const App = () => (
               {/* User didn't explicitly say remove from Dashboard, but usually Dashboards have their own. For now, I'll keep Dashboard in PublicLayout as it was sharing it, but Admin/Advisor will have their own. */}
               {/* Actually, user said "admin panel navbar ile iç içe durumda bunu düzelt". So Admin/Advisor should NOT have it. Dashboard? Let's keep it in Public for now or give it a simple wrapper. The user complaint was specific to Admin Panel nesting. */}
 
-              <Route
-                path="/dashboard"
-                element={
-                  <PublicLayout>
-                    <Dashboard />
-                  </PublicLayout>
-                }
-              />
 
-              {/* Admin & Advisor Routes - NO Public Navbar/Footer */}
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/advisor" element={<AdvisorPanel />} />
+              {/* Protected Dashboard Route */}
+              <Route element={<RoleRoute allowedRoles={["user", "admin", "moderator"]} />}>
+                <Route
+                  path="/dashboard"
+                  element={
+                    <PublicLayout>
+                      <Dashboard />
+                    </PublicLayout>
+                  }
+                />
+              </Route>
 
-              <Route
-                path="/advisor-profile/:id"
-                element={
-                  <PublicLayout>
-                    <AdvisorProfile />
-                  </PublicLayout>
-                }
-              />
+              {/* Admin Routes - Strict Access */}
+              <Route element={<RoleRoute allowedRoles={["admin"]} redirectTo="/dashboard" />}>
+                <Route path="/admin" element={<Admin />} />
+              </Route>
+
+              {/* Advisor Routes - Strict Access */}
+              <Route element={<RoleRoute allowedRoles={["moderator", "admin"]} redirectTo="/dashboard" />}>
+                <Route path="/advisor" element={<AdvisorPanel />} />
+                <Route
+                  path="/advisor-profile/:id"
+                  element={
+                    <PublicLayout>
+                      <AdvisorProfile />
+                    </PublicLayout>
+                  }
+                />
+              </Route>
+
+
 
               {/* 404 */}
               <Route

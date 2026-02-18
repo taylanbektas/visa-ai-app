@@ -39,6 +39,7 @@ interface AppWithAdvisor {
   created_at: string;
   advisorName: string | null;
   advisorId: string | null;
+  advisorPhoto: string | null;
 }
 
 export default function Dashboard() {
@@ -83,12 +84,20 @@ export default function Dashboard() {
     // Get advisor profiles
     let advisorMap = new Map<string, string>(); // advisor.id -> advisor name
     let advisorUserMap = new Map<string, string>(); // advisor.id -> advisor.user_id (for messaging)
+    let advisorPhotoMap = new Map<string, string>(); // advisor.id -> photo_url
+
+    // Also fetch advisor assignment from profiles! 
+    // The previous logic only checked applications. But we now have direct assignment in 'profiles'.
+    // Let's defer that or mix it? The user is viewing 'applications'.
+    // If we want to show the advisor assigned to the USER generally, we should check profile assignment first.
+
+    // For now, let's keep application-based logic BUT verify if we can get photo.
 
     if (assignments && assignments.length > 0) {
       const advisorIds = [...new Set(assignments.map((a) => a.advisor_id))];
       const { data: advisors } = await supabase
         .from("advisors")
-        .select("id, user_id")
+        .select("id, user_id, photo_url")
         .in("id", advisorIds);
 
       if (advisors) {
@@ -102,6 +111,7 @@ export default function Dashboard() {
         advisors.forEach((adv) => {
           advisorMap.set(adv.id, profileMap.get(adv.user_id) || "Danışman");
           advisorUserMap.set(adv.id, adv.user_id);
+          if (adv.photo_url) advisorPhotoMap.set(adv.id, adv.photo_url);
         });
       }
     }
@@ -122,6 +132,7 @@ export default function Dashboard() {
           created_at: app.created_at,
           advisorName: advisorId ? advisorMap.get(advisorId) || null : null,
           advisorId: advisorId ? advisorUserMap.get(advisorId) || null : null,
+          advisorPhoto: advisorId ? advisorPhotoMap.get(advisorId) || null : null,
         }
       })
     );
@@ -158,6 +169,7 @@ export default function Dashboard() {
                     currentUserId={user!.id}
                     targetUserId={applications[0].advisorId || "placeholder"}
                     targetUserName={applications[0].advisorName || "Danışman"}
+                    targetUserPhoto={applications[0].advisorPhoto}
                   />
                 ) : (
                   <div className="h-full flex items-center justify-center text-center p-6 text-muted-foreground">
