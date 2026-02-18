@@ -125,14 +125,14 @@ export default function Admin() {
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("dashboard"); // 'dashboard' | 'applications' | 'advisor-apps' | 'users'
+  const [activeTab, setActiveTab] = useState("dashboard"); // 'dashboard' | 'applications' | 'advisor-apps' | 'users' | 'advisors'
 
   // Data
   const [applications, setApplications] = useState<Application[]>([]);
   const [loadingApps, setLoadingApps] = useState(true);
-  const [advisors, setAdvisors] = useState<Advisor[]>([]);
-  const [usersList, setUsersList] = useState<UserData[]>([]);
-  const [advisorApplications, setAdvisorApplications] = useState<AdvisorApplication[]>([]);
+  const [activeAdvisorsList, setActiveAdvisorsList] = useState<Advisor[]>([]); // Real advisors from 'advisors' table
+  const [usersList, setUsersList] = useState<UserData[]>([]); // Real customers from 'profiles'
+  const [advisorApplications, setAdvisorApplications] = useState<AdvisorApplication[]>([]); // Applications to become advisor
 
   // Stats
   const [stats, setStats] = useState({
@@ -209,36 +209,38 @@ export default function Admin() {
       setAdvisorApplications(advApps as unknown as AdvisorApplication[]);
     }
 
-    // Fetch Active Advisors for assignment dropdown
-    const { data: activeAdvs } = await supabase
+    // 4. Fetch Active Advisors (Real Table)
+    const { data: realAdvisors } = await supabase
       .from("advisors")
-      .select("id, user_id, bio") // We need names, which are in profiles or auth metadata...
-      // Join with profiles to get names
-      // Since supabase-js join syntax can be verbose, let's try:
-      // We'll augment this data in a second step or if we have a view.
-      // For now, let's just get the raw advisors.
-      .eq("is_active", true);
+      .select("*")
+      .order("created_at", { ascending: false });
 
-    if (activeAdvs) {
-      // Fetch profiles for these advisors to get names
-      const userIds = activeAdvs.map(a => a.user_id);
-      const { data: advProfiles } = await supabase.from('profiles').select('user_id, full_name').in('user_id', userIds);
+    // We need their names from profiles
+    if (realAdvisors && realAdvisors.length > 0) {
+      const userIds = realAdvisors.map(a => a.user_id);
+      const { data: advProfiles } = await supabase.from('profiles').select('user_id, full_name, phone, email').in('user_id', userIds);
 
-      const mergedAdvisors = activeAdvs.map(adv => {
+      const mergedAdvisors = realAdvisors.map(adv => {
         const p = advProfiles?.find(p => p.user_id === adv.user_id);
         return {
           ...adv,
           full_name: p?.full_name || 'Danışman',
-          status: 'active',
-          active_applications: 0 // calc later
+          email: p?.email || adv.email || '-',
+          phone: p?.phone || adv.phone || '-',
+          status: adv.is_active ? 'Aktif' : 'Pasif',
+          active_applications: 0 // calc later if needed
         };
       });
-      setAdvisors(mergedAdvisors as any);
-      setStats(prev => ({ ...prev, activeAdvisors: mergedAdvisors.length }));
+      setActiveAdvisorsList(mergedAdvisors as any);
+      setStats(prev => ({ ...prev, activeAdvisors: mergedAdvisors.filter(a => a.is_active).length }));
+    } else {
+      setActiveAdvisorsList([]);
     }
 
     setLoadingApps(false);
   };
+
+
 
   const handleAssignAdvisor = async (userId: string, advisorId: string) => {
     const { error } = await supabase
@@ -377,7 +379,18 @@ export default function Admin() {
                       className="gap-3 font-medium transition-all hover:translate-x-1"
                     >
                       <Users className={activeTab === 'users' ? 'text-primary' : 'text-gray-500'} />
-                      <span className={activeTab === 'users' ? 'font-bold text-navy-dark' : 'text-gray-600'}>Kullanıcılar</span>
+                      <span className={activeTab === 'users' ? 'font-bold text-navy-dark' : 'text-gray-600'}>Müşteriler</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={activeTab === 'advisors'}
+                      onClick={() => setActiveTab('advisors')}
+                      size="lg"
+                      className="gap-3 font-medium transition-all hover:translate-x-1"
+                    >
+                      <Briefcase className={activeTab === 'advisors' ? 'text-primary' : 'text-gray-500'} />
+                      <span className={activeTab === 'advisors' ? 'font-bold text-navy-dark' : 'text-gray-600'}>Danışmanlar</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   {/* ... other menu items ... */}
@@ -816,6 +829,54 @@ export default function Admin() {
                   </TableBody>
                 </Table>
               )}
+            </div>
+          )}
+
+          {/* ADVISORS TAB */}
+          {activeTab === 'advisors' && (
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden animate-in fade-in">
+              <div className="p-4 border-b bg-muted/30 flex justify-between items-center">
+                <h3 className="font-semibold">Tüm Danışmanlar</h3>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Danışman</TableHead>
+                    <TableHead>İletişim</TableHead>
+                    <TableHead>Durum</TableHead>
+                    <TableHead>Puan</TableHead>
+                    <TableHead className="text-right">İşlem</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activeAdvisorsList.length === 0 ? (
+                    <TableRow><TableCell colSpan={5} className="text-center h-24 text-muted-foreground">Danışman bulunamadı.</TableCell></TableRow>
+                  ) : activeAdvisorsList.map((adv: any) => (
+                    <TableRow key={adv.id}>
+                      <TableCell className="font-medium">
+                        {adv.full_name}
+                        <div className="text-xs text-muted-foreground">ID: {adv.id.substring(0, 8)}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">{adv.email}</div>
+                        <div className="text-xs text-muted-foreground">{adv.phone}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={adv.is_active ? 'default' : 'secondary'}>{adv.is_active ? 'Aktif' : 'Pasif'}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <span className="font-bold">{adv.rating || '5.0'}</span>
+                          <span className="text-xs text-muted-foreground">({adv.review_count || 0})</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="ghost">Düzenle</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
 

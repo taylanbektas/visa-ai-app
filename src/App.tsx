@@ -25,6 +25,7 @@ import AdvisorProfile from "./pages/AdvisorProfile";
 import Login from "./pages/Login";
 import JoinAdvisor from "./pages/JoinAdvisor";
 import Contact from "./pages/Contact";
+import StaffLogin from "./pages/StaffLogin";
 
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -112,6 +113,12 @@ const App = () => (
                   <PublicLayout>
                     <Login />
                   </PublicLayout>
+                }
+              />
+              <Route
+                path="/staff-login"
+                element={
+                  <StaffLogin />
                 }
               />
               <Route
