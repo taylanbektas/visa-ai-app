@@ -42,6 +42,7 @@ export function Footer() {
         { label: t("footer.terms"), to: "/terms" },
         { label: t("footer.cookies"), to: "/privacy#cookies" },
         { label: t("footer.refund"), to: "/terms#refund" },
+        { label: "Yetkili Girişi", to: "/staff-login" },
       ],
     },
   ];
