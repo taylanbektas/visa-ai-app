@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -117,6 +117,7 @@ type UserData = {
   created_at: string;
   roles: ("admin" | "moderator" | "user")[];
   assigned_advisor_id?: string | null;
+  is_suspended?: boolean;
 };
 
 type AdvisorApplication = {
@@ -163,6 +164,7 @@ export default function Admin() {
   const [editAdvisorOpen, setEditAdvisorOpen] = useState(false);
   const [assignCustomerOpen, setAssignCustomerOpen] = useState(false);
   const [selectedAdvisorForCustomer, setSelectedAdvisorForCustomer] = useState<Advisor | null>(null);
+  const [expandedAdvisorId, setExpandedAdvisorId] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading || roleLoading) return;
@@ -255,7 +257,7 @@ export default function Admin() {
     setLoadingApps(false);
   };
 
-  const handleAssignAdvisor = async (userId: string, authUserId: string, advisorId: string) => {
+  const handleAssignAdvisor = async (userId: string, authUserId: string, advisorId: string | null) => {
     // Try to update profile. Use .select() to check if row was actually updated (RLS fallback detection)
     const { data: updatedProfile, error: profileError } = await supabase
       .from('profiles')
@@ -461,6 +463,32 @@ export default function Admin() {
     } catch (e: unknown) {
       console.error(e);
       toast({ title: "Hata", description: "Silme işlemi sırasında beklenmeyen bir hata oluştu.", variant: "destructive" });
+    }
+  };
+
+  const handleToggleAdvisor = (advisorId: string) => {
+    setExpandedAdvisorId(prev => prev === advisorId ? null : advisorId);
+  };
+
+  const handleSuspendCustomer = async (userId: string, currentStatus: boolean | undefined) => {
+    const newStatus = !currentStatus;
+    const { error } = await supabase.from('profiles').update({ is_suspended: newStatus } as never).eq('id', userId);
+    if (error) {
+      toast({ title: "Hata", description: "Durum güncellenemedi: " + error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Başarılı", description: newStatus ? "Müşteri askıya alındı." : "Müşteri aktifleştirildi." });
+      fetchData();
+    }
+  };
+
+  const handleDeleteCustomer = async (userId: string) => {
+    if (!window.confirm("Bu müşterinin profilini kalıcı olarak silmek istediğinize emin misiniz? (Üye girişi tamamen engellenecektir ve müşteri verileri veri tabanından silinecektir)")) return;
+    const { error } = await supabase.from('profiles').delete().eq('id', userId);
+    if (error) {
+      toast({ title: "Hata", description: "Müşteri silinemedi: " + error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Başarılı", description: "Müşteri profili silindi." });
+      fetchData();
     }
   };
 
@@ -971,76 +999,116 @@ export default function Admin() {
                   {activeAdvisorsList.length === 0 ? (
                     <TableRow><TableCell colSpan={5} className="text-center h-24 text-muted-foreground">Danışman bulunamadı.</TableCell></TableRow>
                   ) : activeAdvisorsList.map((adv: Advisor & { email?: string; phone?: string; rating?: string; review_count?: number; is_active?: boolean }) => (
-                    <TableRow key={adv.id}>
-                      <TableCell className="font-medium">
-                        {adv.full_name}
-                        <div className="text-xs text-muted-foreground">ID: {adv.id.substring(0, 8)}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">{adv.email}</div>
-                        <div className="text-xs text-muted-foreground">{adv.phone}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={adv.is_active ? 'default' : 'secondary'}>{adv.is_active ? 'Aktif' : 'Pasif'}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <span className="font-bold">{adv.rating || '5.0'}</span>
-                          <span className="text-xs text-muted-foreground">({adv.review_count || 0})</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button size="sm" variant="outline" className="mr-2" onClick={() => { setSelectedAdvisorForCustomer(adv); setAssignCustomerOpen(true); }}>Müşteri Ata</Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="destructive" className="mr-2">Sil</Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Danışmanı Sil</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Bu danışmanı veritabanından kalıcı olarak silmek istediğinize emin misiniz? Bu işlem iptal edilemez.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Vazgeç</AlertDialogCancel>
-                              <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => handleDeleteAdvisor(adv.id, adv.user_id)}>Sil</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                        <Sheet open={editAdvisorOpen} onOpenChange={setEditAdvisorOpen}>
-                          <SheetTrigger asChild>
-                            <Button size="sm" variant="ghost" onClick={() => { setSelectedAdvisor(adv); setEditAdvisorOpen(true); }}>Düzenle</Button>
-                          </SheetTrigger>
-                          <SheetContent>
-                            <SheetHeader>
-                              <SheetTitle>Danışman Düzenle</SheetTitle>
-                            </SheetHeader>
-                            <div className="py-6 space-y-4">
-                              <p className="text-sm text-muted-foreground">
-                                <span className="font-bold">Danışman:</span> {selectedAdvisor?.full_name}
-                              </p>
-                              <div>
-                                <label className="text-sm font-medium mb-2 block">Hesap Durumu</label>
-                                <Select
-                                  defaultValue={selectedAdvisor?.status === "Aktif" ? "active" : "passive"}
-                                  onValueChange={(val) => handleUpdateAdvisorStatus(selectedAdvisor?.id, val === "active")}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="active">Aktif</SelectItem>
-                                    <SelectItem value="passive">Pasif (Gizle)</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                    <Fragment key={adv.id}>
+                      <TableRow className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={(e) => {
+                        // Prevent expanding if clicking on buttons
+                        if ((e.target as HTMLElement).closest('button')) return;
+                        handleToggleAdvisor(adv.id);
+                      }}>
+                        <TableCell className="font-medium">
+                          {adv.full_name}
+                          <div className="text-xs text-muted-foreground">ID: {adv.id.substring(0, 8)}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">{adv.email}</div>
+                          <div className="text-xs text-muted-foreground">{adv.phone}</div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={adv.is_active ? 'default' : 'secondary'}>{adv.is_active ? 'Aktif' : 'Pasif'}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <span className="font-bold">{adv.rating || '5.0'}</span>
+                            <span className="text-xs text-muted-foreground">({adv.review_count || 0})</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button size="sm" variant="outline" className="mr-2" onClick={(e) => { e.stopPropagation(); setSelectedAdvisorForCustomer(adv); setAssignCustomerOpen(true); }}>Müşteri Ata</Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="destructive" className="mr-2" onClick={(e) => e.stopPropagation()}>Sil</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Danışmanı Sil</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Bu danışmanı veritabanından kalıcı olarak silmek istediğinize emin misiniz? Bu işlem iptal edilemez.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+                                <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => handleDeleteAdvisor(adv.id, adv.user_id)}>Sil</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                          <Sheet open={editAdvisorOpen} onOpenChange={setEditAdvisorOpen}>
+                            <SheetTrigger asChild>
+                              <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setSelectedAdvisor(adv); setEditAdvisorOpen(true); }}>Düzenle</Button>
+                            </SheetTrigger>
+                            <SheetContent>
+                              <SheetHeader>
+                                <SheetTitle>Danışman Düzenle</SheetTitle>
+                              </SheetHeader>
+                              <div className="py-6 space-y-4">
+                                <p className="text-sm text-muted-foreground">
+                                  <span className="font-bold">Danışman:</span> {selectedAdvisor?.full_name}
+                                </p>
+                                <div>
+                                  <label className="text-sm font-medium mb-2 block">Hesap Durumu</label>
+                                  <Select
+                                    defaultValue={selectedAdvisor?.status === "Aktif" ? "active" : "passive"}
+                                    onValueChange={(val) => handleUpdateAdvisorStatus(selectedAdvisor?.id, val === "active")}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="active">Aktif</SelectItem>
+                                      <SelectItem value="passive">Pasif (Gizle)</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <Button className="w-full mt-4" onClick={() => setEditAdvisorOpen(false)}>Kapat</Button>
                               </div>
-                              <Button className="w-full mt-4" onClick={() => setEditAdvisorOpen(false)}>Kapat</Button>
+                            </SheetContent>
+                          </Sheet>
+                        </TableCell>
+                      </TableRow>
+                      {expandedAdvisorId === adv.id && (
+                        <TableRow className="bg-slate-50 border-b-2 border-slate-200">
+                          <TableCell colSpan={5} className="p-0">
+                            <div className="p-4 px-6 relative">
+                              <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+                              <h4 className="text-sm font-bold text-navy-dark mb-3 flex items-center justify-between">
+                                Atanmış Müşteriler
+                                <Badge variant="outline" className="bg-white">{usersList.filter(u => u.assigned_advisor_id === adv.id).length} Kişi</Badge>
+                              </h4>
+                              {(() => {
+                                const assignedUsers = usersList.filter(u => u.assigned_advisor_id === adv.id);
+                                if (assignedUsers.length === 0) return <p className="text-xs text-muted-foreground bg-white border rounded-lg p-3">Henüz bir atama yapılmamış.</p>;
+                                return (
+                                  <ul className="space-y-2">
+                                    {assignedUsers.map(u => (
+                                      <li key={u.id} className="text-sm flex justify-between items-center bg-white p-3 rounded-lg border shadow-sm">
+                                        <div className="flex flex-col">
+                                          <span className="font-medium">{u.full_name}</span>
+                                          <span className="text-xs text-muted-foreground">{u.phone} • {u.email}</span>
+                                        </div>
+                                        <Button size="sm" variant="outline" className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => {
+                                          if (window.confirm(`${u.full_name} isimli müşteriyi bu danışmandan almak istediğinize emin misiniz?`)) {
+                                            handleAssignAdvisor(u.id, u.user_id, null);
+                                          }
+                                        }}>Atamayı Kaldır</Button>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                );
+                              })()}
                             </div>
-                          </SheetContent>
-                        </Sheet>
-                      </TableCell>
-                    </TableRow>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </Fragment>
                   ))}
                 </TableBody>
               </Table>
@@ -1056,20 +1124,27 @@ export default function Admin() {
                       <span className="font-bold text-navy-dark">{selectedAdvisorForCustomer?.full_name}</span> adlı danışmana müşteri atayın.
                     </p>
                     <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
-                      {usersList.map((usr: UserData & { full_name?: string }) => (
-                        <div key={usr.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                          onClick={() => {
-                            if (selectedAdvisorForCustomer && usr.id && usr.user_id) {
-                              handleAssignAdvisor(usr.id, usr.user_id, selectedAdvisorForCustomer.id);
-                            }
-                          }}>
-                          <div>
-                            <p className="font-medium">{usr.full_name || 'İsimsiz'}</p>
-                            <p className="text-xs text-muted-foreground">{usr.phone || '-'}</p>
+                      {usersList
+                        .filter(usr => !usr.assigned_advisor_id) // Sadece atanmamış müşteriler
+                        .map((usr: UserData & { full_name?: string }) => (
+                          <div key={usr.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                            onClick={() => {
+                              if (selectedAdvisorForCustomer && usr.id && usr.user_id) {
+                                handleAssignAdvisor(usr.id, usr.user_id, selectedAdvisorForCustomer.id);
+                              }
+                            }}>
+                            <div>
+                              <p className="font-medium">{usr.full_name || 'İsimsiz'}</p>
+                              <p className="text-xs text-muted-foreground">{usr.phone || '-'}</p>
+                            </div>
+                            <Button size="sm" variant="ghost">Seç</Button>
                           </div>
-                          <Button size="sm" variant="ghost">Seç</Button>
-                        </div>
-                      ))}
+                        ))}
+                      {usersList.filter(usr => !usr.assigned_advisor_id).length === 0 && (
+                        <p className="text-sm text-center text-muted-foreground mt-4 border border-dashed rounded-lg p-6">
+                          Boşta olan bir müşteri bulunmamaktadır. Tüm müşteriler zaten bir danışmana atanmış durumda.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </SheetContent>
@@ -1096,10 +1171,10 @@ export default function Admin() {
                 </TableHeader>
                 <TableBody>
                   {usersList.map((usr: UserData & { full_name?: string; phone?: string; id?: string; advisor?: Advisor }) => (
-                    <TableRow key={usr.id}>
+                    <TableRow key={usr.id} className={usr.is_suspended ? "opacity-50 line-through" : ""}>
                       <TableCell className="font-medium">
                         {usr.full_name || 'İsimsiz'}
-                        <div className="text-xs text-muted-foreground">{usr.id}</div>
+                        <div className="text-xs text-muted-foreground">ID: {usr.id}</div>
                       </TableCell>
                       <TableCell>{usr.phone || '-'}</TableCell>
                       <TableCell>{new Date(usr.created_at).toLocaleDateString('tr-TR')}</TableCell>
@@ -1114,37 +1189,56 @@ export default function Admin() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Sheet open={assignmentOpen} onOpenChange={setAssignmentOpen}>
-                          <SheetTrigger asChild>
-                            <Button size="sm" variant="outline" onClick={() => { setSelectedUser(usr); setAssignmentOpen(true); }}>Atama Yap</Button>
-                          </SheetTrigger>
-                          <SheetContent>
-                            <SheetHeader>
-                              <SheetTitle>Danışman Ata</SheetTitle>
-                            </SheetHeader>
-                            <div className="py-6 space-y-4">
-                              <p className="text-sm text-muted-foreground">
-                                <span className="font-bold text-navy-dark">{selectedUser?.full_name}</span> adlı kullanıcıya danışman atayın.
-                              </p>
-                              <div className="space-y-2">
-                                {activeAdvisorsList.map(adv => (
-                                  <div key={adv.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                                    onClick={() => {
-                                      if (selectedUser?.id && selectedUser?.user_id) {
-                                        handleAssignAdvisor(selectedUser.id, selectedUser.user_id, adv.id);
-                                      }
-                                    }}>
-                                    <div>
-                                      <p className="font-medium">{adv.full_name}</p>
-                                      <p className="text-xs text-muted-foreground">{adv.active_applications || 0} aktif danışan</p>
+                        <Button size="sm" variant="outline" className={`mr-2 ${usr.is_suspended ? 'border-orange-200 text-orange-600 hover:bg-orange-50' : 'border-slate-200'}`} onClick={() => handleSuspendCustomer(usr.id, usr.is_suspended)}>
+                          {usr.is_suspended ? "Erişimi Aç" : "Askıya Al"}
+                        </Button>
+                        <Button size="sm" variant="destructive" className="mr-2" onClick={() => handleDeleteCustomer(usr.id)}>Sil</Button>
+
+                        {!usr.is_suspended && (
+                          <Sheet open={assignmentOpen} onOpenChange={setAssignmentOpen}>
+                            <SheetTrigger asChild>
+                              <Button size="sm" variant="outline" onClick={() => { setSelectedUser(usr); setAssignmentOpen(true); }}>Atama Yap</Button>
+                            </SheetTrigger>
+                            <SheetContent>
+                              <SheetHeader>
+                                <SheetTitle>Danışman Ata</SheetTitle>
+                              </SheetHeader>
+                              <div className="py-6 space-y-4">
+                                <p className="text-sm text-muted-foreground">
+                                  <span className="font-bold text-navy-dark">{selectedUser?.full_name}</span> adlı kullanıcıya danışman atayın.
+                                </p>
+                                <div className="space-y-2">
+                                  {activeAdvisorsList.map(adv => (
+                                    <div key={adv.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                                      onClick={() => {
+                                        if (selectedUser?.id && selectedUser?.user_id) {
+                                          handleAssignAdvisor(selectedUser.id, selectedUser.user_id, adv.id);
+                                        }
+                                      }}>
+                                      <div>
+                                        <p className="font-medium">{adv.full_name}</p>
+                                        <p className="text-xs text-muted-foreground">{adv.active_applications || 0} aktif danışan</p>
+                                      </div>
+                                      <Button size="sm" variant="ghost">Seç</Button>
                                     </div>
-                                    <Button size="sm" variant="ghost">Seç</Button>
-                                  </div>
-                                ))}
+                                  ))}
+                                  {/* Unassign option if someone is already assigned */}
+                                  {selectedUser?.assigned_advisor_id && (
+                                    <div className="mt-6 pt-4 border-t">
+                                      <Button variant="destructive" className="w-full h-10" onClick={() => {
+                                        if (selectedUser.id && selectedUser.user_id) {
+                                          handleAssignAdvisor(selectedUser.id, selectedUser.user_id, null);
+                                        }
+                                      }}>
+                                        Mevcut Atamayı Kaldır
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          </SheetContent>
-                        </Sheet>
+                            </SheetContent>
+                          </Sheet>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -1154,7 +1248,7 @@ export default function Admin() {
           )}
 
         </main>
-      </div>
-    </SidebarProvider>
+      </div >
+    </SidebarProvider >
   );
 }

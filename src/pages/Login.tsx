@@ -31,15 +31,26 @@ export default function Login() {
     if (mode === "login") {
       const { data: { session }, error } = await signIn(email, password);
       if (error) {
-        toast({ title: "Giriş başarısız", description: error.message, variant: "destructive" });
+        toast({ title: "Giriş başarısız", description: (error as Error).message, variant: "destructive" });
       } else {
         toast({ title: "Hoş geldiniz!" });
 
         if (session?.user) {
-          const { data: roles } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id);
+          const [{ data: roles }, { data: profile }] = await Promise.all([
+            supabase.from('user_roles').select('role').eq('user_id', session.user.id),
+            supabase.from('profiles').select('is_suspended').eq('id', session.user.id).single()
+          ]);
+
+          if ((profile as any)?.is_suspended) {
+            await supabase.auth.signOut();
+            toast({
+              title: "Hesap Askıya Alındı",
+              description: "Hesabınız yönetici tarafından askıya alınmıştır. Giriş yapamazsınız.",
+              variant: "destructive"
+            });
+            setIsLoading(false);
+            return;
+          }
 
           const userRoles = roles?.map(r => r.role) || [];
 
@@ -68,7 +79,7 @@ export default function Login() {
 
       const { error } = await signUp(email, password, fullName, phone);
       if (error) {
-        toast({ title: "Kayıt başarısız", description: error.message, variant: "destructive" });
+        toast({ title: "Kayıt başarısız", description: (error as Error).message, variant: "destructive" });
       } else {
         // Show email verification screen instead of auto-login
         setShowEmailVerification(true);

@@ -26,7 +26,7 @@ export default function StaffLogin() {
         const { data: { session }, error } = await signIn(email, password);
 
         if (error) {
-            toast({ title: "Giriş başarısız", description: error.message, variant: "destructive" });
+            toast({ title: "Giriş başarısız", description: (error as Error).message, variant: "destructive" });
             setIsLoading(false);
             return;
         }
@@ -47,9 +47,10 @@ export default function StaffLogin() {
                 toast({ title: "Danışman paneline yönlendiriliyor..." });
                 navigate('/advisor');
             } else {
-                // Not authorized for staff panel
-                toast({ title: "Yetkisiz Giriş", description: "Bu panel sadece yetkili personel içindir.", variant: "destructive" });
-                navigate('/dashboard');
+                // Not authorized for staff panel, kick them back out
+                await supabase.auth.signOut();
+                toast({ title: "Yetkisiz Giriş", description: "Bu panel sadece danışmanlar içindir. Müşteri girişi yapmalısınız.", variant: "destructive" });
+                navigate('/login');
             }
         }
     };
@@ -67,10 +68,10 @@ export default function StaffLogin() {
                             <ShieldCheck size={24} />
                         </div>
                         <h1 className="text-2xl font-extrabold text-navy-dark">
-                            Yetkili Girişi
+                            Danışman Girişi
                         </h1>
                         <p className="text-sm text-muted-foreground mt-2">
-                            Sadece Yönetici ve Danışmanlar içindir.
+                            Sadece Danışman ve Yöneticiler içindir.
                         </p>
                     </div>
 

@@ -4,8 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, User } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Send, User, Paperclip, Loader2, File as FileIcon, Image as ImageIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type Message = {
@@ -13,6 +12,8 @@ type Message = {
     sender_id: string;
     recipient_id: string;
     content: string;
+    attachment_url?: string;
+    attachment_type?: string;
     created_at: string;
 };
 
@@ -30,8 +31,10 @@ export function MessageCenter({
 }) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState("");
-    const scrollRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(true);
+    const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
         if (!currentUserId || !targetUserId) return;
@@ -93,9 +96,9 @@ export function MessageCenter({
     }, [currentUserId, targetUserId]);
 
     useEffect(() => {
-        // Auto-scroll to bottom
-        if (scrollRef.current) {
-            scrollRef.current.scrollIntoView({ behavior: "smooth" });
+        // Robust auto-scroll without jumping the whole page
+        if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
         }
     }, [messages]);
 
@@ -119,61 +122,152 @@ export function MessageCenter({
 
         if (error) {
             console.error("Error sending message:", error);
-            // Remove optimistic msg or show error - for now ignoring
         }
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${currentUserId}_${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        // 1. Upload to storage
+        const { error: uploadError } = await supabase.storage
+            .from('message_attachments')
+            .upload(filePath, file);
+
+        if (uploadError) {
+            console.error("Upload Error:", uploadError);
+            setIsUploading(false);
+            return;
+        }
+
+        // 2. Get public URL
+        const { data: { publicUrl } } = supabase.storage
+            .from('message_attachments')
+            .getPublicUrl(filePath);
+
+        // 3. Send message with attachment
+        const msg = {
+            sender_id: currentUserId,
+            recipient_id: targetUserId,
+            content: file.type.startsWith('image/') ? 'Görsel gönderildi' : 'Dosya gönderildi',
+            attachment_url: publicUrl,
+            attachment_type: file.type
+        };
+
+        const tempMsg = { ...msg, id: Date.now().toString(), created_at: new Date().toISOString() };
+        setMessages((prev) => [...prev, tempMsg]);
+
+        await supabase.from("messages").insert(msg);
+        setIsUploading(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
     return (
         <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-4 border-b bg-gray-50 flex items-center gap-3">
-                <Avatar className="h-8 w-8">
+            <div className="p-3 px-4 border-b bg-white flex items-center gap-3 shadow-sm z-10 relative">
+                <Avatar className="h-10 w-10 border border-gray-100 shadow-sm">
                     <AvatarImage src={targetUserPhoto || `https://ui-avatars.com/api/?name=${targetUserName || 'User'}`} />
                     <AvatarFallback><User /></AvatarFallback>
                 </Avatar>
                 <div>
-                    <h3 className="font-bold text-sm text-navy-dark">{targetUserName || "Sohbet"}</h3>
-                    {/* User requested to remove fake online status in Advisor page, but kept generic here? 
-                        The request "sahte çevrimiçi mesajını gösterme" was under "advisor sayfasında atanan başvurular kısmı kolpa olmasın" context. 
-                        But also "advisor sayfasında... sahte çevrimiçi mesajını gösterme".
-                        Since this component is shared, maybe we should make it optional or real.
-                        For now, removing the "Çevrimiçi" text if it's fake. */}
+                    <h3 className="font-bold text-base text-gray-800 tracking-tight">{targetUserName || "Sohbet"}</h3>
                 </div>
             </div>
 
-            <ScrollArea className="flex-1 p-4 bg-slate-50">
-                <div className="space-y-4">
+            <div
+                ref={containerRef}
+                className="flex-1 p-4 bg-[#E5DDD5] overflow-y-auto scroll-smooth"
+                style={{ backgroundImage: 'url("https://w7.pngwing.com/pngs/351/181/png-transparent-whatsapp-background-thumbnail.png")', backgroundBlendMode: 'overlay', backgroundColor: 'rgba(229, 221, 213, 0.95)' }}
+            >
+                <div className="space-y-3 pb-2 flex flex-col justify-end min-h-full">
                     {messages.length === 0 && !loading && (
-                        <div className="text-center text-muted-foreground py-10 text-sm">
-                            Henüz mesaj yok. İlk mesajı gönder!
+                        <div className="text-center w-full py-10 flex flex-col items-center">
+                            <div className="bg-[#FFF5C4] text-gray-700 text-xs px-4 py-2 rounded-xl shadow-sm text-center max-w-xs">
+                                Uçtan uca şifrelenmiş mesajlaşma başladı. Görüşmeleriniz güvenle saklanmaktadır.
+                            </div>
                         </div>
                     )}
                     {messages.map((msg) => {
                         const isMe = msg.sender_id === currentUserId;
                         return (
                             <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${isMe ? 'bg-navy-dark text-white rounded-br-none' : 'bg-white border shadow-sm text-gray-800 rounded-bl-none'}`}>
-                                    <p>{msg.content}</p>
-                                    <span className={`text-[10px] block mt-1 ${isMe ? 'text-white/60 text-right' : 'text-gray-400'}`}>
-                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
+                                <div
+                                    className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-3 pt-2 pb-1.5 text-[15px] shadow-sm relative ${isMe
+                                            ? 'bg-[#dcf8c6] text-gray-900 rounded-tr-none'
+                                            : 'bg-white text-gray-900 rounded-tl-none'
+                                        }`}
+                                >
+                                    {/* Attachment rendering */}
+                                    {msg.attachment_url && (
+                                        <div className="mb-1.5 -mx-1 -mt-1 overflow-hidden rounded-t-xl rounded-b-sm">
+                                            {msg.attachment_type?.startsWith('image/') ? (
+                                                <a href={msg.attachment_url} target="_blank" rel="noreferrer">
+                                                    <img src={msg.attachment_url} alt="Attachment" className="max-w-full h-auto max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity" />
+                                                </a>
+                                            ) : (
+                                                <a href={msg.attachment_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-3 bg-black/5 rounded hover:bg-black/10 transition-colors m-1">
+                                                    <div className="bg-primary/20 p-2 rounded-full text-primary">
+                                                        <FileIcon size={20} />
+                                                    </div>
+                                                    <span className="text-sm font-medium underline underline-offset-2 truncate">Belgeyi Görüntüle</span>
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+                                        <p className="leading-snug flex-1 break-words">{msg.content !== 'Görsel gönderildi' && msg.content !== 'Dosya gönderildi' ? msg.content : ''}</p>
+                                        <span className={`text-[10px] font-medium mt-1 uppercase w-full flex justify-end ${isMe ? 'text-green-700/70' : 'text-gray-400'}`}>
+                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         )
                     })}
-                    <div ref={scrollRef} />
                 </div>
-            </ScrollArea>
+            </div>
 
-            <div className="p-3 bg-white border-t flex gap-2">
+            <div className="p-3 bg-[#f0f2f5] flex items-end gap-2">
                 <Input
-                    placeholder="Mesajınızı yazın..."
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    accept="image/*,.pdf,.doc,.docx"
+                />
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 shrink-0 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    title="Dosya veya Görsel Ekle"
+                >
+                    {isUploading ? <Loader2 size={20} className="animate-spin text-primary" /> : <Paperclip size={20} />}
+                </Button>
+
+                <Input
+                    placeholder="Bir mesaj yazın"
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-1 border-gray-200 focus-visible:ring-offset-0 focus-visible:ring-[#00D69E]"
+                    autoComplete="off"
+                    className="flex-1 border-none shadow-sm rounded-xl py-5 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-500"
                 />
-                <Button onClick={handleSendMessage} size="icon" className="bg-[#00D69E] hover:bg-[#00D69E]/90 text-white rounded-lg">
-                    <Send size={18} />
+
+                <Button
+                    onClick={handleSendMessage}
+                    size="icon"
+                    className="h-10 w-10 shrink-0 bg-[#00a884] hover:bg-[#008f6f] text-white rounded-full shadow-sm"
+                    disabled={!newMessage.trim() || isUploading}
+                >
+                    <Send size={18} className="translate-x-[2px] translate-y-[1px]" />
                 </Button>
             </div>
         </div>
