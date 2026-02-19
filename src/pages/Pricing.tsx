@@ -21,14 +21,16 @@ import { useLanguage } from "@/i18n/LanguageContext";
 
 /* ── Quiz Logic Helper ──────────────────────────────────── */
 function getRecommendation(answers: string[]): string {
-  let score = 0;
-  for (const a of answers) {
-    if (a === "no") score += 1;
-    if (a === "partial") score += 0.5;
-  }
-  if (score <= 1) return "starter";
-  if (score <= 2) return "pro";
-  return "elite";
+  // If the user said "yes" to absolutely everything (they want to do it all themselves)
+  const isStarter = answers.every((a) => a === "yes");
+  if (isStarter) return "starter";
+
+  // If they said "no" to both document prep and appointment tracking, it's elite
+  const noCount = answers.filter((a) => a === "no").length;
+  if (noCount >= 2) return "elite";
+
+  // Otherwise default to pro
+  return "pro";
 }
 
 export default function Pricing() {

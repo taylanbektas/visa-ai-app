@@ -195,16 +195,16 @@ export function MessageCenter({
                     {messages.map((msg) => {
                         const isMe = msg.sender_id === currentUserId;
                         return (
-                            <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                            <div key={msg.id} className={`flex w-full mb-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
                                 <div
-                                    className={`max-w-[85%] md:max-w-[75%] rounded-2xl px-3 pt-2 pb-1.5 text-[15px] shadow-sm relative ${isMe
-                                            ? 'bg-[#dcf8c6] text-gray-900 rounded-tr-none'
-                                            : 'bg-white text-gray-900 rounded-tl-none'
+                                    className={`max-w-[85%] md:max-w-[75%] flex flex-col rounded-xl px-3 pt-2 pb-1.5 shadow-sm relative ${isMe
+                                        ? 'bg-[#dcf8c6] text-[#111b21] rounded-tr-md'
+                                        : 'bg-white text-[#111b21] rounded-tl-md'
                                         }`}
                                 >
                                     {/* Attachment rendering */}
                                     {msg.attachment_url && (
-                                        <div className="mb-1.5 -mx-1 -mt-1 overflow-hidden rounded-t-xl rounded-b-sm">
+                                        <div className="mb-1.5 -mx-1 -mt-1 overflow-hidden rounded-t-lg rounded-b-sm">
                                             {msg.attachment_type?.startsWith('image/') ? (
                                                 <a href={msg.attachment_url} target="_blank" rel="noreferrer">
                                                     <img src={msg.attachment_url} alt="Attachment" className="max-w-full h-auto max-h-64 object-cover cursor-pointer hover:opacity-90 transition-opacity" />
@@ -220,11 +220,13 @@ export function MessageCenter({
                                         </div>
                                     )}
 
-                                    <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
-                                        <p className="leading-snug flex-1 break-words">{msg.content !== 'Görsel gönderildi' && msg.content !== 'Dosya gönderildi' ? msg.content : ''}</p>
-                                        <span className={`text-[10px] font-medium mt-1 uppercase w-full flex justify-end ${isMe ? 'text-green-700/70' : 'text-gray-400'}`}>
-                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    <div className="flex flex-wrap items-end gap-x-2">
+                                        <span className="leading-relaxed text-[15px] font-medium break-words whitespace-pre-wrap">
+                                            {msg.content !== 'Görsel gönderildi' && msg.content !== 'Dosya gönderildi' ? msg.content : ''}
                                         </span>
+                                        <div className={`text-[11px] font-medium mt-1 shrink-0 ml-auto flex items-center gap-1 ${isMe ? 'text-[#54656f]' : 'text-[#667781]'}`}>
+                                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

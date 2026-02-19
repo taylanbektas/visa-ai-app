@@ -5,8 +5,9 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, MessageSquare, Briefcase, Paperclip, X, type LucideIcon,
+  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, MessageSquare, Briefcase, Paperclip, X, Sparkles, ArrowRight, type LucideIcon,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { MessageCenter } from "@/components/MessageCenter";
 import { useAuth } from "@/hooks/useAuth";
@@ -232,6 +233,35 @@ export default function Dashboard() {
               </div>
             </motion.div>
 
+            {/* Active Package Banner - NEW */}
+            {profile?.active_package && applications.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg mb-8 relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <Sparkles size={120} />
+                </div>
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge className="bg-white/20 hover:bg-white/30 text-white border-transparent backdrop-blur-sm">
+                      Aktif Paket: <span className="ml-1 uppercase">{profile.active_package}</span>
+                    </Badge>
+                  </div>
+                  <h2 className="text-xl md:text-2xl font-bold mb-2">Vize Başvurunuzu Başlatın</h2>
+                  <p className="text-blue-100 text-sm mb-6 max-w-md">
+                    Hesabınıza tanımlı paketiniz bulunmaktadır. Hemen başvurunuzu oluşturarak evrak sürecini başlatabilirsiniz.
+                  </p>
+                  <Link to="/apply" state={{ plan: profile.active_package }}>
+                    <Button className="bg-white text-blue-700 hover:bg-blue-50 font-bold px-8">
+                      Başvuruyu Başlat <ArrowRight size={18} className="ml-2" />
+                    </Button>
+                  </Link>
+                </div>
+              </motion.div>
+            )}
+
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               <h2 className="font-semibold mb-4 flex items-center gap-2"><FileText size={18} /> Başvurularınız</h2>
 
@@ -251,7 +281,10 @@ export default function Dashboard() {
                       <div key={app.id} className="bg-card border rounded-xl p-5">
                         <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
-                            <span className="font-mono text-xs text-muted-foreground">{app.reference_id}</span>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-mono text-xs text-muted-foreground">{app.reference_id}</span>
+                              <Badge variant="outline" className="text-[10px] uppercase h-4 px-1">{app.plan}</Badge>
+                            </div>
                             <h3 className="font-semibold">{app.destination} — {app.visa_type}</h3>
                           </div>
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${statusColors[app.status] || ""}`}>

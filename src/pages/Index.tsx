@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import useEmblaCarousel from "embla-carousel-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Accordion,
   AccordionContent,
@@ -60,7 +61,6 @@ const passportOptions = [
   { code: "AF", labelKey: "country.afghanistan", flag: "🇦🇫" },
 ];
 
-/* ── Destination list with flags ─────────────────────────── */
 /* ── Destination list with flags ─────────────────────────── */
 import { destinations } from "@/data/countries";
 
@@ -280,7 +280,8 @@ function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
 export default function Index() {
   const [wordIndex, setWordIndex] = useState(0);
   const [selectedPassport, setSelectedPassport] = useState("TR");
-  const [selectedDestination, setSelectedDestination] = useState("");
+  const [selectedDestinationKey, setSelectedDestinationKey] = useState("");
+  const selectedDestination = destinations.find(d => d.key === selectedDestinationKey);
   const sizerRef = useRef<HTMLSpanElement>(null);
   const [wordWidth, setWordWidth] = useState<number | undefined>(undefined);
   const { t } = useLanguage();
@@ -304,11 +305,11 @@ export default function Index() {
   const currentPassport = passportOptions.find((p) => p.code === selectedPassport)!;
 
   // Determine visa status
-  const isVisaFree = selectedDestination
-    ? (visaFreeMap[selectedPassport] || []).includes(selectedDestination)
+  const isVisaFree = selectedDestinationKey
+    ? (visaFreeMap[selectedPassport] || []).includes(selectedDestinationKey)
     : false;
-  const isEVisa = selectedDestination ? eVisaDestinations.includes(selectedDestination) : false;
-  const visaResult = selectedDestination ? visaData[selectedDestination] : null;
+  const isEVisa = selectedDestinationKey ? eVisaDestinations.includes(selectedDestinationKey) : false;
+  const visaResult = selectedDestinationKey ? visaData[selectedDestinationKey] : null;
 
   /* ── Smooth scroll helper ─────────────────────────────── */
   const scrollToSection = (sectionId: string) => {
@@ -396,33 +397,29 @@ export default function Index() {
 
               {/* Destination */}
               <div className="flex-1">
-                <label className="text-sm font-extrabold text-foreground mb-2 block text-left uppercase tracking-wide">{t("checker.destination")}</label>
-                <Select onValueChange={setSelectedDestination} value={selectedDestination}>
-                  <SelectTrigger className="h-16 text-lg shadow-sm border-border/60">
-                    <SelectValue placeholder={t("checker.placeholder")} />
-                  </SelectTrigger>
-                  <SelectContent className="w-full min-w-[300px] max-h-[350px]">
-                    {destinations
-                      .filter(d => d.key.toUpperCase() !== selectedPassport) // Prevent selecting same country
-                      .map((country) => (
-                        <SelectItem key={country.key} value={country.key} className="py-3 cursor-pointer">
-                          <span className="flex items-center gap-3">
-                            <span className="text-2xl">{country.flag}</span>
-                            <span className="text-base font-bold">{t("country." + country.key)}</span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+                <label className="text-sm font-extrabold text-navy-dark mb-2 block text-left uppercase tracking-wide">{t("checker.destination")}</label>
+                <Combobox
+                  options={destinations
+                    .filter(d => d.key.toUpperCase() !== selectedPassport) // Prevent selecting same country
+                    .map((country) => ({
+                      value: country.key,
+                      label: t("country." + country.key),
+                      flag: country.flag
+                    }))}
+                  value={selectedDestinationKey}
+                  onChange={setSelectedDestinationKey}
+                  placeholder={t("checker.placeholder")}
+                  className="h-16"
+                />
               </div>
 
               {/* CTA Button — visual anchor */}
               <div className="flex items-end">
                 <Button
                   className="w-full sm:w-auto btn-gradient text-white font-bold h-16 px-8 sm:px-10 rounded-xl text-base sm:text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                  disabled={!selectedDestination}
+                  disabled={!selectedDestinationKey}
                   onClick={() => {
-                    if (selectedDestination) {
+                    if (selectedDestinationKey) {
                       // Scroll to result instead of navigating immediately
                       const resultElement = document.getElementById("visa-result-container");
                       if (resultElement) {
@@ -439,7 +436,7 @@ export default function Index() {
 
             {/* Inline Result — shows automatically on destination select */}
             <AnimatePresence>
-              {selectedDestination && (
+              {selectedDestinationKey && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -453,14 +450,17 @@ export default function Index() {
                       <div className="w-16 h-16 rounded-full bg-[#00D69E]/10 flex items-center justify-center mx-auto mb-4">
                         <CheckCircle size={32} className="text-[#00D69E]" />
                       </div>
-                      <h3 className="text-2xl font-extrabold text-navy-dark mb-2">{t("checker.visaFree")}</h3>
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <span className="text-3xl">{selectedDestination?.flag}</span>
+                        <h3 className="text-2xl font-extrabold text-navy-dark">{t("country." + selectedDestinationKey)} - {t("checker.visaFree")}</h3>
+                      </div>
 
                       {isEVisa && visaResult ? (
                         <div className="mt-4">
                           <p className="text-lg text-muted-foreground mb-4">
                             {t(visaResult.typeKey)} gereklidir.
                           </p>
-                          <Link to="/apply" state={{ destination: selectedDestination, passport: selectedPassport }}>
+                          <Link to="/apply" state={{ destination: selectedDestinationKey, passport: selectedPassport }}>
                             <Button className="btn-gradient text-white font-bold h-14 px-8 rounded-xl text-base">
                               {t("visa.evisa_starter")} <ArrowRight size={18} className="ml-2" />
                             </Button>
@@ -469,7 +469,7 @@ export default function Index() {
                       ) : (
                         <div className="mt-4">
                           <p className="text-lg text-muted-foreground">
-                            <strong className="text-foreground">{t(currentPassport.labelKey)}</strong> {t("checker.visaFreeDesc")} <strong className="text-foreground">{t("country." + selectedDestination)}</strong> {t("checker.visaFreeFor")}
+                            <strong className="text-foreground">{t(currentPassport.labelKey)}</strong> {t("checker.visaFreeDesc")} <strong className="text-foreground">{t("country." + selectedDestinationKey)}</strong> {t("checker.visaFreeFor")}
                           </p>
                         </div>
                       )}
@@ -477,6 +477,10 @@ export default function Index() {
                   ) : (
                     /* ── Visa required ── */
                     <>
+                      <div className="flex items-center gap-3 mb-6 pb-4 border-b border-border/50">
+                        <span className="text-4xl">{selectedDestination?.flag}</span>
+                        <h3 className="text-2xl font-bold text-navy-dark">{t("country." + selectedDestinationKey)}</h3>
+                      </div>
                       <div className="grid sm:grid-cols-3 gap-4 text-left">
                         <div>
                           <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wide">{t("checker.visaType")}</p>
@@ -501,7 +505,7 @@ export default function Index() {
                           ))}
                         </div>
                       </div>
-                      <Link to="/apply" state={{ destination: selectedDestination, passport: selectedPassport }} className="block mt-6">
+                      <Link to="/apply" state={{ destination: selectedDestinationKey, passport: selectedPassport }} className="block mt-6">
                         <Button className="w-full btn-gradient text-white font-bold h-14 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
                           {t("visa.get_visa")} <ArrowRight size={18} className="ml-2" />
                         </Button>

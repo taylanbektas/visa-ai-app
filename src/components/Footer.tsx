@@ -7,32 +7,18 @@ export function Footer() {
 
   const footerLinks = [
     {
-      title: t("footer.quickLinks"),
-      links: [
-        { label: t("nav.home"), to: "/" },
-        { label: t("nav.learn"), to: "/learn" },
-        { label: t("nav.pricing"), to: "/pricing" },
-        { label: t("nav.track"), to: "/track" },
-        { label: t("nav.faq"), to: "/#sss" },
-      ],
-    },
-    {
       title: t("footer.support"),
       links: [
         { label: t("nav.contact"), to: "/contact" },
-        { label: t("footer.joinAdvisor"), to: "/join-advisor" },
         { label: t("nav.whatsapp"), to: "https://wa.me/905XXXXXXXXX", external: true },
-        { label: t("footer.helpCenter"), to: "/learn" },
         { label: t("footer.videoGuides"), to: "/learn" },
       ],
     },
     {
-      title: t("footer.about"),
+      title: "Kurumsal",
       links: [
-        { label: "Vizyon & Misyon", to: "/about" }, // Changed from generic About Us
         { label: "Kariyer", to: "/join-advisor" },
-        { label: t("footer.privacy"), to: "/privacy" },
-        { label: t("footer.terms"), to: "/terms" },
+        { label: "Danışman Girişi", to: "/staff-login" },
       ],
     },
     {
@@ -42,7 +28,6 @@ export function Footer() {
         { label: t("footer.terms"), to: "/terms" },
         { label: t("footer.cookies"), to: "/privacy#cookies" },
         { label: t("footer.refund"), to: "/terms#refund" },
-        { label: "Yetkili Girişi", to: "/staff-login" },
       ],
     },
   ];
@@ -111,7 +96,7 @@ export function Footer() {
           </div>
 
           <div className="md:col-span-8 lg:col-span-8">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
               {footerLinks.map((section) => (
                 <div key={section.title}>
                   <h4 className="mb-4 text-base font-bold text-navy-dark">{section.title}</h4>

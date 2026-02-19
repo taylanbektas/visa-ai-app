@@ -50,7 +50,8 @@ import {
   Loader2,
   ExternalLink,
   Download,
-  Eye
+  Eye,
+  TrendingUp
 } from "lucide-react";
 import {
   Sheet,
@@ -118,6 +119,8 @@ type UserData = {
   roles: ("admin" | "moderator" | "user")[];
   assigned_advisor_id?: string | null;
   is_suspended?: boolean;
+  active_package?: "starter" | "pro" | "elite" | null;
+  package_assigned_at?: string;
 };
 
 type AdvisorApplication = {
@@ -155,7 +158,9 @@ export default function Admin() {
     totalApplications: 0,
     pendingReview: 0,
     activeAdvisors: 0,
-    totalUsers: 0
+    totalUsers: 0,
+    totalAdvisors: 0,
+    totalRevenue: 0
   });
 
   const [selectedUser, setSelectedUser] = useState<UserData & { advisor?: Advisor } | null>(null); // For assignment dialog
@@ -165,6 +170,8 @@ export default function Admin() {
   const [assignCustomerOpen, setAssignCustomerOpen] = useState(false);
   const [selectedAdvisorForCustomer, setSelectedAdvisorForCustomer] = useState<Advisor | null>(null);
   const [expandedAdvisorId, setExpandedAdvisorId] = useState<string | null>(null);
+  const [assignPackageOpen, setAssignPackageOpen] = useState(false);
+  const [selectedUserForPackage, setSelectedUserForPackage] = useState<UserData | null>(null);
 
   useEffect(() => {
     if (authLoading || roleLoading) return;
@@ -191,7 +198,12 @@ export default function Admin() {
 
     if (apps) {
       setApplications(apps as unknown as Application[]);
-      setStats(prev => ({ ...prev, totalApplications: apps.length, pendingReview: apps.filter(a => a.status === 'pending_review').length }));
+      setStats(prev => ({
+        ...prev,
+        totalApplications: apps.length,
+        pendingReview: apps.filter(a => a.status === 'pending_review').length,
+        totalRevenue: apps.filter(a => a.status === 'completed').length * 3500 // Mock revenue logic
+      }));
     }
 
     // 2. Fetch Active Advisors (Real Table)
@@ -220,7 +232,11 @@ export default function Admin() {
         return fullAdvisor;
       });
       setActiveAdvisorsList(mergedAdvisors as Advisor[]);
-      setStats(prev => ({ ...prev, activeAdvisors: mergedAdvisors.filter(a => a.is_active).length }));
+      setStats(prev => ({
+        ...prev,
+        activeAdvisors: mergedAdvisors.filter(a => a.is_active).length,
+        totalAdvisors: mergedAdvisors.length
+      }));
     } else {
       setActiveAdvisorsList([]);
     }
@@ -231,9 +247,17 @@ export default function Admin() {
       .select("*")
       .order("created_at", { ascending: false });
 
+    const { data: rolesData } = await supabase.from('user_roles').select('*');
+
     if (profiles) {
+      // Omit users who have admin or moderator roles
+      const customerProfiles = profiles.filter((p) => {
+        const userRoles = rolesData?.filter(r => r.user_id === p.user_id).map(r => r.role) || [];
+        return !userRoles.includes('admin') && !userRoles.includes('moderator');
+      });
+
       // Map advisor details to users
-      const usersWithAdvisors = (profiles as unknown as UserData[]).map((p) => {
+      const usersWithAdvisors = (customerProfiles as unknown as UserData[]).map((p) => {
         if (p.assigned_advisor_id && advisorMap.has(p.assigned_advisor_id)) {
           return { ...p, advisor: advisorMap.get(p.assigned_advisor_id) };
         }
@@ -241,7 +265,7 @@ export default function Admin() {
       });
 
       setUsersList(usersWithAdvisors);
-      setStats(prev => ({ ...prev, totalUsers: profiles.length }));
+      setStats(prev => ({ ...prev, totalUsers: customerProfiles.length }));
     }
 
     // 4. Fetch Advisor Applications (NEW)
@@ -305,6 +329,24 @@ export default function Admin() {
     setAssignmentOpen(false);
     setAssignCustomerOpen(false);
     fetchData();
+  };
+
+  const handleAssignPackage = async (userId: string, packageName: "starter" | "pro" | "elite" | null) => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        active_package: packageName,
+        package_assigned_at: packageName ? new Date().toISOString() : null
+      } as any)
+      .eq('id', userId);
+
+    if (error) {
+      toast({ title: "Hata", description: "Paket atanamadı: " + error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Başarılı", description: packageName ? `${packageName.toUpperCase()} paketi başarıyla atandı.` : "Paket kaldırıldı." });
+      setAssignPackageOpen(false);
+      fetchData();
+    }
   };
 
   const handleUpdateAdvisorStatus = async (advisorId: string, isActive: boolean) => {
@@ -482,8 +524,7 @@ export default function Admin() {
   };
 
   const handleDeleteCustomer = async (userId: string) => {
-    if (!window.confirm("Bu müşterinin profilini kalıcı olarak silmek istediğinize emin misiniz? (Üye girişi tamamen engellenecektir ve müşteri verileri veri tabanından silinecektir)")) return;
-    const { error } = await supabase.rpc('delete_user', { user_id: userId });
+    const { error } = await supabase.rpc('delete_user' as any, { user_id: userId });
     if (error) {
       toast({ title: "Hata", description: "Müşteri silinemedi: " + error.message, variant: "destructive" });
     } else {
@@ -495,27 +536,27 @@ export default function Admin() {
   if (authLoading || roleLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
   return (
-    <SidebarProvider>
+    <SidebarProvider style={{ "--sidebar-width": "18rem" } as React.CSSProperties}>
       <div className="flex min-h-screen w-full bg-slate-50">
-        <Sidebar>
-          <SidebarHeader className="border-b px-6 py-4 pt-24 md:pt-4"> {/* Mobile/Desktop spacing fix */}
-            <h2 className="text-xl font-bold tracking-tight text-navy-dark">Admin Panel</h2>
+        <Sidebar className="border-r shadow-sm">
+          <SidebarHeader className="border-b px-8 py-6 pt-10 md:pt-4">
+            <h2 className="text-3xl font-black tracking-tight text-navy-dark px-2">VisaPath <span className="text-blue-500 font-extrabold uppercase text-xs tracking-[0.2em] block mt-1">Admin Control</span></h2>
           </SidebarHeader>
-          <SidebarContent>
+          <SidebarContent className="px-6 py-6">
             {/* ... sidebar content ... */}
             <SidebarGroup>
-              <SidebarGroupLabel>YÖNETİM</SidebarGroupLabel>
+              <SidebarGroupLabel className="px-2 mb-4 text-xs font-bold text-slate-400 uppercase tracking-widest">YÖNETİM</SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="space-y-4">
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={activeTab === 'dashboard'}
                       onClick={() => setActiveTab('dashboard')}
-                      size="lg" // Try to use larger size if available or just update classes below if not
-                      className="gap-3 font-medium transition-all hover:translate-x-1"
+                      size="lg"
+                      className="rounded-2xl h-16 gap-4 font-bold transition-all hover:translate-x-1"
                     >
-                      <LayoutDashboard className={activeTab === 'dashboard' ? 'text-primary' : 'text-gray-500'} />
-                      <span className={activeTab === 'dashboard' ? 'font-bold text-navy-dark' : 'text-gray-600'}>Genel Bakış</span>
+                      <LayoutDashboard className={activeTab === 'dashboard' ? 'text-blue-600 w-6 h-6' : 'text-slate-400 w-6 h-6'} />
+                      <span className={activeTab === 'dashboard' ? 'text-navy-dark text-lg' : 'text-slate-500 text-lg'}>Genel Bakış</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
@@ -523,10 +564,10 @@ export default function Admin() {
                       isActive={activeTab === 'users'}
                       onClick={() => setActiveTab('users')}
                       size="lg"
-                      className="gap-3 font-medium transition-all hover:translate-x-1"
+                      className="rounded-2xl h-16 gap-4 font-bold transition-all hover:translate-x-1"
                     >
-                      <Users className={activeTab === 'users' ? 'text-primary' : 'text-gray-500'} />
-                      <span className={activeTab === 'users' ? 'font-bold text-navy-dark' : 'text-gray-600'}>Müşteriler</span>
+                      <Users className={activeTab === 'users' ? 'text-blue-600 w-6 h-6' : 'text-slate-400 w-6 h-6'} />
+                      <span className={activeTab === 'users' ? 'text-navy-dark text-lg' : 'text-slate-500 text-lg'}>Müşteriler</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
@@ -534,22 +575,21 @@ export default function Admin() {
                       isActive={activeTab === 'advisors'}
                       onClick={() => setActiveTab('advisors')}
                       size="lg"
-                      className="gap-3 font-medium transition-all hover:translate-x-1"
+                      className="rounded-2xl h-16 gap-4 font-bold transition-all hover:translate-x-1"
                     >
-                      <Briefcase className={activeTab === 'advisors' ? 'text-primary' : 'text-gray-500'} />
-                      <span className={activeTab === 'advisors' ? 'font-bold text-navy-dark' : 'text-gray-600'}>Danışmanlar</span>
+                      <Briefcase className={activeTab === 'advisors' ? 'text-blue-600 w-6 h-6' : 'text-slate-400 w-6 h-6'} />
+                      <span className={activeTab === 'advisors' ? 'text-navy-dark text-lg' : 'text-slate-500 text-lg'}>Danışmanlar</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                  {/* ... other menu items ... */}
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={activeTab === 'applications'}
                       onClick={() => setActiveTab('applications')}
                       size="lg"
-                      className="gap-3 font-medium transition-all hover:translate-x-1"
+                      className="rounded-2xl h-16 gap-4 font-bold transition-all hover:translate-x-1"
                     >
-                      <FileText className={activeTab === 'applications' ? 'text-primary' : 'text-gray-500'} />
-                      <span className={activeTab === 'applications' ? 'font-bold text-navy-dark' : 'text-gray-600'}>Vize Başvuruları</span>
+                      <FileText className={activeTab === 'applications' ? 'text-blue-600 w-6 h-6' : 'text-slate-400 w-6 h-6'} />
+                      <span className={activeTab === 'applications' ? 'text-navy-dark text-lg' : 'text-slate-500 text-lg'}>Vize Başvuruları</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
@@ -557,90 +597,100 @@ export default function Admin() {
                       isActive={activeTab === 'advisor-apps'}
                       onClick={() => setActiveTab('advisor-apps')}
                       size="lg"
-                      className="gap-3 font-medium transition-all hover:translate-x-1"
+                      className="rounded-2xl h-16 gap-4 font-bold transition-all hover:translate-x-1 relative"
                     >
-                      <Briefcase className={activeTab === 'advisor-apps' ? 'text-primary' : 'text-gray-500'} />
-                      <span className={activeTab === 'advisor-apps' ? 'font-bold text-navy-dark' : 'text-gray-600'}>Danışmanlık Talepleri</span>
+                      <Briefcase className={activeTab === 'advisor-apps' ? 'text-blue-600 w-6 h-6' : 'text-slate-400 w-6 h-6'} />
+                      <span className={activeTab === 'advisor-apps' ? 'text-navy-dark text-lg' : 'text-slate-500 text-lg'}>Talep Onay</span>
                       {advisorApplications.filter(a => a.status === 'pending').length > 0 && (
-                        <span className="ml-auto bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full">
+                        <span className="absolute right-4 bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                           {advisorApplications.filter(a => a.status === 'pending').length}
                         </span>
                       )}
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                  {/* ... */}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-            {/* ... footer group ... */}
+            <div className="mt-auto px-4 pb-8 space-y-4">
+              <Button
+                variant="outline"
+                className="w-full h-16 justify-start text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-100 shadow-sm rounded-2xl font-extrabold text-lg transition-all active:scale-[0.98]"
+                onClick={() => signOut().then(() => navigate("/"))}
+              >
+                <div className="w-10 h-10 rounded-xl bg-rose-100/50 flex items-center justify-center mr-4">
+                  <LogOut className="h-5 w-5" />
+                </div>
+                Çıkış Yap
+              </Button>
+            </div>
           </SidebarContent>
         </Sidebar>
 
-        <main className="flex-1 p-8 overflow-auto pt-24 md:pt-8"> {/* Content spacing fix */}
-          {/* ... header ... */}
-
+        <main className="flex-1 p-8 lg:p-12 overflow-auto pt-24 md:pt-12">
           {/* DASHBOARD TAB */}
           {activeTab === 'dashboard' && (
-            <div className="space-y-8 animate-in fade-in duration-500">
-              {/* Header */}
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight text-navy-dark">Genel Bakış</h1>
-                <p className="text-muted-foreground mt-1">Sistem durumunu ve performans metriklerini buradan takip edebilirsiniz.</p>
+            <div className="space-y-12 animate-in fade-in duration-500 max-w-[1600px] mx-auto">
+              <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
+                <h1 className="text-4xl font-black tracking-tight text-navy-dark">Genel Bakış</h1>
+                <p className="text-lg text-slate-500 font-medium mt-1">Sistem durumunu ve performans metriklerini buradan takip edebilirsiniz.</p>
               </div>
 
               {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <FileText size={64} className="text-navy-dark" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-slate-200/50 transition-all relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <FileText size={80} className="text-navy-dark" />
                   </div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Toplam Başvuru</h3>
+                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Toplam Başvuru</h3>
                   <div className="flex items-end gap-2">
-                    <p className="text-4xl font-extrabold text-navy-dark">{stats.totalApplications}</p>
-                    <span className="text-sm text-green-500 font-bold mb-1 flex items-center">
-                      <ChevronRight className="w-4 h-4 rotate-[-45deg]" /> %12
+                    <p className="text-5xl font-black text-navy-dark">{stats.totalApplications}</p>
+                    <span className="text-sm text-emerald-500 font-black mb-1 flex items-center bg-emerald-50 px-2 py-0.5 rounded-lg">
+                      +%12
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">Geçen aya göre artış</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-50 to-white p-6 rounded-2xl shadow-sm border border-green-100 hover:shadow-md transition-shadow relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <LayoutDashboard size={64} className="text-green-600" />
+                <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-slate-200/50 transition-all relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Users size={80} className="text-navy-dark" />
                   </div>
-                  <h3 className="text-sm font-medium text-green-700 mb-2">Tahmini Gelir</h3>
+                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Aktif Kullanıcı</h3>
                   <div className="flex items-end gap-2">
-                    <p className="text-4xl font-extrabold text-green-600">₺{(stats.totalApplications * 3500).toLocaleString('tr-TR')}</p>
+                    <p className="text-5xl font-black text-navy-dark">{stats.totalUsers}</p>
+                    <span className="text-sm text-blue-500 font-black mb-1 flex items-center bg-blue-50 px-2 py-0.5 rounded-lg">
+                      Sistemde
+                    </span>
                   </div>
-                  <p className="text-xs text-green-600/80 mt-2">Bu ayki tahmini kazanç</p>
                 </div>
 
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Briefcase size={64} className="text-blue-500" />
+                <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-slate-200/50 transition-all relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Briefcase size={80} className="text-navy-dark" />
                   </div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-2">Danışman Adayları</h3>
-                  <p className="text-4xl font-extrabold text-blue-600">{advisorApplications.filter(a => a.status === 'pending').length}</p>
-                  <p className="text-xs text-muted-foreground mt-2">İncelenmeyi bekleyen başvuru</p>
-                </div>
-
-                <div className="bg-gradient-to-br from-purple-50 to-white p-6 rounded-2xl shadow-sm border border-purple-100 hover:shadow-md transition-shadow relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Users size={64} className="text-purple-600" />
-                  </div>
-                  <h3 className="text-sm font-medium text-purple-700 mb-2">Aktif Danışmanlar</h3>
+                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Aktif Danışman</h3>
                   <div className="flex items-end gap-2">
-                    <p className="text-4xl font-extrabold text-purple-600">{Math.max(1, stats.activeAdvisors)}</p>
-                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold mb-1">Online</span>
+                    <p className="text-5xl font-black text-navy-dark">{stats.totalAdvisors}</p>
+                    <span className="text-sm text-violet-500 font-black mb-1 flex items-center bg-violet-50 px-2 py-0.5 rounded-lg">
+                      Uzman
+                    </span>
                   </div>
-                  <p className="text-xs text-purple-600/80 mt-2">Sisteme kayıtlı uzmanlar</p>
+                </div>
+
+                <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-slate-200/50 transition-all relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <TrendingUp size={80} className="text-navy-dark" />
+                  </div>
+                  <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Tahmini Ciro</h3>
+                  <div className="flex items-end gap-2">
+                    <p className="text-5xl font-black text-navy-dark">₺{stats.totalRevenue.toLocaleString()}</p>
+                  </div>
                 </div>
               </div>
 
               {/* CHARTS ROW */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* 1. Revenue/Usage Trends (Area Chart) - Takes up 2 cols */}
-                <div className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                <div className="lg:col-span-2 bg-white p-10 rounded-3xl shadow-sm border border-gray-100">
                   <div className="flex justify-between items-center mb-6">
                     <div>
                       <h3 className="text-xl font-bold text-navy-dark">Gelir Analizi</h3>
@@ -1094,11 +1144,28 @@ export default function Admin() {
                                           <span className="font-medium">{u.full_name}</span>
                                           <span className="text-xs text-muted-foreground">{u.phone} • {u.email}</span>
                                         </div>
-                                        <Button size="sm" variant="outline" className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => {
-                                          if (window.confirm(`${u.full_name} isimli müşteriyi bu danışmandan almak istediğinize emin misiniz?`)) {
-                                            handleAssignAdvisor(u.id, u.user_id, null);
-                                          }
-                                        }}>Atamayı Kaldır</Button>
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button size="sm" variant="outline" className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50" onClick={(e) => e.stopPropagation()}>
+                                              Atamayı Kaldır
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Atamayı Kaldır</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                <span className="font-bold text-navy-dark">{u.full_name}</span> isimli müşteriyi bu danışmandan almak istediğinize emin misiniz?
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel onClick={(e) => e.stopPropagation()}>İptal</AlertDialogCancel>
+                                              <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleAssignAdvisor(u.id, u.user_id, null);
+                                              }}>Kaldır</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
                                       </li>
                                     ))}
                                   </ul>
@@ -1166,6 +1233,7 @@ export default function Admin() {
                     <TableHead>Telefon</TableHead>
                     <TableHead>Kayıt Tarihi</TableHead>
                     <TableHead>Atanan Danışman</TableHead>
+                    <TableHead>Aktif Paket</TableHead>
                     <TableHead className="text-right">İşlem</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -1188,11 +1256,38 @@ export default function Admin() {
                           <span className="text-muted-foreground text-xs">Atanmadı</span>
                         )}
                       </TableCell>
+                      <TableCell>
+                        {usr.active_package ? (
+                          <Badge className="bg-blue-100 text-blue-700 border-blue-200 capitalize">
+                            {usr.active_package}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">Paket Yok</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="outline" className={`mr-2 ${usr.is_suspended ? 'border-orange-200 text-orange-600 hover:bg-orange-50' : 'border-slate-200'}`} onClick={() => handleSuspendCustomer(usr.id, usr.is_suspended)}>
                           {usr.is_suspended ? "Erişimi Aç" : "Askıya Al"}
                         </Button>
-                        <Button size="sm" variant="destructive" className="mr-2" onClick={() => handleDeleteCustomer(usr.id)}>Sil</Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="destructive" className="mr-2">Sil</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Emin misiniz?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Bu müşterinin profilini kalıcı olarak silmek istediğinize emin misiniz? (Üye girişi tamamen engellenecektir ve veri tabanından silinecektir)
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>İptal</AlertDialogCancel>
+                              <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={() => handleDeleteCustomer(usr.id)}>
+                                Sil
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
 
                         {!usr.is_suspended && (
                           <Sheet open={assignmentOpen} onOpenChange={setAssignmentOpen}>
@@ -1239,6 +1334,52 @@ export default function Admin() {
                             </SheetContent>
                           </Sheet>
                         )}
+
+                        <Sheet open={assignPackageOpen} onOpenChange={setAssignPackageOpen}>
+                          <SheetTrigger asChild>
+                            <Button size="sm" variant="outline" className="ml-2 border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => { setSelectedUserForPackage(usr); setAssignPackageOpen(true); }}>Paket Ata</Button>
+                          </SheetTrigger>
+                          <SheetContent>
+                            <SheetHeader>
+                              <SheetTitle>Paket Tanımla</SheetTitle>
+                            </SheetHeader>
+                            <div className="py-6 space-y-6">
+                              <p className="text-sm text-muted-foreground">
+                                <span className="font-bold text-navy-dark">{selectedUserForPackage?.full_name}</span> adlı kullanıcıya vize paketi tanımlayın.
+                              </p>
+
+                              <div className="grid gap-4">
+                                {[
+                                  { id: 'starter', name: 'Starter', desc: 'Dijital rehber + AI kontrol', color: 'bg-slate-100' },
+                                  { id: 'pro', name: 'Pro', desc: 'Uzman inceleme + randevu', color: 'bg-blue-50' },
+                                  { id: 'elite', name: 'Elite', desc: 'VIP hizmet + %100 iade', color: 'bg-purple-50' }
+                                ].map((pkg) => (
+                                  <div
+                                    key={pkg.id}
+                                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all hover:border-blue-400 ${pkg.color} ${selectedUserForPackage?.active_package === pkg.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-transparent'}`}
+                                    onClick={() => handleAssignPackage(selectedUserForPackage!.id, pkg.id as any)}
+                                  >
+                                    <div className="flex justify-between items-center mb-1">
+                                      <span className="font-bold text-lg">{pkg.name}</span>
+                                      {selectedUserForPackage?.active_package === pkg.id && <Badge className="bg-blue-500">Aktif</Badge>}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">{pkg.desc}</p>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {selectedUserForPackage?.active_package && (
+                                <Button
+                                  variant="ghost"
+                                  className="w-full text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                  onClick={() => handleAssignPackage(selectedUserForPackage.id, null)}
+                                >
+                                  Mevcut Paketi Kaldır
+                                </Button>
+                              )}
+                            </div>
+                          </SheetContent>
+                        </Sheet>
                       </TableCell>
                     </TableRow>
                   ))}

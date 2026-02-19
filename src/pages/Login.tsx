@@ -33,7 +33,6 @@ export default function Login() {
       if (error) {
         toast({ title: "Giriş başarısız", description: (error as Error).message, variant: "destructive" });
       } else {
-        toast({ title: "Hoş geldiniz!" });
 
         if (session?.user) {
           const [{ data: roles }, { data: profile }] = await Promise.all([
@@ -122,63 +121,67 @@ export default function Login() {
 
   return (
     <div className="page-shell section-gradient-light flex items-center justify-center">
-      <div className="container mx-auto px-4 md:px-6 max-w-md">
+      <div className="container mx-auto px-4 md:px-6 max-w-lg">
         <motion.div
-          className="bg-white rounded-2xl border border-border p-6 sm:p-8 md:p-10 shadow-lg"
+          className="bg-white rounded-3xl border border-border p-8 sm:p-10 md:p-12 shadow-2xl relative overflow-hidden"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="text-center mb-8">
-            <Link to="/" className="inline-flex items-center gap-2 mb-4">
-              <span className="text-2xl">✈️</span>
-              <span className="text-xl font-extrabold tracking-tight">
+          {/* Subtle background glow effect */}
+          <div className="absolute top-0 right-0 -m-20 w-40 h-40 bg-green-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 -m-20 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div className="text-center mb-10 relative z-10">
+            <Link to="/" className="inline-flex items-center gap-2 mb-6 hover:scale-105 transition-transform duration-200">
+              <span className="text-3xl">✈️</span>
+              <span className="text-2xl font-extrabold tracking-tight">
                 <span className="text-navy-dark">Visa</span>
                 <span className="text-gradient-mint">Path</span>
               </span>
             </Link>
-            <h1 className="text-2xl font-extrabold text-navy-dark">
+            <h1 className="text-3xl font-extrabold text-navy-dark tracking-tight">
               {mode === "login" ? "Giriş Yapın" : "Hesap Oluşturun"}
             </h1>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-base text-muted-foreground mt-3">
               {mode === "login"
                 ? "Başvurularınızı takip edin ve belgelerinizi yönetin."
                 : "Hızlı ve güvenli bir şekilde hesabınızı oluşturun."}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
             {mode === "register" && (
               <div>
-                <label className="text-sm font-semibold text-foreground mb-1 block">Ad Soyad</label>
-                <Input className="h-11 text-[15px]" placeholder="Adınız Soyadınız" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                <label className="text-sm font-semibold text-foreground mb-1.5 block">Ad Soyad</label>
+                <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" placeholder="Adınız Soyadınız" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
               </div>
             )}
             <div>
-              <label className="text-sm font-semibold text-foreground mb-1 block">E-posta</label>
-              <Input className="h-11 text-[15px]" type="email" placeholder="ornek@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">E-posta</label>
+              <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="email" placeholder="ornek@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div>
-              <label className="text-sm font-semibold text-foreground mb-1 block">Şifre</label>
-              <Input className="h-11 text-[15px]" type="password" placeholder="En az 8 karakter" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">Şifre</label>
+              <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="password" placeholder="En az 8 karakter" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
             {mode === "register" && (
               <>
                 <div>
-                  <label className="text-sm font-semibold text-foreground mb-1 block">Şifre Tekrar</label>
-                  <Input className="h-11 text-[15px]" type="password" placeholder="Şifrenizi doğrulayın" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                  <label className="text-sm font-semibold text-foreground mb-1.5 block">Şifre Tekrar</label>
+                  <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="password" placeholder="Şifrenizi doğrulayın" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-foreground mb-1 block">Telefon</label>
-                  <Input className="h-11 text-[15px]" type="tel" placeholder="+90 5XX XXX XX XX" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                  <label className="text-sm font-semibold text-foreground mb-1.5 block">Telefon</label>
+                  <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="tel" placeholder="+90 5XX XXX XX XX" value={phone} onChange={(e) => setPhone(e.target.value)} required />
                 </div>
               </>
             )}
 
-            <Button type="submit" disabled={isLoading} className="w-full btn-gradient text-white font-bold h-14 text-base rounded-xl mt-4">
+            <Button type="submit" disabled={isLoading} className="w-full btn-gradient text-white font-extrabold h-14 text-lg rounded-xl mt-6 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">
               {isLoading ? (
-                <Loader2 size={18} className="mr-2 animate-spin" />
+                <Loader2 size={24} className="mr-2 animate-spin" />
               ) : mode === "login" ? (
-                <><LogIn size={18} className="mr-2" /> Giriş Yap</>
+                <><LogIn size={20} className="mr-2" /> Giriş Yap</>
               ) : (
                 <><User size={18} className="mr-2" /> Üye Ol</>
               )}
