@@ -10,7 +10,7 @@ const tabs = [
   { to: "/track", icon: Search, labelKey: "nav.track" },
 ];
 
-const hiddenPathPrefixes = ["/login", "/admin", "/dashboard"];
+const hiddenPathPrefixes = ["/login", "/admin", "/dashboard", "/advisor"];
 
 export function MobileBottomNav() {
   const location = useLocation();
@@ -39,11 +39,10 @@ export function MobileBottomNav() {
               <Link
                 key={tab.to}
                 to={tab.to}
-                className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold transition-colors ${
-                  active
+                className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-semibold transition-colors ${active
                     ? "bg-white text-accent shadow-sm"
                     : "text-muted-foreground hover:bg-white/70 hover:text-foreground"
-                }`}
+                  }`}
                 aria-current={active ? "page" : undefined}
               >
                 <tab.icon size={16} />

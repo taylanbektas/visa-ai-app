@@ -227,7 +227,11 @@ export default function Pricing() {
                         }
                       </Button>
                     </Link>
-                    <Button variant="ghost" onClick={resetQuiz} className="text-muted-foreground font-semibold">
+                    <Button
+                      variant="ghost"
+                      onClick={resetQuiz}
+                      className="text-muted-foreground font-bold hover:text-[#00B386] hover:bg-emerald-50 rounded-xl"
+                    >
                       {t("pricing.quiz.btnRetry")}
                     </Button>
                   </div>

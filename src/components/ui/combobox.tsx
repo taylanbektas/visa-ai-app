@@ -103,7 +103,31 @@ export function Combobox({
                             if (!open) setOpen(true)
                             if (e.target.value === "") onChange("")
                         }}
-                        onFocus={() => setOpen(true)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && filteredOptions.length > 0) {
+                                e.preventDefault()
+                                const autoSelect = filteredOptions[0]
+                                onChange(autoSelect.value)
+                                setInputValue(autoSelect.label)
+                                setOpen(false)
+                                inputRef.current?.blur()
+                            }
+                            if (e.key === "Backspace" && selectedOption && inputValue === selectedOption.label) {
+                                e.preventDefault()
+                                setInputValue("")
+                                onChange("")
+                            }
+                        }}
+                        onFocus={() => {
+                            setOpen(true)
+                            // Set cursor at the end
+                            setTimeout(() => {
+                                if (inputRef.current) {
+                                    const len = inputRef.current.value.length
+                                    inputRef.current.setSelectionRange(len, len)
+                                }
+                            }, 0)
+                        }}
                         onBlur={(e) => {
                             // On blur, if they haven't made a valid selection, revert to the actual selected value
                             // We'll delay it slightly so clicking an item has time to register `onChange`

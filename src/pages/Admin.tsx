@@ -51,7 +51,8 @@ import {
   ExternalLink,
   Download,
   Eye,
-  TrendingUp
+  TrendingUp,
+  Plus
 } from "lucide-react";
 import {
   Sheet,
@@ -540,7 +541,7 @@ export default function Admin() {
       <div className="flex min-h-screen w-full bg-slate-50">
         <Sidebar className="border-r shadow-sm">
           <SidebarHeader className="border-b px-8 py-6 pt-10 md:pt-4">
-            <h2 className="text-3xl font-black tracking-tight text-navy-dark px-2">VisaPath <span className="text-blue-500 font-extrabold uppercase text-xs tracking-[0.2em] block mt-1">Admin Control</span></h2>
+            <h2 className="text-3xl font-black tracking-tight text-navy-dark px-2">Sistem <span className="text-blue-500 font-extrabold uppercase text-xs tracking-[0.2em] block mt-1">Denetim Merkezi</span></h2>
           </SidebarHeader>
           <SidebarContent className="px-6 py-6">
             {/* ... sidebar content ... */}
@@ -613,12 +614,22 @@ export default function Admin() {
             </SidebarGroup>
             <div className="mt-auto px-4 pb-8 space-y-4">
               <Button
+                variant="ghost"
+                className="w-full h-16 justify-start text-navy-dark hover:bg-slate-100 rounded-2xl font-extrabold text-lg transition-all group border border-transparent hover:border-slate-200"
+                onClick={() => navigate("/")}
+              >
+                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mr-4 group-hover:bg-white transition-colors">
+                  <Plus className="h-5 w-5 text-navy-dark rotate-45" />
+                </div>
+                Anasayfa
+              </Button>
+              <Button
                 variant="outline"
-                className="w-full h-16 justify-start text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-100 shadow-sm rounded-2xl font-extrabold text-lg transition-all active:scale-[0.98]"
+                className="w-full h-14 justify-start text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-100 shadow-sm rounded-2xl font-extrabold text-base transition-all active:scale-[0.98]"
                 onClick={() => signOut().then(() => navigate("/"))}
               >
-                <div className="w-10 h-10 rounded-xl bg-rose-100/50 flex items-center justify-center mr-4">
-                  <LogOut className="h-5 w-5" />
+                <div className="w-8 h-8 rounded-lg bg-rose-100/50 flex items-center justify-center mr-4">
+                  <LogOut className="h-4 w-4" />
                 </div>
                 Çıkış Yap
               </Button>
@@ -626,7 +637,7 @@ export default function Admin() {
           </SidebarContent>
         </Sidebar>
 
-        <main className="flex-1 p-8 lg:p-12 overflow-auto pt-24 md:pt-12">
+        <main className="flex-1 p-8 lg:p-12 overflow-auto pt-8">
           {/* DASHBOARD TAB */}
           {activeTab === 'dashboard' && (
             <div className="space-y-12 animate-in fade-in duration-500 max-w-[1600px] mx-auto">

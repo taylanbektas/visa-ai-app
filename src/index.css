@@ -148,7 +148,12 @@
   h4,
   h5,
   h6 {
-    @apply font-semibold tracking-tight;
+    @apply font-black tracking-tighter;
+  }
+
+  button {
+    @apply font-extrabold;
+    font-size: 16px;
   }
 }
 
@@ -176,10 +181,12 @@
   .btn-gradient {
     position: relative;
     background: linear-gradient(135deg, #00D69E 0%, #00e6a8 60%, #0EA5E9 100%);
-    /* Matching text-gradient-mint */
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 15px rgba(0, 214, 158, 0.2);
+    font-size: 18px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.02em;
   }
 
   .btn-gradient::before {
@@ -218,6 +225,9 @@
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.01em;
   }
 
   .btn-gradient-navy::before {
@@ -239,7 +249,7 @@
 
   .btn-gradient-navy:hover {
     background: linear-gradient(135deg, hsl(210 35% 22%) 0%, hsl(210 40% 16%) 100%);
-    box-shadow: 0 0 25px rgba(28, 49, 68, 0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     transform: translateY(-2px);
   }
 

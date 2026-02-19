@@ -164,9 +164,9 @@ export default function Apply() {
         .maybeSingle();
 
       if (!error && data) {
-        setActiveProfilePackage(data.active_package);
-        if (data.active_package && !selectedPlan) {
-          setSelectedPlan(data.active_package);
+        setActiveProfilePackage((data as any).active_package);
+        if ((data as any).active_package && !selectedPlan) {
+          setSelectedPlan((data as any).active_package);
         }
       }
 
@@ -216,14 +216,14 @@ export default function Apply() {
       setRecommendation(draft.recommendation ?? null);
       setAuthMode(draft.authMode === "login" ? "login" : "register");
 
-      // Focus on Step 1 if coming from homepage with preselected data
-      if (hasOverrides && !hasScrolledToFocus) {
-        setHasScrolledToFocus(true);
-        setTimeout(() => {
-          const el = document.getElementById("apply-step-1-focus");
-          if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 300);
-      }
+      // Remove automatic scrolling on mount when coming from homepage
+      // if (hasOverrides && !hasScrolledToFocus) {
+      //   setHasScrolledToFocus(true);
+      //   setTimeout(() => {
+      //     const el = document.getElementById("apply-step-1-focus");
+      //     if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      //   }, 300);
+      // }
     } catch {
       localStorage.removeItem(APPLY_DRAFT_KEY);
     }
@@ -337,7 +337,7 @@ export default function Apply() {
         visa_type: visaType,
         plan: selectedPlan,
         status: "Alındı",
-        payment_status: "paid", // For this demo/flow, we assume payment success
+        payment_status: usePackageId ? "paid" : "pending",
         used_package_id: usePackageId
       })
       .select()
@@ -359,7 +359,8 @@ export default function Apply() {
 
 
     setReferenceId(refId);
-    setIsSuccess(true);
+    // Redirect to the new success page instead of inline state
+    window.location.href = `/success/${refId}`;
     setIsLoading(false);
     toast({ title: "Başvuru Alındı", description: "Başvurunuz başarıyla oluşturuldu." });
   };
@@ -644,14 +645,29 @@ export default function Apply() {
                     )}
 
                     {quizDone && recommendation && (
-                      <div className="bg-[#00D69E]/10 border-2 border-[#00D69E]/30 rounded-2xl p-5 mb-8 flex items-start gap-3">
-                        <CheckCircle size={24} className="text-[#00D69E] shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-extrabold text-navy-dark text-[15px]">
-                            Önerimiz: <span className="text-[#00B386] capitalize">{recommendation} Plan</span>
-                          </p>
-                          <p className="text-sm text-foreground/80 mt-1">Verdiğiniz cevaplara göre bu plan sizin için en uygunudur.</p>
+                      <div className="bg-[#00D69E]/10 border-2 border-[#00D69E]/30 rounded-2xl p-5 mb-8 flex items-center justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <CheckCircle size={24} className="text-[#00D69E] shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-extrabold text-navy-dark text-[15px]">
+                              Önerimiz: <span className="text-[#00B386] capitalize">{recommendation} Plan</span>
+                            </p>
+                            <p className="text-sm text-foreground/80 mt-1">Verdiğiniz cevaplara göre bu plan sizin için en uygunudur.</p>
+                          </div>
                         </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="font-bold text-navy-dark/60 hover:text-[#00B386]"
+                          onClick={() => {
+                            setQuizDone(false);
+                            setQuizQ(0);
+                            setQuizAnswers([]);
+                            setRecommendation(null);
+                          }}
+                        >
+                          Tekrar Dene
+                        </Button>
                       </div>
                     )}
 
@@ -1011,11 +1027,16 @@ export default function Apply() {
                               Ödeme yapmanıza gerek yoktur, doğrudan başvurunuzu tamamlayabilirsiniz.
                             </p>
                             <Button
-                              className="w-full btn-gradient text-white font-extrabold h-16 text-lg rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold h-16 text-lg rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] flex items-center justify-center gap-2"
                               disabled={isLoading}
                               onClick={() => handleCompleteApplication(matchingPackage?.id)}
                             >
-                              {isLoading ? <Loader2 size={24} className="animate-spin" /> : "Başvuruyu Onayla ve Devam Et"}
+                              {isLoading ? <Loader2 size={24} className="animate-spin" /> : (
+                                <>
+                                  <Sparkles size={20} />
+                                  Paket Hakkımı Kullan ve Başlat
+                                </>
+                              )}
                             </Button>
                           </div>
                         ) : (

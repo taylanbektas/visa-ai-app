@@ -23,7 +23,26 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: Book
     const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [bookingLoading, setBookingLoading] = useState(false);
+    const [availableDays, setAvailableDays] = useState<number[]>([]);
     const { toast } = useToast();
+
+    useEffect(() => {
+        if (advisorId && isOpen) {
+            fetchAdvisorAvailability();
+        }
+    }, [advisorId, isOpen]);
+
+    const fetchAdvisorAvailability = async () => {
+        const { data } = await supabase
+            .from('advisor_availability' as any)
+            .select('day_of_week')
+            .eq('advisor_id', advisorId) as { data: { day_of_week: number }[] | null };
+
+        if (data) {
+            const days = Array.from(new Set(data.map(a => a.day_of_week)));
+            setAvailableDays(days);
+        }
+    };
 
     useEffect(() => {
         if (selectedDate && advisorId) {
@@ -80,7 +99,7 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: Book
             slotDate.setHours(h, m, 0, 0);
             if (isBefore(slotDate, new Date())) return false;
 
-            // Check recurring availability (if advisor has set any)
+            // Check recurring availability
             if (recurringAvailability && recurringAvailability.length > 0) {
                 const isAvailable = recurringAvailability.some(a => {
                     const start = a.start_time.substring(0, 5);
@@ -88,6 +107,9 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: Book
                     return slot >= start && slot < end;
                 });
                 if (!isAvailable) return false;
+            } else {
+                // If advisor hasn't set ANY availability for this day, no slots are available
+                return false;
             }
 
             // Check if already booked
@@ -160,7 +182,14 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: Book
                             selected={selectedDate}
                             onSelect={setSelectedDate}
                             className="rounded-2xl border-none bg-white shadow-xl shadow-slate-200/50 p-4"
-                            disabled={(date) => date < startOfDay(new Date())}
+                            disabled={(date) => {
+                                const past = date < startOfDay(new Date());
+                                if (past) return true;
+                                if (availableDays.length > 0) {
+                                    return !availableDays.includes(date.getDay());
+                                }
+                                return false;
+                            }}
                             locale={tr}
                         />
                     </div>

@@ -27,6 +27,7 @@ import JoinAdvisor from "./pages/JoinAdvisor";
 import Contact from "./pages/Contact";
 import StaffLogin from "./pages/StaffLogin";
 
+import Success from "./pages/Success";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
@@ -138,6 +139,14 @@ const App = () => (
                 }
               />
               <Route
+                path="/success/:referenceId"
+                element={
+                  <PublicLayout>
+                    <Success />
+                  </PublicLayout>
+                }
+              />
+              <Route
                 path="/privacy"
                 element={
                   <PublicLayout>
@@ -163,11 +172,7 @@ const App = () => (
               <Route element={<RoleRoute allowedRoles={["user"]} />}>
                 <Route
                   path="/dashboard"
-                  element={
-                    <PublicLayout>
-                      <Dashboard />
-                    </PublicLayout>
-                  }
+                  element={<Dashboard />}
                 />
               </Route>
 
