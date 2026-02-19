@@ -5,11 +5,12 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, MessageSquare, Briefcase, Paperclip, X, Sparkles, ArrowRight, type LucideIcon,
+  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, MessageSquare, Briefcase, Paperclip, X, Sparkles, ArrowRight, Calendar as CalendarIcon, type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { MessageCenter } from "@/components/MessageCenter";
+import { BookingCalendar } from "@/components/BookingCalendar";
 import { useAuth } from "@/hooks/useAuth";
 
 const statusIcons: Record<string, LucideIcon> = {
@@ -42,6 +43,7 @@ interface AppWithAdvisor {
   advisorName: string | null;
   advisorId: string | null;
   advisorPhoto: string | null;
+  payment_status: string | null;
 }
 
 interface AssignedAdvisor {
@@ -62,6 +64,7 @@ export default function Dashboard() {
   const [dataLoading, setDataLoading] = useState(true);
   const [uploadingAppId, setUploadingAppId] = useState<string | null>(null);
   const [appDocuments, setAppDocuments] = useState<Record<string, { name: string; url: string }[]>>({});
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -115,7 +118,7 @@ export default function Dashboard() {
   const fetchApplications = async () => {
     if (!user) return;
 
-    const { data: apps } = await supabase
+    const { data: apps } = await (supabase as any)
       .from("applications")
       .select("*")
       .eq("user_id", user.id)
@@ -141,7 +144,7 @@ export default function Dashboard() {
 
     if (assignments && assignments.length > 0) {
       const advisorIds = [...new Set(assignments.map((a) => a.advisor_id))];
-      const { data: advisors } = await supabase
+      const { data: advisors } = await (supabase as any)
         .from("advisors")
         .select("id, user_id, photo_url")
         .in("id", advisorIds);
@@ -179,6 +182,7 @@ export default function Dashboard() {
           advisorName: advisorId ? advisorMap.get(advisorId) || null : null,
           advisorId: advisorId ? advisorUserMap.get(advisorId) || null : null,
           advisorPhoto: advisorId ? advisorPhotoMap.get(advisorId) || null : null,
+          payment_status: app.payment_status || "pending",
         }
       })
     );
@@ -208,8 +212,10 @@ export default function Dashboard() {
 
             {/* Messages Section - NEW */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <h2 className="font-semibold mb-4 flex items-center gap-2"><MessageSquare size={18} /> Mesajlarınız</h2>
-              <div className="h-[400px] bg-white rounded-xl border shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-semibold flex items-center gap-2"><MessageSquare size={18} /> Mesajlarınız</h2>
+              </div>
+              <div className="h-[600px] bg-white rounded-xl border shadow-sm overflow-hidden">
                 {applications.length > 0 && (applications[0].advisorId || applications[0].advisorName) ? (
                   <MessageCenter
                     currentUserId={user!.id}
@@ -232,6 +238,37 @@ export default function Dashboard() {
                 )}
               </div>
             </motion.div>
+
+            {/* Booking Section - NEW */}
+            {(applications[0]?.advisorId || assignedAdvisor) && (
+              <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="mt-8">
+                <div className="bg-white rounded-[2.5rem] p-8 border border-blue-50 shadow-sm relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-blue-50 rounded-full -mr-20 -mt-20 blur-3xl transition-colors group-hover:bg-blue-100"></div>
+                  <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+                    <div className="w-24 h-24 rounded-[2rem] bg-navy-dark flex items-center justify-center text-white shadow-xl shadow-navy-dark/20 flex-shrink-0">
+                      <CalendarIcon size={40} />
+                    </div>
+                    <div className="flex-1 text-center md:text-left">
+                      <h3 className="text-2xl font-black text-navy-dark mb-2 tracking-tight">Danışman Görüşmesi</h3>
+                      <p className="text-slate-500 font-medium mb-0">Vize sürecinizle ilgili aklınıza takılan her şeyi birebir görüşmede sorun.</p>
+                    </div>
+                    <Button
+                      onClick={() => setIsBookingOpen(true)}
+                      className="bg-navy-dark hover:bg-navy-light text-white font-black px-10 h-16 rounded-2xl shadow-xl shadow-navy-dark/10 transition-all hover:-translate-y-1 active:scale-[0.98]"
+                    >
+                      Görüşme Planla
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            <BookingCalendar
+              isOpen={isBookingOpen}
+              onClose={() => setIsBookingOpen(false)}
+              advisorId={applications[0]?.advisorId || assignedAdvisor?.user_id || ""}
+              customerId={user!.id}
+            />
 
             {/* Active Package Banner - NEW */}
             {profile?.active_package && applications.length === 0 && (
@@ -302,37 +339,46 @@ export default function Dashboard() {
                         </div>
                         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                           <Link to="/track"><Button size="sm" variant="outline" className="text-xs">Durumu Takip Et</Button></Link>
-                          <label className="cursor-pointer">
-                            <input
-                              type="file"
-                              className="hidden"
-                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                              disabled={uploadingAppId === app.id}
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0];
-                                if (!file || !user) return;
-                                setUploadingAppId(app.id);
-                                const filePath = `${user.id}/${app.id}/${Date.now()}_${file.name}`;
-                                const { error } = await supabase.storage.from('documents').upload(filePath, file);
-                                if (error) {
-                                  toast.error("Dosya yüklenemedi: " + error.message);
-                                } else {
-                                  const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(filePath);
-                                  setAppDocuments(prev => ({
-                                    ...prev,
-                                    [app.id]: [...(prev[app.id] || []), { name: file.name, url: publicUrl }]
-                                  }));
-                                  toast.success("Belge yüklendi!");
-                                }
-                                setUploadingAppId(null);
-                              }}
-                            />
-                            <Button size="sm" variant="outline" className="text-xs pointer-events-none" asChild={false} tabIndex={-1}>
-                              {uploadingAppId === app.id ? <Loader2 size={12} className="animate-spin mr-1" /> : <Paperclip size={12} className="mr-1" />}
-                              Belge Yükle
-                            </Button>
-                          </label>
+                          {app.payment_status === 'paid' ? (
+                            <label className="cursor-pointer">
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                                disabled={uploadingAppId === app.id}
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file || !user) return;
+                                  setUploadingAppId(app.id);
+                                  const filePath = `${user.id}/${app.id}/${Date.now()}_${file.name}`;
+                                  const { error } = await supabase.storage.from('documents').upload(filePath, file);
+                                  if (error) {
+                                    toast.error("Dosya yüklenemedi: " + error.message);
+                                  } else {
+                                    const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(filePath);
+                                    setAppDocuments(prev => ({
+                                      ...prev,
+                                      [app.id]: [...(prev[app.id] || []), { name: file.name, url: publicUrl }]
+                                    }));
+                                    toast.success("Belge yüklendi!");
+                                  }
+                                  setUploadingAppId(null);
+                                }}
+                              />
+                              <Button size="sm" variant="outline" className="text-xs pointer-events-none" asChild={false} tabIndex={-1}>
+                                {uploadingAppId === app.id ? <Loader2 size={12} className="animate-spin mr-1" /> : <Paperclip size={12} className="mr-1" />}
+                                Belge Yükle
+                              </Button>
+                            </label>
+                          ) : (
+                            <Link to="/apply" state={{ plan: app.plan }}>
+                              <Button size="sm" variant="destructive" className="text-xs">
+                                <AlertCircle size={12} className="mr-1" /> Ödemeyi Tamamla
+                              </Button>
+                            </Link>
+                          )}
                         </div>
+
                         {appDocuments[app.id] && appDocuments[app.id].length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-2">
                             {appDocuments[app.id].map((doc, i) => (

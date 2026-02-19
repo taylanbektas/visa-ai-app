@@ -364,35 +364,26 @@ export default function Index() {
 
           {/* Visa Checker Widget */}
           <motion.div
-            className="bg-white rounded-2xl shadow-xl border border-border/40 p-5 sm:p-6 md:p-8 max-w-2xl mx-auto"
+            className="bg-white rounded-2xl shadow-2xl border border-border/40 p-5 sm:p-6 md:p-10 max-w-4xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
           >
-            <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch">
               {/* Passport */}
               <div className="flex-1">
                 <label className="text-sm font-extrabold text-foreground mb-2 block text-left uppercase tracking-wide">{t("checker.passport")}</label>
-                <Select onValueChange={setSelectedPassport} value={selectedPassport}>
-                  <SelectTrigger className="h-16 text-lg font-medium">
-                    <SelectValue>
-                      <span className="flex items-center gap-2">
-                        <span className="text-xl">{currentPassport.flag}</span>
-                        <span>{t(currentPassport.labelKey)}</span>
-                      </span>
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="w-full min-w-[300px] max-h-[350px]">
-                    {passportOptions.map((p) => (
-                      <SelectItem key={p.code} value={p.code} className="py-3 cursor-pointer">
-                        <span className="flex items-center gap-3">
-                          <span className="text-2xl">{p.flag}</span>
-                          <span className="text-base font-bold">{t(p.labelKey)}</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  options={passportOptions.map((p) => ({
+                    value: p.code,
+                    label: t(p.labelKey),
+                    flag: p.flag
+                  }))}
+                  value={selectedPassport}
+                  onChange={setSelectedPassport}
+                  placeholder={t("checker.passport_placeholder") || "Pasaport Ülkesi Search..."}
+                  className="h-16"
+                />
               </div>
 
               {/* Destination */}

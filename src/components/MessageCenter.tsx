@@ -35,6 +35,7 @@ export function MessageCenter({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(true);
     const [isUploading, setIsUploading] = useState(false);
+    const [uploadType, setUploadType] = useState<'image' | 'file' | null>(null);
 
     useEffect(() => {
         if (!currentUserId || !targetUserId) return;
@@ -154,7 +155,7 @@ export function MessageCenter({
         const msg = {
             sender_id: currentUserId,
             recipient_id: targetUserId,
-            content: file.type.startsWith('image/') ? 'Görsel gönderildi' : 'Dosya gönderildi',
+            content: file.type.startsWith('image/') ? 'Görsel gönderildi' : file.name,
             attachment_url: publicUrl,
             attachment_type: file.type
         };
@@ -164,6 +165,7 @@ export function MessageCenter({
 
         await supabase.from("messages").insert(msg);
         setIsUploading(false);
+        setUploadType(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
@@ -241,18 +243,36 @@ export function MessageCenter({
                     ref={fileInputRef}
                     onChange={handleFileUpload}
                     className="hidden"
-                    accept="image/*,.pdf,.doc,.docx"
+                    accept={uploadType === 'image' ? "image/*" : ".pdf,.doc,.docx,.xls,.xlsx"}
                 />
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 shrink-0 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-200"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    title="Dosya veya Görsel Ekle"
-                >
-                    {isUploading ? <Loader2 size={20} className="animate-spin text-primary" /> : <Paperclip size={20} />}
-                </Button>
+                <div className="flex gap-1">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 shrink-0 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+                        onClick={() => {
+                            setUploadType('image');
+                            setTimeout(() => fileInputRef.current?.click(), 0);
+                        }}
+                        disabled={isUploading}
+                        title="Görsel Ekle"
+                    >
+                        {isUploading && uploadType === 'image' ? <Loader2 size={18} className="animate-spin text-primary" /> : <ImageIcon size={20} />}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 shrink-0 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-200"
+                        onClick={() => {
+                            setUploadType('file');
+                            setTimeout(() => fileInputRef.current?.click(), 0);
+                        }}
+                        disabled={isUploading}
+                        title="Dosya Ekle"
+                    >
+                        {isUploading && uploadType === 'file' ? <Loader2 size={18} className="animate-spin text-primary" /> : <Paperclip size={20} />}
+                    </Button>
+                </div>
 
                 <Input
                     placeholder="Bir mesaj yazın"

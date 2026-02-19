@@ -62,6 +62,8 @@ type ApplyDraft = {
   quizAnswers: string[];
   recommendation: string | null;
   authMode: "login" | "register";
+  isSuccess: boolean;
+  referenceId: string | null;
 };
 
 const APPLY_DRAFT_KEY = "visapath.apply-draft.v1";
@@ -122,10 +124,7 @@ export default function Apply() {
 
   const [step, setStep] = useState(1);
   const [selectedPassport, setSelectedPassport] = useState(preselectedPassport || "TR");
-  const preselectedLabel = preselectedDestination
-    ? destinations.find(d => d.key === preselectedDestination)?.label || preselectedDestination
-    : "";
-  const [destination, setDestination] = useState(preselectedLabel);
+  const [destination, setDestination] = useState(preselectedDestination || "");
   const [visaType, setVisaType] = useState("");
   const [travelerCount, setTravelerCount] = useState("1");
   const [selectedPlan, setSelectedPlan] = useState(preselectedPlan || "");
@@ -147,6 +146,9 @@ export default function Apply() {
   const [isLoading, setIsLoading] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [activeProfilePackage, setActiveProfilePackage] = useState<string | null>(null);
+  const [userPackages, setUserPackages] = useState<any[]>([]);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [referenceId, setReferenceId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -167,6 +169,18 @@ export default function Apply() {
           setSelectedPlan(data.active_package);
         }
       }
+
+      // Fetch specific customer packages
+      const { data: packages, error: pkgError } = await (supabase as any)
+        .from('customer_packages')
+        .select('*')
+        .eq('user_id', user.id)
+        .gt('remaining_count', 0);
+
+
+      if (!pkgError && packages) {
+        setUserPackages(packages);
+      }
     };
 
     fetchProfile();
@@ -178,21 +192,17 @@ export default function Apply() {
 
     try {
       const draft: Partial<ApplyDraft> = JSON.parse(rawDraft);
-      const validPassport = passportOptions.some((p) => p.code === draft.selectedPassport)
-        ? draft.selectedPassport!
-        : (preselectedPassport || "TR");
-      const preselected = preselectedDestination
-        ? destinations.find(d => d.key === preselectedDestination)?.label || preselectedDestination
-        : "";
-      const draftDest = preselected || draft.destination || "";
+      const validPassport = preselectedPassport || draft.selectedPassport || "TR";
+      const validDest = preselectedDestination || draft.destination || "";
+
+      // Verify availability
       const visaFree = sharedVisaFreeMap[validPassport] || [];
-      const destObj = destinations.find((d) => d.label === draftDest);
-      const destAllowed = !draftDest || !destObj || !visaFree.includes(destObj.key);
+      const destAllowed = !validDest || !visaFree.includes(validDest);
       const hasOverrides = !!preselectedDestination || !!preselectedPassport || !!preselectedPlan;
 
       setStep(hasOverrides ? 1 : (draft.step ?? 1));
       setSelectedPassport(validPassport);
-      setDestination(destAllowed ? draftDest : "");
+      setDestination(destAllowed ? validDest : "");
       setVisaType(draft.visaType ?? "");
       setTravelerCount(draft.travelerCount ?? "1");
       setSelectedPlan(preselectedPlan || draft.selectedPlan || "");
@@ -222,8 +232,7 @@ export default function Apply() {
 
   useEffect(() => {
     const visaFree = sharedVisaFreeMap[selectedPassport] || [];
-    const currentDest = destinations.find((d) => d.label === destination);
-    if (currentDest && visaFree.includes(currentDest.key)) {
+    if (destination && visaFree.includes(destination)) {
       setDestination("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -268,6 +277,8 @@ export default function Apply() {
       quizAnswers,
       recommendation,
       authMode,
+      isSuccess,
+      referenceId,
     };
     localStorage.setItem(APPLY_DRAFT_KEY, JSON.stringify(draft));
   }, [
@@ -292,8 +303,8 @@ export default function Apply() {
     !visaFreeForPassport.includes(d.key) &&
     d.key.toUpperCase() !== selectedPassport
   );
-  const selectedDestination = destinations.find((d) => d.label === destination);
-  const isDestinationStillAvailable = selectedDestination != null && availableDestinations.some((d) => d.label === destination);
+  const selectedDestination = destinations.find((d) => d.key === destination);
+  const isDestinationStillAvailable = selectedDestination != null && availableDestinations.some((d) => d.key === destination);
 
   const tCount = parseInt(travelerCount, 10) || 1;
   const basePricePerPerson = plans.find(p => p.id === selectedPlan)?.basePrice || 0;
@@ -305,7 +316,53 @@ export default function Apply() {
   const totalGovFee = governmentFeePerPerson * tCount;
 
   const isPackageAssigned = activeProfilePackage && selectedPlan === activeProfilePackage;
-  const finalTotal = isPackageAssigned ? 0 : (totalBasePrice + totalProcPrice + totalGovFee);
+
+  // Find if user has a specific package they can use for this plan
+  const matchingPackage = userPackages.find(p => p.package_type === selectedPlan);
+  const canUsePackage = isPackageAssigned || (matchingPackage && matchingPackage.remaining_count > 0);
+
+  const finalTotal = (isPackageAssigned || canUsePackage) ? 0 : (totalBasePrice + totalProcPrice + totalGovFee);
+
+  const handleCompleteApplication = async (usePackageId?: string) => {
+    if (!user) return;
+    setIsLoading(true);
+
+    const refId = `VP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const { data: newApp, error } = await supabase
+      .from("applications")
+      .insert({
+        user_id: user.id,
+        reference_id: refId,
+        destination: destination,
+        visa_type: visaType,
+        plan: selectedPlan,
+        status: "Alındı",
+        payment_status: "paid", // For this demo/flow, we assume payment success
+        used_package_id: usePackageId
+      })
+      .select()
+      .single();
+
+    if (error) {
+      toast({ title: "Hata", description: "Başvuru oluşturulurken bir hata oluştu.", variant: "destructive" });
+      setIsLoading(false);
+      return;
+    }
+
+    if (usePackageId) {
+      // Decrement package count
+      await (supabase as any)
+        .from('customer_packages')
+        .update({ remaining_count: matchingPackage.remaining_count - 1 })
+        .eq('id', usePackageId);
+    }
+
+
+    setReferenceId(refId);
+    setIsSuccess(true);
+    setIsLoading(false);
+    toast({ title: "Başvuru Alındı", description: "Başvurunuz başarıyla oluşturuldu." });
+  };
 
   const handleQuizAnswer = (value: string) => {
     const newAnswers = [...quizAnswers, value];
@@ -428,8 +485,51 @@ export default function Apply() {
             {/* Step Content */}
             <AnimatePresence mode="wait">
 
+              {/* ── STEP 5: Success ── */}
+              {isSuccess && (
+                <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
+                  <div className="bg-white rounded-2xl border border-border p-8 md:p-12 shadow-xl text-center">
+                    <div className="w-20 h-20 bg-[#00D69E]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <CheckCircle className="w-10 h-10 text-[#00D69E]" />
+                    </div>
+                    <h2 className="text-3xl font-extrabold text-navy-dark mb-4">Tebrikler!</h2>
+                    <p className="text-lg text-muted-foreground mb-8">
+                      Vize başvurunuz başarıyla oluşturuldu. <br />
+                      Referans Numaranız: <span className="text-navy-dark font-mono font-bold">{referenceId}</span>
+                    </p>
+                    <div className="bg-gray-50 rounded-2xl p-6 mb-8 inline-block text-left max-w-md w-full border border-gray-100">
+                      <h3 className="font-bold text-navy-dark mb-3 flex items-center gap-2">
+                        <ArrowRight size={18} className="text-[#00D69E]" /> Sırada Ne Var?
+                      </h3>
+                      <ul className="space-y-3 text-sm text-muted-foreground">
+                        <li className="flex gap-2">
+                          <span className="w-5 h-5 rounded-full bg-[#00D69E] text-white flex items-center justify-center text-[10px] shrink-0 mt-0.5">1</span>
+                          <span>Panelinize giderek <strong>{selectedDestination?.label} {visaType}</strong> başvurunuzu görüntüleyin.</span>
+                        </li>
+                        <li className="flex gap-2">
+                          <span className="w-5 h-5 rounded-full bg-[#00D69E] text-white flex items-center justify-center text-[10px] shrink-0 mt-0.5">2</span>
+                          <span>Gerekli vize belgelerini yüklemek için alanlar aktif hale geldi.</span>
+                        </li>
+                        <li className="flex gap-2">
+                          <span className="w-5 h-5 rounded-full bg-[#00D69E] text-white flex items-center justify-center text-[10px] shrink-0 mt-0.5">3</span>
+                          <span>Danışmanınız belgelerinizi inceleyip sizinle iletişime geçecektir.</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <div>
+                      <Button
+                        onClick={() => window.location.href = "/dashboard"}
+                        className="btn-gradient text-white font-extrabold h-14 px-10 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                      >
+                        Panelime Git <ArrowRight size={20} className="ml-2" />
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
               {/* ── STEP 1: Trip Details ── */}
-              {step === 1 && (
+              {step === 1 && !isSuccess && (
                 <motion.div key="step1" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
                   <div className="bg-white rounded-2xl border border-border p-6 md:p-10 shadow-sm">
                     <h2 className="text-2xl font-extrabold text-navy-dark mb-8">Nereye seyahat ediyorsunuz?</h2>
@@ -453,7 +553,7 @@ export default function Apply() {
                           </div>
                         ) : (
                           <Combobox
-                            options={availableDestinations.map(c => ({ value: c.label, label: c.label, flag: c.flag }))}
+                            options={availableDestinations.map(c => ({ value: c.key, label: c.label, flag: c.flag }))}
                             value={isDestinationStillAvailable ? destination : ""}
                             onChange={setDestination}
                             placeholder="Gideceğiniz ülkeyi arayın..."
@@ -896,35 +996,36 @@ export default function Apply() {
                           </div>
                         </div>
 
-                        {isPackageAssigned ? (
+                        {canUsePackage ? (
                           <div className="mt-10 bg-blue-50 border border-blue-200 p-6 rounded-2xl">
                             <div className="flex items-center gap-3 mb-3">
                               <Sparkles className="text-blue-600" size={24} />
                               <h3 className="font-bold text-blue-900">Tanımlı Paketiniz Mevcut</h3>
                             </div>
                             <p className="text-blue-800 text-sm mb-6 leading-relaxed">
-                              Hesabınıza tanımlanmış <span className="font-bold underline uppercase">{activeProfilePackage}</span> paketiniz bulunmaktadır.
+                              {matchingPackage
+                                ? `Hesabınıza tanımlanmış ${matchingPackage.remaining_count} adet `
+                                : "Hesabınıza tanımlanmış "
+                              }
+                              <span className="font-bold underline uppercase">{selectedPlan}</span> paketiniz bulunmaktadır.
                               Ödeme yapmanıza gerek yoktur, doğrudan başvurunuzu tamamlayabilirsiniz.
                             </p>
                             <Button
                               className="w-full btn-gradient text-white font-extrabold h-16 text-lg rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02]"
-                              onClick={async () => {
-                                setIsLoading(true);
-                                // Here we would normally create the application in Supabase
-                                // I'll search for where the application creation logic is or should be.
-                                // It seems there isn't a final submission handler here yet besides the UI.
-                                // Let's check if there's a handleCompleteApplication.
-                                toast({ title: "Başvuru Alındı", description: "Başvurunuz başarıyla oluşturuldu. Belge yükleme sayfasına yönlendiriliyorsunuz." });
-                                window.location.href = "/dashboard";
-                              }}
+                              disabled={isLoading}
+                              onClick={() => handleCompleteApplication(matchingPackage?.id)}
                             >
-                              Başvuruyu Onayla ve Devam Et
+                              {isLoading ? <Loader2 size={24} className="animate-spin" /> : "Başvuruyu Onayla ve Devam Et"}
                             </Button>
                           </div>
                         ) : (
                           <>
-                            <Button className="w-full btn-gradient text-white font-extrabold h-16 text-lg rounded-2xl mt-10 shadow-[0_8px_30px_rgb(0,214,158,0.3)] hover:shadow-[0_8px_30px_rgb(0,214,158,0.5)] transition-all duration-300 hover:scale-[1.02]">
-                              €{finalTotal} Öde ve Başvuruyu Tamamla
+                            <Button
+                              className="w-full btn-gradient text-white font-extrabold h-16 text-lg rounded-2xl mt-10 shadow-[0_8px_30px_rgb(0,214,158,0.3)] hover:shadow-[0_8px_30px_rgb(0,214,158,0.5)] transition-all duration-300 hover:scale-[1.02]"
+                              disabled={isLoading}
+                              onClick={() => handleCompleteApplication()}
+                            >
+                              {isLoading ? <Loader2 size={24} className="animate-spin" /> : `€${finalTotal} Öde ve Başvuruyu Tamamla`}
                             </Button>
 
                             <div className="flex items-center justify-center gap-2 mt-6 text-xs font-bold text-muted-foreground bg-green-50/50 py-3 rounded-xl border border-green-100">
@@ -933,6 +1034,7 @@ export default function Apply() {
                             </div>
                           </>
                         )}
+
                       </>
                     )}
 

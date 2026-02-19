@@ -84,7 +84,7 @@ export function Combobox({
                         inputRef.current?.focus()
                     }}
                 >
-                    {selectedOption?.flag && (
+                    {selectedOption?.flag && inputValue === selectedOption.label && (
                         <div className="absolute left-4 z-10 text-3xl flex items-center h-full" aria-hidden="true">
                             {selectedOption.flag}
                         </div>
@@ -94,7 +94,7 @@ export function Combobox({
                         type="text"
                         className={cn(
                             "absolute inset-0 w-full h-full bg-transparent outline-none placeholder:text-muted-foreground placeholder:font-normal font-bold text-lg text-foreground",
-                            selectedOption?.flag ? "pl-16 pr-10" : "px-4 pr-10"
+                            (selectedOption?.flag && inputValue === selectedOption.label) ? "pl-16 pr-10" : "px-4 pr-10"
                         )}
                         placeholder={placeholder}
                         value={inputValue}

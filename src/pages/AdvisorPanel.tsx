@@ -8,6 +8,8 @@ import {
   Tooltip,
   CartesianGrid
 } from 'recharts';
+import { format } from "date-fns";
+import { tr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,7 +40,10 @@ import {
   AlertCircle,
   TrendingUp,
   DollarSign,
-  Zap
+  Zap,
+  Calendar,
+  Plus,
+  Trash2
 } from "lucide-react";
 import {
   Table,
@@ -69,6 +74,23 @@ type Application = {
   phone?: string | null;
 };
 
+type Consultation = {
+  id: string;
+  customer_id: string;
+  start_time: string;
+  end_time: string;
+  status: 'pending' | 'confirmed' | 'rejected' | 'cancelled';
+  customer_name?: string;
+  is_advisor_request?: boolean;
+};
+
+type Availability = {
+  id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+};
+
 export default function AdvisorPanel() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { isAdmin, isModerator, loading: roleLoading } = useUserRole(); // Fixed lint
@@ -83,7 +105,8 @@ export default function AdvisorPanel() {
     completed: 0,
     pendingMessages: 0,
     totalRevenue: 0,
-    activeApps: 0
+    activeApps: 0,
+    pendingConsultations: 0
   });
 
   // Profile Form State
@@ -99,6 +122,9 @@ export default function AdvisorPanel() {
 
   // Messaging state
   const [selectedChatUser, setSelectedChatUser] = useState<{ id: string, name: string } | null>(null);
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [availability, setAvailability] = useState<Availability[]>([]);
+  const [advisorId, setAdvisorId] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading || roleLoading) return;
@@ -136,6 +162,8 @@ export default function AdvisorPanel() {
         photo_url: advisorData.photo_url || "",
         specialties: advisorData.specializations || []
       });
+
+      setAdvisorId(advisorData.id);
 
       // 2. Fetch assigned users from profiles using the correct advisor ID
       const { data: assignedUsers } = await supabase
@@ -186,8 +214,38 @@ export default function AdvisorPanel() {
           completed: completedCount || 0,
           pendingMessages: pendingCount,
           totalRevenue: (completedCount || 0) * 3500,
-          activeApps: assignedUsers.length - (completedCount || 0)
+          activeApps: assignedUsers.length - (completedCount || 0),
+          pendingConsultations: 0 // Will be updated below
         });
+
+        // 3. Fetch consultations
+        const { data: consData } = await supabase
+          .from('consultations' as any)
+          .select('*, profiles(full_name)')
+          .eq('advisor_id', advisorData.id)
+          .order('start_time', { ascending: true });
+
+        if (consData) {
+          setConsultations(consData.map((c: any) => ({
+            ...c,
+            customer_name: c.profiles?.full_name || 'Müşteri'
+          })));
+
+          const pendingCons = consData.filter((c: any) => c.status === 'pending').length;
+          setStats(prev => ({ ...prev, pendingConsultations: pendingCons }));
+        }
+
+        // 4. Fetch availability
+        const { data: availData } = await supabase
+          .from('advisor_availability' as any)
+          .select('*')
+          .eq('advisor_id', advisorData.id)
+          .order('day_of_week', { ascending: true })
+          .order('start_time', { ascending: true }) as { data: any[] | null };
+
+        if (availData) {
+          setAvailability(availData);
+        }
       }
     }
 
@@ -261,6 +319,56 @@ export default function AdvisorPanel() {
     navigate("/");
   };
 
+  const handleUpdateConsultationStatus = async (id: string, status: string) => {
+    const { error } = await supabase
+      .from('consultations' as any)
+      .update({ status })
+      .eq('id', id);
+
+    if (error) {
+      toast({ title: "Hata", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Başarılı", description: "Görüşme durumu güncellendi." });
+      fetchData();
+    }
+  };
+
+  const dayNames = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+  const [newAvail, setNewAvail] = useState({ day: 1, start: "09:00", end: "17:00" });
+
+  const handleAddAvailability = async () => {
+    if (!advisorId) return;
+    const { error } = await supabase
+      .from('advisor_availability' as any)
+      .insert({
+        advisor_id: advisorId,
+        day_of_week: newAvail.day,
+        start_time: newAvail.start,
+        end_time: newAvail.end
+      });
+
+    if (error) {
+      toast({ title: "Hata", description: "Müsaitlik eklenemedi: " + error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Başarılı", description: "Müsaitlik eklendi." });
+      fetchData();
+    }
+  };
+
+  const handleRemoveAvailability = async (id: string) => {
+    const { error } = await supabase
+      .from('advisor_availability' as any)
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({ title: "Hata", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Başarılı", description: "Müsaitlik kaldırıldı." });
+      fetchData();
+    }
+  };
+
   if (authLoading || roleLoading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
 
   return (
@@ -306,6 +414,17 @@ export default function AdvisorPanel() {
                     >
                       <MessageSquare className={activeTab === 'messages' ? 'text-emerald-600 w-6 h-6' : 'text-slate-400 w-6 h-6'} />
                       <span className={activeTab === 'messages' ? 'text-navy-dark text-lg' : 'text-slate-500 text-lg'}>Mesajlar</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={activeTab === 'bookings'}
+                      onClick={() => setActiveTab('bookings')}
+                      size="lg"
+                      className="rounded-2xl h-16 gap-4 font-bold transition-all hover:translate-x-1"
+                    >
+                      <Calendar className={activeTab === 'bookings' ? 'text-emerald-600 w-6 h-6' : 'text-slate-400 w-6 h-6'} />
+                      <span className={activeTab === 'bookings' ? 'text-navy-dark text-lg' : 'text-slate-500 text-lg'}>Görüşmeler</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
@@ -642,6 +761,131 @@ export default function AdvisorPanel() {
                     Profilimi Güncelle
                   </Button>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'bookings' && (
+            <div className="space-y-12 animate-in fade-in duration-500">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Consultations Lists */}
+                <div className="lg:col-span-2 space-y-8">
+                  <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
+                    <h3 className="text-2xl font-black text-navy-dark mb-8 tracking-tight flex items-center gap-2">
+                      <Clock className="text-blue-500" /> Bekleyen Talepler
+                      {stats.pendingConsultations > 0 && <Badge className="ml-2 bg-blue-500">{stats.pendingConsultations}</Badge>}
+                    </h3>
+                    <div className="space-y-4">
+                      {consultations.filter(c => c.status === 'pending').map(c => (
+                        <div key={c.id} className="p-6 bg-slate-50 rounded-3xl flex items-center justify-between border border-slate-100 hover:border-blue-200 transition-colors">
+                          <div>
+                            <p className="font-black text-navy-dark text-lg">{c.customer_name}</p>
+                            <p className="text-slate-500 font-bold text-sm">
+                              {format(new Date(c.start_time), 'd MMMM yyyy, EEEE', { locale: tr })}
+                            </p>
+                            <p className="text-blue-600 font-black text-sm uppercase tracking-wider mt-1">
+                              {format(new Date(c.start_time), 'HH:mm')} - {format(new Date(c.end_time), 'HH:mm')}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button onClick={() => handleUpdateConsultationStatus(c.id, 'confirmed')} className="bg-emerald-500 hover:bg-emerald-600 rounded-xl font-bold h-12 px-6">Onayla</Button>
+                            <Button onClick={() => handleUpdateConsultationStatus(c.id, 'rejected')} variant="outline" className="text-rose-600 border-rose-100 hover:bg-rose-50 rounded-xl font-bold h-12 px-6">Reddet</Button>
+                          </div>
+                        </div>
+                      ))}
+                      {consultations.filter(c => c.status === 'pending').length === 0 && (
+                        <p className="text-center py-10 text-slate-400 font-bold">Bekleyen randevu talebi bulunmuyor.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
+                    <h3 className="text-2xl font-black text-navy-dark mb-8 tracking-tight flex items-center gap-2">
+                      <CheckCircle2 className="text-emerald-500" /> Onaylanmış Görüşmeler
+                    </h3>
+                    <div className="space-y-4">
+                      {consultations.filter(c => c.status === 'confirmed').map(c => (
+                        <div key={c.id} className="p-6 bg-white rounded-3xl flex items-center justify-between border border-slate-100">
+                          <div>
+                            <p className="font-black text-navy-dark text-lg">{c.customer_name}</p>
+                            <p className="text-slate-500 font-bold text-sm">
+                              {format(new Date(c.start_time), 'd MMMM yyyy, EEEE', { locale: tr })}
+                            </p>
+                            <p className="text-emerald-600 font-black text-sm uppercase tracking-wider mt-1">
+                              {format(new Date(c.start_time), 'HH:mm')} - {format(new Date(c.end_time), 'HH:mm')}
+                            </p>
+                          </div>
+                          <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 px-4 py-1 rounded-full font-bold">Onaylandı</Badge>
+                        </div>
+                      ))}
+                      {consultations.filter(c => c.status === 'confirmed').length === 0 && (
+                        <p className="text-center py-10 text-slate-400 font-bold">Yaklaşan onaylı görüşme bulunmuyor.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Availability Settings */}
+                <div className="space-y-8">
+                  <div className="bg-navy-dark p-8 rounded-[2.5rem] text-white shadow-xl shadow-navy-dark/20">
+                    <h3 className="text-xl font-black mb-6 flex items-center gap-3">
+                      <Zap className="text-emerald-400" /> Uygunluk Tanımla
+                    </h3>
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-white/60">Gün</Label>
+                        <select
+                          value={newAvail.day}
+                          onChange={e => setNewAvail({ ...newAvail, day: parseInt(e.target.value) })}
+                          className="w-full bg-white/10 border-white/20 rounded-xl h-12 px-4 text-white font-bold outline-none focus:ring-2 ring-emerald-400/50"
+                        >
+                          {dayNames.map((name, i) => <option key={i} value={i} className="text-navy-dark">{name}</option>)}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-white/60">Başlangıç</Label>
+                          <Input
+                            type="time"
+                            value={newAvail.start}
+                            onChange={e => setNewAvail({ ...newAvail, start: e.target.value })}
+                            className="bg-white/10 border-white/20 h-12 text-white font-bold rounded-xl"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-white/60">Bitiş</Label>
+                          <Input
+                            type="time"
+                            value={newAvail.end}
+                            onChange={e => setNewAvail({ ...newAvail, end: e.target.value })}
+                            className="bg-white/10 border-white/20 h-12 text-white font-bold rounded-xl"
+                          />
+                        </div>
+                      </div>
+                      <Button onClick={handleAddAvailability} className="w-full bg-emerald-500 hover:bg-emerald-600 h-14 rounded-xl font-black gap-2 transition-all active:scale-[0.98]">
+                        <Plus size={20} /> Ekle
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                    <h3 className="text-xl font-black text-navy-dark mb-6">Mevcut Uygunluklar</h3>
+                    <div className="space-y-3">
+                      {availability.map(a => (
+                        <div key={a.id} className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between group">
+                          <div>
+                            <p className="font-black text-navy-dark text-sm">{dayNames[a.day_of_week]}</p>
+                            <p className="text-slate-500 font-bold text-xs">{a.start_time.substring(0, 5)} - {a.end_time.substring(0, 5)}</p>
+                          </div>
+                          <Button onClick={() => handleRemoveAvailability(a.id)} variant="ghost" size="icon" className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all">
+                            <Trash2 size={18} />
+                          </Button>
+                        </div>
+                      ))}
+                      {availability.length === 0 && <p className="text-center text-slate-400 text-xs font-bold py-6">Müsaitlik tanımlanmamış.</p>}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
