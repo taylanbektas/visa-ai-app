@@ -76,6 +76,17 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Application = {
   id: string;
@@ -150,6 +161,8 @@ export default function Admin() {
   const [assignmentOpen, setAssignmentOpen] = useState(false);
   const [selectedAdvisor, setSelectedAdvisor] = useState<Advisor | null>(null);
   const [editAdvisorOpen, setEditAdvisorOpen] = useState(false);
+  const [assignCustomerOpen, setAssignCustomerOpen] = useState(false);
+  const [selectedAdvisorForCustomer, setSelectedAdvisorForCustomer] = useState<Advisor | null>(null);
 
   useEffect(() => {
     if (authLoading || roleLoading) return;
@@ -242,19 +255,54 @@ export default function Admin() {
     setLoadingApps(false);
   };
 
-  const handleAssignAdvisor = async (userId: string, advisorId: string) => {
-    const { error } = await supabase
+  const handleAssignAdvisor = async (userId: string, authUserId: string, advisorId: string) => {
+    // Try to update profile. Use .select() to check if row was actually updated (RLS fallback detection)
+    const { data: updatedProfile, error: profileError } = await supabase
       .from('profiles')
       .update({ assigned_advisor_id: advisorId } as never)
-      .eq('id', userId);
+      .eq('id', userId)
+      .select();
 
-    if (error) {
-      toast({ title: "Hata", description: "Atama yapılamadı: " + error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Başarılı", description: "Danışman atandı." });
-      setAssignmentOpen(false);
-      fetchData();
+    if (profileError) {
+      toast({ title: "Hata", description: "Profil ataması yapılamadı: " + profileError.message, variant: "destructive" });
+      return;
     }
+
+    if (!updatedProfile || updatedProfile.length === 0) {
+      toast({
+        title: "Yetki Hatası (RLS)",
+        description: "Danışman atandı olarak işaretlenemedi. Adminlerin 'profiles' tablosunu güncelleyebilmesi için RLS izinlerine ihtiyacı var.",
+        variant: "destructive"
+      });
+      return; // Stop here if profile update failed silently
+    }
+
+    // Assign existing applications
+    const { data: apps } = await supabase
+      .from('applications')
+      .select('id')
+      .eq('user_id', authUserId);
+
+    if (apps && apps.length > 0) {
+      const appIds = apps.map(a => a.id);
+      await supabase.from('advisor_assignments').delete().in('application_id', appIds);
+
+      const assignments = apps.map(app => ({
+        id: crypto.randomUUID(), // Assuming UUID is required if it's not auto-generated properly
+        application_id: app.id,
+        advisor_id: advisorId
+      }));
+
+      const { error: assignError } = await supabase.from('advisor_assignments').insert(assignments);
+      if (assignError) {
+        console.error("Assignment error:", assignError);
+      }
+    }
+
+    toast({ title: "Başarılı", description: "Danışman atandı." });
+    setAssignmentOpen(false);
+    setAssignCustomerOpen(false);
+    fetchData();
   };
 
   const handleUpdateAdvisorStatus = async (advisorId: string, isActive: boolean) => {
@@ -342,13 +390,42 @@ export default function Admin() {
 
   const handleRejectAdvisor = async (id: string) => {
     try {
+      const app = advisorApplications.find(a => a.id === id);
+
       const { error } = await supabase
         .from('advisor_applications')
         .update({ status: 'rejected' } as never)
         .eq('id', id);
 
       if (error) throw error;
-      toast({ title: "Reddedildi", description: "Başvuru reddedildi." });
+
+      if (app) {
+        // Revoke the moderator role if they had it
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .delete()
+          .match({ user_id: app.user_id, role: 'moderator' });
+
+        if (roleError) console.error("Role revoke error:", roleError);
+
+        // Delete their advisor profile completely
+        const { error: advError } = await supabase
+          .from('advisors')
+          .delete()
+          .eq('user_id', app.user_id);
+
+        if (advError) {
+          console.error("Advisor delete error:", advError);
+          // Fallback to inactivate if delete fails (e.g. RLS)
+          await supabase.from('advisors').update({ is_active: false }).eq('user_id', app.user_id);
+          toast({ title: "Uyarı", description: "Başvuru reddedildi ancak profil silinemedi (RLS kısıtlaması olabilir).", variant: "destructive" });
+        } else {
+          toast({ title: "Reddedildi", description: "Başvuru reddedildi ve varsa yetkileri tamamen silindi." });
+        }
+      } else {
+        toast({ title: "Reddedildi", description: "Başvuru reddedildi." });
+      }
+
       fetchData();
     } catch (e: unknown) {
       if (e instanceof Error) {
@@ -356,6 +433,34 @@ export default function Admin() {
       } else {
         toast({ title: "Hata", description: "Bilinmeyen bir hata oluştu.", variant: "destructive" });
       }
+    }
+  };
+
+  const handleDeleteAdvisor = async (advisorId: string, userId: string) => {
+    try {
+      // 1. Delete assigned applications or unassign them first (if needed, but ON DELETE CASCADE should handle assignments table if setup correctly)
+
+      // 2. Remove moderator role
+      await supabase
+        .from('user_roles')
+        .delete()
+        .match({ user_id: userId, role: 'moderator' });
+
+      // 3. Delete advisor profile
+      const { error } = await supabase
+        .from('advisors')
+        .delete()
+        .eq('id', advisorId);
+
+      if (error) {
+        toast({ title: "Silme Hatası", description: "Hata: " + error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Başarılı", description: "Danışman veritabanından kalıcı olarak silindi." });
+        fetchData();
+      }
+    } catch (e: unknown) {
+      console.error(e);
+      toast({ title: "Hata", description: "Silme işlemi sırasında beklenmeyen bir hata oluştu.", variant: "destructive" });
     }
   };
 
@@ -885,6 +990,24 @@ export default function Admin() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
+                        <Button size="sm" variant="outline" className="mr-2" onClick={() => { setSelectedAdvisorForCustomer(adv); setAssignCustomerOpen(true); }}>Müşteri Ata</Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="destructive" className="mr-2">Sil</Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Danışmanı Sil</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Bu danışmanı veritabanından kalıcı olarak silmek istediğinize emin misiniz? Bu işlem iptal edilemez.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Vazgeç</AlertDialogCancel>
+                              <AlertDialogAction className="bg-red-600 hover:bg-red-700" onClick={() => handleDeleteAdvisor(adv.id, adv.user_id)}>Sil</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                         <Sheet open={editAdvisorOpen} onOpenChange={setEditAdvisorOpen}>
                           <SheetTrigger asChild>
                             <Button size="sm" variant="ghost" onClick={() => { setSelectedAdvisor(adv); setEditAdvisorOpen(true); }}>Düzenle</Button>
@@ -921,6 +1044,37 @@ export default function Admin() {
                   ))}
                 </TableBody>
               </Table>
+
+              {/* Customer Assignment to Advisor Sheet */}
+              <Sheet open={assignCustomerOpen} onOpenChange={setAssignCustomerOpen}>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Müşteri Ata</SheetTitle>
+                  </SheetHeader>
+                  <div className="py-6 space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-bold text-navy-dark">{selectedAdvisorForCustomer?.full_name}</span> adlı danışmana müşteri atayın.
+                    </p>
+                    <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
+                      {usersList.map((usr: UserData & { full_name?: string }) => (
+                        <div key={usr.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                          onClick={() => {
+                            if (selectedAdvisorForCustomer && usr.id && usr.user_id) {
+                              handleAssignAdvisor(usr.id, usr.user_id, selectedAdvisorForCustomer.id);
+                            }
+                          }}>
+                          <div>
+                            <p className="font-medium">{usr.full_name || 'İsimsiz'}</p>
+                            <p className="text-xs text-muted-foreground">{usr.phone || '-'}</p>
+                          </div>
+                          <Button size="sm" variant="ghost">Seç</Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+
             </div>
           )}
 
@@ -975,7 +1129,11 @@ export default function Admin() {
                               <div className="space-y-2">
                                 {activeAdvisorsList.map(adv => (
                                   <div key={adv.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                                    onClick={() => handleAssignAdvisor(selectedUser?.id, adv.id)}>
+                                    onClick={() => {
+                                      if (selectedUser?.id && selectedUser?.user_id) {
+                                        handleAssignAdvisor(selectedUser.id, selectedUser.user_id, adv.id);
+                                      }
+                                    }}>
                                     <div>
                                       <p className="font-medium">{adv.full_name}</p>
                                       <p className="text-xs text-muted-foreground">{adv.active_applications || 0} aktif danışan</p>

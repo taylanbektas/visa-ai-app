@@ -25,9 +25,9 @@ export function useUserRole() {
         .eq("user_id", user.id);
 
       let dbRoles = data?.map((r) => r.role) ?? [];
-      // Default to 'user' role if authenticated
-      if (!dbRoles.includes("admin") && !dbRoles.includes("moderator") && !dbRoles.includes("user")) {
-        dbRoles = [...dbRoles, "user"];
+      // Default to 'user' role ONLY if they have no other roles
+      if (dbRoles.length === 0) {
+        dbRoles = ["user"];
       }
 
       setRoles(dbRoles);
