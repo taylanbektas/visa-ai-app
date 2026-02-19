@@ -1,0 +1,22 @@
+{
+  "plugins": {
+    "supabase": {
+      "enabled": true
+    },
+    "linear": {
+      "enabled": true
+    },
+    "vercel": {
+      "enabled": true
+    },
+    "prisma": {
+      "enabled": true
+    },
+    "cloudflare": {
+      "enabled": true
+    },
+    "parallel": {
+      "enabled": true
+    }
+  }
+}
