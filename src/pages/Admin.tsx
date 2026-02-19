@@ -185,14 +185,14 @@ export default function Admin() {
 
     if (realAdvisors && realAdvisors.length > 0) {
       const userIds = realAdvisors.map(a => a.user_id);
-      const { data: advProfiles } = await supabase.from('profiles').select('user_id, full_name, phone, email').in('user_id', userIds);
+      const { data: advProfiles } = await supabase.from('profiles').select('user_id, full_name, phone').in('user_id', userIds);
 
       const mergedAdvisors = realAdvisors.map(adv => {
         const p = advProfiles?.find(p => p.user_id === adv.user_id);
         const fullAdvisor = {
           ...adv,
           full_name: p?.full_name || 'Danışman',
-          email: p?.email || adv.email || '-',
+          email: adv.email || '-',
           phone: p?.phone || adv.phone || '-',
           status: adv.is_active ? 'Aktif' : 'Pasif',
           active_applications: 0 // calc later if needed

@@ -107,7 +107,7 @@ export default function JoinAdvisor() {
                 .getPublicUrl(filePath);
 
             // 2. Insert Application Record
-            const { error: dbError } = await supabase
+            const { error: dbError } = await (supabase as any)
                 .from('advisor_applications')
                 .insert({
                     user_id: user.id,

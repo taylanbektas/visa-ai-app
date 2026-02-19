@@ -5,8 +5,9 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, MessageSquare, Briefcase, type LucideIcon,
+  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, MessageSquare, Briefcase, Paperclip, X, type LucideIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 import { MessageCenter } from "@/components/MessageCenter";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -48,6 +49,8 @@ export default function Dashboard() {
   const [applications, setApplications] = useState<AppWithAdvisor[]>([]);
   const [assignedAdvisor, setAssignedAdvisor] = useState<any>(null);
   const [dataLoading, setDataLoading] = useState(true);
+  const [uploadingAppId, setUploadingAppId] = useState<string | null>(null);
+  const [appDocuments, setAppDocuments] = useState<Record<string, { name: string; url: string }[]>>({});
 
   useEffect(() => {
     if (!loading && !user) {
@@ -75,16 +78,16 @@ export default function Dashboard() {
           // 2. Get Advisor User Profile (for name/photo if not in advisor table)
           const { data: userData } = await supabase
             .from('profiles')
-            .select('full_name, avatar_url')
+            .select('full_name')
             .eq('user_id', advisorData.user_id)
-            .single();
+            .maybeSingle();
 
           setAssignedAdvisor({
             ...advisorData,
             full_name: userData?.full_name || 'Danışman',
-            avatar_url: userData?.avatar_url,
-            rating: advisorData.rating || 5.0,
-            review_count: advisorData.review_count || 0
+            avatar_url: advisorData.photo_url,
+            rating: 5.0,
+            review_count: 0
           });
         }
       }
@@ -248,9 +251,48 @@ export default function Dashboard() {
                             {new Date(app.created_at).toLocaleDateString("tr-TR")}
                           </span>
                         </div>
-                        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                           <Link to="/track"><Button size="sm" variant="outline" className="text-xs">Durumu Takip Et</Button></Link>
+                          <label className="cursor-pointer">
+                            <input
+                              type="file"
+                              className="hidden"
+                              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                              disabled={uploadingAppId === app.id}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file || !user) return;
+                                setUploadingAppId(app.id);
+                                const filePath = `${user.id}/${app.id}/${Date.now()}_${file.name}`;
+                                const { error } = await supabase.storage.from('documents').upload(filePath, file);
+                                if (error) {
+                                  toast.error("Dosya yüklenemedi: " + error.message);
+                                } else {
+                                  const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(filePath);
+                                  setAppDocuments(prev => ({
+                                    ...prev,
+                                    [app.id]: [...(prev[app.id] || []), { name: file.name, url: publicUrl }]
+                                  }));
+                                  toast.success("Belge yüklendi!");
+                                }
+                                setUploadingAppId(null);
+                              }}
+                            />
+                            <Button size="sm" variant="outline" className="text-xs pointer-events-none" asChild={false} tabIndex={-1}>
+                              {uploadingAppId === app.id ? <Loader2 size={12} className="animate-spin mr-1" /> : <Paperclip size={12} className="mr-1" />}
+                              Belge Yükle
+                            </Button>
+                          </label>
                         </div>
+                        {appDocuments[app.id] && appDocuments[app.id].length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {appDocuments[app.id].map((doc, i) => (
+                              <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded hover:bg-muted/80">
+                                <Paperclip size={10} /> {doc.name}
+                              </a>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
