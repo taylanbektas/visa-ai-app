@@ -1,63 +1,147 @@
 
-# Kapsamli Sistem Duzeltme ve Gelistirme Plani
 
-## Mevcut Sorunlar (Build Hatalari)
+# Kapsamli Hata Duzeltme ve Sistem Iyilestirme Plani
 
-1. **Admin.tsx**: `profiles` tablosunda `email` kolonu yok -- sorgu `full_name, phone, email` seciyor ama tabloda `email` yok
-2. **Dashboard.tsx**: `profiles` tablosunda `avatar_url` kolonu yok; `advisors` tablosunda `rating` ve `review_count` kolonu yok
-3. **JoinAdvisor.tsx**: `advisor_applications` tablosu Supabase types dosyasinda tanimli degil (tablo DB'de var ama types guncellenmemis)
+## Tespit Edilen Sorunlar
 
-## Yapilacak Isler
+### 1. Veritabani: applications tablosunda sonsuz dongu (Infinite Recursion)
+`applications` tablosunun RLS politikasi `advisor_assignments` tablosunu kontrol ediyor, ancak `advisor_assignments` tablosunun RLS politikasi da geri `applications` tablosunu kontrol ediyor. Bu dongusel referans PostgreSQL'in "infinite recursion" hatasi vermesine neden oluyor.
 
-### 1. Veritabani Migrasyonu
+### 2. Giris sonrasi yanlis yonlendirme
+- **StaffLogin**: Her zaman `/advisor`'a yonlendiriyor, admin olsa bile.
+- **Login**: `getPanelPath()` roller yuklenmeden cagriliyor (race condition). Admin yetkisine sahip `user@example.com` advisor panele yonleniyor.
 
-- `advisor_applications` tablosunu Supabase types dosyasina eklemek icin types dosyasini guncelleyemeyiz (otomatik), ancak `(supabase as any)` ile gecici cozum zaten var -- build hatasini tipler icinde duzeltmemiz gerekiyor
-- Yeni kolon eklenmeyecek -- mevcut sema yeterli. Sorunlar kodun olmayan kolonlari sorgulamasindan kaynaklaniyor
+### 3. AdvisorPanel veri cekme hatasi
+Advisor paneli `profiles.assigned_advisor_id = user.id` (auth UUID) kontrolu yapiyor, ancak `assigned_advisor_id` alani `advisors` tablosundaki ID'yi tutuyor. Bu yuzden atanan musteriler gorunmuyor.
 
-### 2. Build Hatalarinin Duzeltilmesi
+### 4. Dashboard'da danismani goruntuleme
+Admin panelden atama yapildiktan sonra musteri panelinde "Atanmis danisman yok" gorunuyor, cunku profil bilgisi yeniden cekilmiyor.
 
-**Admin.tsx (satir ~188):**
-- `profiles` sorgusundan `email` kolonunu kaldirmak. Profil tablosunda email yok, kullanicinin email'i `auth.users` tablosunda. Sorguyu `user_id, full_name, phone` olarak degistirmek yeterli
+### 5. Advisor profil duzenleme formu
+Mevcut veriler forma on-dolgu yapilmiyor, form bos basliyor. Ayrica tasarim cok basit.
 
-**Dashboard.tsx (satir ~78-87):**
-- `profiles` sorgusundan `avatar_url` kolonunu kaldirmak (yok)
-- `advisors` tablosundan `rating` ve `review_count` erisimini kaldirmak (bu kolonlar yok). Sabit degerler kullanilacak
+### 6. Veritabaninda yanlis rol atamalari
+`customer@example.com` kullanicisina yanlis olarak `moderator` rolu atanmis.
 
-**JoinAdvisor.tsx (satir ~111):**
-- `advisor_applications` tablosu types'ta tanimli degil. `(supabase as any)` cast'i ile cozulecek (zaten Admin.tsx'te bu yontem kullaniliyor)
+---
 
-### 3. Danışman Profil Bilgileri
+## Cozum Plani
 
-Danismanin kendi profilini duzenleyebildigi ekran zaten `AdvisorPanel.tsx`'te "Profilim" sekmesinde mevcut. Su anda `email`, `phone`, `about_me`, `photo_url` alanlarini kaydediyor. Bu alanlar `advisors` tablosunda zaten var.
+### Adim 1: RLS Sonsuz Dongu Duzeltmesi (Veritabani Migrasyonu)
 
-Musteri panelinde (Dashboard.tsx) atanan danismanin bilgileri gosteriliyor -- sadece `avatar_url` ve `rating/review_count` referanslarini duzeltmemiz gerekiyor:
-- `avatar_url` yerine `photo_url` kullanilacak (advisors tablosundaki kolon)
-- `rating` ve `review_count` icin sabit/varsayilan degerler kullanilacak
+Yeni bir `SECURITY DEFINER` fonksiyonu olusturulacak ve `advisor_assignments` tablosundaki sorunlu politika guncellenecek:
 
-### 4. Footer'a Staff Giris Linki Ekleme
+```sql
+-- Advisor assignments icin guvenli kontrol fonksiyonu
+CREATE OR REPLACE FUNCTION public.is_own_application(_user_id uuid, _application_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.applications
+    WHERE id = _application_id AND user_id = _user_id
+  )
+$$;
 
-Footer.tsx'e "Yetkili Girisi" linki eklenecek (`/staff-login` sayfasina yonlendirir). Bu sayfa zaten mevcut ve calisiyor.
+-- Sorunlu politikayi kaldir ve yeniden olustur
+DROP POLICY IF EXISTS "Users can view own application assignments" ON public.advisor_assignments;
+CREATE POLICY "Users can view own application assignments" ON public.advisor_assignments
+  FOR SELECT USING (public.is_own_application(auth.uid(), application_id));
+```
 
-### 5. Danışman Başvuru Akisi (JoinAdvisor)
+Ayrica `customer@example.com` kullanicisinin yanlis moderator rolunu temizlemek icin:
+```sql
+DELETE FROM public.user_roles 
+WHERE user_id = '23190572-2439-4251-9978-647f217caf00' AND role = 'moderator';
+```
 
-Zaten mevcut ve calisir durumda:
-- Kullanici `/join-advisor`'dan basvuruyor
-- Admin panelinde "Danismanlik Talepleri" sekmesinde gorunuyor
-- Admin onayladiginda `user_roles`'a `moderator` ekleniyor ve `advisors` tablosuna kayit olusturuluyor
-- Tek sorun: types hatasi -- `(supabase as any)` ile cozulecek
+### Adim 2: Giris Sonrasi Dogru Yonlendirme
 
-### 6. Belge Yukleme Karari
+**StaffLogin.tsx** ve **Login.tsx** dosyalarinda giris sonrasi rol kontrolu duzelecek. Mevcut sistem `setTimeout` ile 500-1000ms bekliyor ve `getPanelPath()` cagriyor, ancak roller henuz yuklenmemis olabiliyor.
 
-Belge yukleme ozelligi **basvuru satın aldiktan sonra** aktif olacak. Best practice olarak:
-- Kullanici basvuru yapar ve plani secer
-- Basvuru olusturulduktan sonra Dashboard'da her basvuru icin belge yukleme alani gorunur
-- Bu, gereksiz belge yuklemesini onler ve sureci daha organize tutar
+Cozum: Giris basarili olduktan sonra rolleri tekrar cek ve ardından yonlendir:
 
-Dashboard.tsx'e her basvuru kartinin altina bir "Belge Yukle" butonu/alani eklenecek. Belgeler Supabase Storage'daki mevcut `documents` bucket'ina yuklenecek.
+```typescript
+// StaffLogin.tsx & Login.tsx - giris sonrasi
+const { error } = await signIn(email, password);
+if (!error) {
+  // Rolleri dogrudan DB'den cek
+  const { data: roles } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', session.user.id);
+  
+  const userRoles = roles?.map(r => r.role) || [];
+  if (userRoles.includes('admin')) navigate('/admin');
+  else if (userRoles.includes('moderator')) navigate('/advisor');
+  else navigate('/dashboard');
+}
+```
 
-### 7. Mesajlasma Sistemi
+**Login.tsx**: Normal musteri girisi icin her zaman `/dashboard`'a yonlendirecek. Staff girisi ayri sayfadan yapilacak.
 
-Mesajlasma zaten calisiyor (`MessageCenter` komponenti, `messages` tablosu, realtime subscription). Duzeltilecek tek sey: types uyumsuzlugu (`(supabase as any)` zaten kullaniliyor).
+**StaffLogin.tsx**: Rol kontrolu yapilacak. Eger giren kisi sadece "user" rolundeyse, "Bu panel yetkili personel icindir" mesaji gosterilip `/dashboard`'a yonlendirilecek.
+
+### Adim 3: AdvisorPanel Veri Cekme Duzeltmesi
+
+Mevcut hata: `profiles.assigned_advisor_id = user.id` (auth UUID kullaniliyor ama deger advisor table ID).
+
+Duzeltme: Once `advisors` tablosundan kendi advisor kaydini bul, sonra `profiles` tablosunda `assigned_advisor_id = advisor.id` ile eslesenleri getir:
+
+```typescript
+// AdvisorPanel.tsx - fetchData
+// 1. Kendi advisor kaydini bul
+const { data: myAdvisor } = await supabase
+  .from('advisors')
+  .select('id')
+  .eq('user_id', user.id)
+  .single();
+
+if (myAdvisor) {
+  // 2. Bu advisor'a atanmis musterileri getir
+  const { data: assignedUsers } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('assigned_advisor_id', myAdvisor.id);
+}
+```
+
+### Adim 4: Dashboard Danisman Gosterimi
+
+`useAuth` hook'undaki `fetchProfile` fonksiyonu sadece auth state degistiginde calisiyor. Dashboard acildiginda profili yeniden cekmek gerekiyor.
+
+Cozum: Dashboard'a bir `refetchProfile` mekanizmasi eklenecek veya `useEffect` ile profil dogrudan cekilecek:
+
+```typescript
+// Dashboard.tsx
+useEffect(() => {
+  if (!user) return;
+  // Profili dogrudan cek (useAuth'taki stale veriyi bypass et)
+  const fetchMyProfile = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('assigned_advisor_id')
+      .eq('user_id', user.id)
+      .single();
+    if (data?.assigned_advisor_id) {
+      // Advisor bilgilerini cek...
+    }
+  };
+  fetchMyProfile();
+}, [user]);
+```
+
+### Adim 5: Advisor Profil Formu Iyilestirmesi
+
+- Sayfa acildiginda mevcut advisor verileri DB'den cekilip forma doldurulacak
+- `Input` ve `Textarea` bilesenlerinden Shadcn/ui kullanilacak (simdi duz HTML input var)
+- Fotograf yukleme icin dosya secici eklenecek (Supabase Storage)
+- Toast bildirimleri `alert()` yerine `sonner` kullanilacak
+- Uzmanlık alanları (specializations) coklu secim ile eklenebilecek
+
+### Adim 6: Ek Iyilestirmeler
+
+- **Dashboard'dan developer tools (Admin Yap, Danisman Yap butonlari) kaldirilacak** -- guvenlik riski
+- **RoleRoute** zaten mevcut ve calisiyor, tum korunmali route'lar bununla sarili
+- **Admin panelde danisman atama**: Mevcut akis `profiles.assigned_advisor_id` uzerinden calisiyor. Bu yeterli ve dogru. `advisor_assignments` tablosu ise vize basvurularina ozel atamalar icin kullanilacak (ileride)
 
 ---
 
@@ -65,23 +149,14 @@ Mesajlasma zaten calisiyor (`MessageCenter` komponenti, `messages` tablosu, real
 
 ### Degistirilecek Dosyalar
 
-1. **src/pages/Admin.tsx**
-   - Satir ~188: `profiles` sorgusundan `email` kaldirilacak
-   - Satir ~195: `p?.email` referansi `adv.email` ile degistirilecek (advisors tablosundaki email)
+| Dosya | Degisiklik |
+|-------|-----------|
+| `supabase/migrations/` | Yeni migrasyon: RLS duzeltme + rol temizligi |
+| `src/pages/StaffLogin.tsx` | Rol bazli yonlendirme, yetkisiz kullanici kontrolu |
+| `src/pages/Login.tsx` | Musteri icin her zaman /dashboard'a yonlendirme |
+| `src/pages/AdvisorPanel.tsx` | Dogru advisor ID ile veri cekme, profil formu iyilestirmesi, mevcut verilerin on-dolgusu |
+| `src/pages/Dashboard.tsx` | Danisman bilgisini dogrudan cekme, developer tools kaldirma |
 
-2. **src/pages/Dashboard.tsx**
-   - Satir ~78: `profiles` sorgusundan `avatar_url` kaldirilacak
-   - Satir ~84-87: `avatar_url` yerine `photo_url`, `rating`/`review_count` yerine sabit degerler
+### Olusturulacak Yeni Dosyalar
 
-3. **src/pages/JoinAdvisor.tsx**
-   - Satir ~110-111: `supabase` yerine `(supabase as any)` cast'i eklenecek
-
-4. **src/components/Footer.tsx**
-   - Footer alt kismina "Yetkili Girisi" linki eklenecek
-
-5. **src/pages/Dashboard.tsx** (ek)
-   - Her basvuru kartina belge yukleme alani eklenecek
-   - Supabase Storage'a dosya yukleme fonksiyonu eklenecek
-
-6. **src/integrations/supabase/types.ts**
-   - `advisor_applications` tablosu tanimini eklemek -- ancak bu dosya otomatik uretildigi icin dogrudan duzenlenemez. Bunun yerine kodda `(supabase as any)` kullanilacak
+Yok -- mevcut dosyalar uzerinde duzeltmeler yapilacak.
