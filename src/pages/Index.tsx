@@ -190,7 +190,7 @@ function TestimonialsCarousel({ t }: { t: (key: string) => string }) {
   const scrollPrev = useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi && emblaApi.scrollNext(), [emblaApi]);
 
-  const onSelect = useCallback((api: any) => {
+  const onSelect = useCallback((api: ReturnType<typeof useEmblaCarousel>[1]) => {
     setPrevBtnEnabled(api.canScrollPrev());
     setNextBtnEnabled(api.canScrollNext());
   }, []);

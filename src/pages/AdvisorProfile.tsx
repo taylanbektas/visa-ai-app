@@ -14,7 +14,7 @@ type AdvisorProfileType = {
     user_id: string;
     full_name: string;
     bio: string;
-    specialties: string[];
+    specializations: string[];
     rating: number;
     review_count: number;
     is_active: boolean;
@@ -43,14 +43,27 @@ export default function AdvisorProfile() {
         // Since I don't have real data, I'll mock the fetch if it fails or returns nothing, 
         // but I'll write the code to try fetching.
 
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
             .from('advisors')
             .select('*')
             .eq('user_id', id)
             .maybeSingle();
 
         if (data) {
-            setAdvisor(data as AdvisorProfileType);
+            // Fetch name from profiles
+            const { data: profileData } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('user_id', data.user_id)
+                .maybeSingle();
+
+            setAdvisor({
+                ...data,
+                full_name: profileData?.full_name || 'Danışman',
+                specializations: data.specializations || [],
+                rating: 5.0, // Default for now
+                review_count: 0 // Default for now
+            } as AdvisorProfileType);
         } else {
             // Fallback for demo if not found in DB or DB empty
             // Mock data matching the requested "Approved Advisor"
@@ -59,7 +72,7 @@ export default function AdvisorProfile() {
                 user_id: id || 'mock-user-id',
                 full_name: 'Zeynep Yılmaz',
                 bio: 'Avrupa vizeleri konusunda 7 yıllık deneyimim var. Schengen vizesi süreçlerinde %98 başarı oranı ile çalışıyorum.',
-                specialties: ['Schengen', 'Almanya', 'Fransa'],
+                specializations: ['Schengen', 'Almanya', 'Fransa'],
                 rating: 4.9,
                 review_count: 142,
                 is_active: true
@@ -134,12 +147,12 @@ export default function AdvisorProfile() {
                                 <div>
                                     <h3 className="text-lg font-bold text-navy-dark mb-4">Uzmanlık Alanları</h3>
                                     <div className="flex flex-wrap gap-2">
-                                        {advisor.specialties?.map(s => (
+                                        {advisor.specializations?.map(s => (
                                             <Badge key={s} variant="secondary" className="px-4 py-2 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 border-transparent">
                                                 {s}
                                             </Badge>
                                         ))}
-                                        {(!advisor.specialties || advisor.specialties.length === 0) && (
+                                        {(!advisor.specializations || advisor.specializations.length === 0) && (
                                             <>
                                                 <Badge variant="secondary" className="px-4 py-2 text-sm">Schengen Vizesi</Badge>
                                                 <Badge variant="secondary" className="px-4 py-2 text-sm">Öğrenci Vizeleri</Badge>

@@ -37,7 +37,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Upload, X } from "lucide-react";
 import { MessageCenter } from "@/components/MessageCenter";
 
 // Types
@@ -58,14 +62,27 @@ export default function AdvisorPanel() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { isAdmin, isModerator, loading: roleLoading } = useUserRole(); // Fixed lint
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("dashboard"); // dashboard | applications | messages | profile
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
   const [stats, setStats] = useState({
     assigned: 0,
     completed: 0,
     pending: 0
   });
+
+  // Profile Form State
+  const [formData, setFormData] = useState({
+    email: "",
+    phone: "",
+    bio: "",
+    photo_url: "",
+    specialties: [] as string[]
+  });
+
+  const SPECIALTIES_LIST = ["Schengen", "ABD", "İngiltere", "Kanada", "Dubai", "Öğrenci Vizesi", "Turistik", "Ticari"];
 
   // Messaging state
   const [selectedChatUser, setSelectedChatUser] = useState<{ id: string, name: string } | null>(null);
@@ -90,64 +107,113 @@ export default function AdvisorPanel() {
   const fetchData = async () => {
     setLoading(true);
 
-    // Fetch assigned users from profiles
-    const { data: assignedUsers, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("assigned_advisor_id", user?.id);
+    // 1. Get my advisor record first (to get the correct ID, not auth user_id)
+    const { data: advisorData } = await supabase
+      .from('advisors')
+      .select('*')
+      .eq('user_id', user?.id)
+      .single();
 
-    if (assignedUsers) {
-      // detailed info not in applications table anymore for strict separation? 
-      // User said "vize satın almamış olsa bile". So we list USERS from profiles.
-      // We map profiles to the structure we use or separate list.
-      // Let's use a new state or repurpose 'applications'.
-      // The previous code used 'applications' table. 
-      // The requirement is: "admin panelden tüm eşleşmeleri ayarlayabilmeliyim... vize satın almamış olsa bile"
-      // So Advisor should see USERS assigned to them.
-
-      const mappedApps = assignedUsers.map(p => ({
-        id: p.id,
-        applicant_name: p.full_name || 'İsimsiz',
-        passport_type: '-', // not in profile
-        destination_country: '-',
-        visa_type: '-',
-        status: 'Atandı',
-        created_at: p.created_at,
-        user_id: p.user_id,
-        phone: p.phone
-      }));
-      setApplications(mappedApps as any);
-      setStats({
-        assigned: assignedUsers.length,
-        completed: 0,
-        pending: assignedUsers.length
+    if (advisorData) {
+      // Pre-fill form
+      setFormData({
+        email: advisorData.email || "",
+        phone: advisorData.phone || "",
+        bio: advisorData.bio || "",
+        photo_url: advisorData.photo_url || "",
+        specialties: advisorData.specializations || []
       });
+
+      // 2. Fetch assigned users from profiles using the correct advisor ID
+      const { data: assignedUsers } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("assigned_advisor_id", advisorData.id);
+
+      if (assignedUsers) {
+        const mappedApps = assignedUsers.map(p => ({
+          id: p.id,
+          applicant_name: p.full_name || 'İsimsiz',
+          passport_type: '-',
+          destination_country: '-',
+          visa_type: '-',
+          status: 'Atandı',
+          created_at: p.created_at,
+          user_id: p.user_id,
+          phone: p.phone
+        }));
+        setApplications(mappedApps);
+        setStats({
+          assigned: assignedUsers.length,
+          completed: 0,
+          pending: assignedUsers.length
+        });
+      }
     }
 
     setLoading(false);
   };
 
-  const handleUpdateProfile = async (e: any) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setUploading(true);
+    const fileExt = file.name.split('.').pop();
+    const filePath = `advisor-photos/${user.id}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('documents') // Using documents bucket as established in Dashboard.tsx
+      .upload(filePath, file);
+
+    if (uploadError) {
+      toast({ title: "Yükleme Hatası", description: uploadError.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('documents')
+      .getPublicUrl(filePath);
+
+    setFormData(prev => ({ ...prev, photo_url: publicUrl }));
+    setUploading(false);
+    toast({ title: "Fotoğraf yüklendi", description: "Lütfen profili kaydetmeyi unutmayın." });
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
+
     const updates = {
-      email: formData.get('email'),
-      phone: formData.get('phone'),
-      about_me: formData.get('about_me'),
-      photo_url: formData.get('photo_url'),
+      email: formData.email,
+      phone: formData.phone,
+      bio: formData.bio,
+      photo_url: formData.photo_url,
+      specializations: formData.specialties,
+      updated_at: new Date().toISOString()
     };
 
     const { error } = await supabase
       .from('advisors')
-      .update(updates as any)
+      .update(updates)
       .eq('user_id', user!.id);
 
     if (error) {
-      // toast error
-      alert("Hata: " + error.message);
+      toast({ title: "Hata", description: error.message, variant: "destructive" });
     } else {
-      alert("Profil güncellendi!");
+      toast({ title: "Başarılı", description: "Profil bilgileriniz güncellendi." });
     }
+  };
+
+  const toggleSpecialty = (specialty: string) => {
+    setFormData(prev => {
+      const current = prev.specialties || [];
+      if (current.includes(specialty)) {
+        return { ...prev, specialties: current.filter(s => s !== specialty) };
+      } else {
+        return { ...prev, specialties: [...current, specialty] };
+      }
+    });
   };
 
   const handleSignOut = async () => {
@@ -256,7 +322,7 @@ export default function AdvisorPanel() {
           {activeTab === 'applications' && (
             <div className="space-y-6 animate-in fade-in duration-500">
               <h2 className="text-2xl font-bold text-navy-dark">Atanan Başvurular</h2>
-              <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="bg-white rounded-xl shadow-sm border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -353,24 +419,73 @@ export default function AdvisorPanel() {
                 <h2 className="text-2xl font-bold text-navy-dark">{user?.user_metadata?.full_name || 'Danışman'}</h2>
                 <p className="text-muted-foreground mb-6">Profil Bilgileri</p>
 
-                <form onSubmit={handleUpdateProfile} className="space-y-4 text-left max-w-md mx-auto">
-                  <div>
-                    <label className="text-sm font-medium">Fotoğraf URL</label>
-                    <input name="photo_url" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="https://..." />
+                <form onSubmit={handleUpdateProfile} className="space-y-6 text-left max-w-lg mx-auto">
+
+                  <div className="flex flex-col items-center gap-4 mb-6">
+                    <div className="w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative group">
+                      {formData.photo_url ? (
+                        <img src={formData.photo_url} alt="Profil" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="text-slate-400 w-10 h-10" />
+                      )}
+                      <label className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                        {uploading ? <Loader2 className="animate-spin text-white" /> : <Upload className="text-white" />}
+                        <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} disabled={uploading} />
+                      </label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Profil fotoğrafı yüklemek için tıklayın</p>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium">Email (İletişim)</label>
-                    <input name="email" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="contact@example.com" />
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">İletişim E-posta</Label>
+                    <Input
+                      id="email"
+                      value={formData.email}
+                      onChange={e => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="contact@visapath.com"
+                    />
                   </div>
-                  <div>
-                    <label className="text-sm font-medium">Telefon</label>
-                    <input name="phone" className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="+90..." />
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefon</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="+90 555 ..."
+                    />
                   </div>
-                  <div>
-                    <label className="text-sm font-medium">Hakkımda</label>
-                    <textarea name="about_me" className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Danışanlarınıza kendinizi tanıtın..." />
+
+                  <div className="space-y-2">
+                    <Label>Uzmanlık Alanları</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {SPECIALTIES_LIST.map(specialty => (
+                        <Badge
+                          key={specialty}
+                          variant={formData.specialties?.includes(specialty) ? "default" : "outline"}
+                          className={`cursor-pointer ${formData.specialties?.includes(specialty) ? "bg-navy-dark hover:bg-navy-dark/90" : "hover:bg-slate-100"}`}
+                          onClick={() => toggleSpecialty(specialty)}
+                        >
+                          {specialty}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                  <Button type="submit" className="w-full">Kaydet</Button>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Hakkımda</Label>
+                    <Textarea
+                      id="bio"
+                      value={formData.bio}
+                      onChange={e => setFormData({ ...formData, bio: e.target.value })}
+                      placeholder="Danışanlarınıza kendinizi, deneyimlerinizi ve yaklaşımınızı anlatın..."
+                      className="min-h-[120px]"
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full bg-navy-dark hover:bg-navy-dark/90 text-white font-semibold h-11">
+                    Değişiklikleri Kaydet
+                  </Button>
                 </form>
               </div>
             </div>

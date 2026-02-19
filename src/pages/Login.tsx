@@ -7,6 +7,7 @@ import { User, LogIn, Lock, Loader2, Mail, CheckCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Login() {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -28,16 +29,24 @@ export default function Login() {
     setIsLoading(true);
 
     if (mode === "login") {
-      const { error } = await signIn(email, password);
+      const { data: { session }, error } = await signIn(email, password);
       if (error) {
         toast({ title: "Giriş başarısız", description: error.message, variant: "destructive" });
       } else {
         toast({ title: "Hoş geldiniz!" });
-        // Role-based redirect will happen after roles load
-        // Use a small delay to let role hook update
-        setTimeout(() => {
-          navigate(getPanelPath());
-        }, 500);
+
+        if (session?.user) {
+          const { data: roles } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id);
+
+          const userRoles = roles?.map(r => r.role) || [];
+
+          if (userRoles.includes('admin')) navigate('/admin');
+          else if (userRoles.includes('moderator')) navigate('/advisor');
+          else navigate('/dashboard');
+        }
       }
     } else {
       // Registration Validation

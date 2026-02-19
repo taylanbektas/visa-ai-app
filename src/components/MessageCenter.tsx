@@ -39,7 +39,7 @@ export function MessageCenter({
         // Fetch initial messages
         const fetchMessages = async () => {
             setLoading(true);
-            const { data } = await (supabase as any)
+            const { data } = await supabase
                 .from("messages")
                 .select("*")
                 .or(`sender_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`)
@@ -53,7 +53,7 @@ export function MessageCenter({
             // sender_id.eq.them,recipient_id.eq.me
 
             // Re-fetching with precise query
-            const { data: conversation } = await (supabase as any)
+            const { data: conversation } = await supabase
                 .from("messages")
                 .select("*")
                 .or(`and(sender_id.eq.${currentUserId},recipient_id.eq.${targetUserId}),and(sender_id.eq.${targetUserId},recipient_id.eq.${currentUserId})`)
@@ -113,7 +113,7 @@ export function MessageCenter({
         setMessages((prev) => [...prev, tempMsg]);
         setNewMessage("");
 
-        const { error } = await (supabase as any)
+        const { error } = await supabase
             .from("messages")
             .insert(msg);
 

@@ -43,11 +43,21 @@ interface AppWithAdvisor {
   advisorPhoto: string | null;
 }
 
+interface AssignedAdvisor {
+  id: string;
+  user_id: string;
+  full_name: string;
+  photo_url?: string | null;
+  avatar_url?: string | null;
+  rating?: number;
+  review_count?: number;
+}
+
 export default function Dashboard() {
   const { user, profile, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [applications, setApplications] = useState<AppWithAdvisor[]>([]);
-  const [assignedAdvisor, setAssignedAdvisor] = useState<any>(null);
+  const [assignedAdvisor, setAssignedAdvisor] = useState<AssignedAdvisor | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [uploadingAppId, setUploadingAppId] = useState<string | null>(null);
   const [appDocuments, setAppDocuments] = useState<Record<string, { name: string; url: string }[]>>({});
@@ -55,6 +65,12 @@ export default function Dashboard() {
   useEffect(() => {
     if (!loading && !user) {
       navigate("/login");
+    }
+    // Force refetch profile to check for assignments that might have happened
+    if (user) {
+      // We rely on useAuth to fetch initial profile, but we can also re-check specific fields
+      // useAuth uses onAuthStateChange which might be cached or slow.
+      // But for now, let's rely on the profile dependency in the next useEffect which fetches advisor.
     }
   }, [user, loading, navigate]);
 
@@ -65,7 +81,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchAdvisor = async () => {
-      const advisorId = (profile as any)?.assigned_advisor_id;
+      const advisorId = profile?.assigned_advisor_id as string | undefined;
       if (advisorId) {
         // 1. Get Advisor Table Details
         const { data: advisorData } = await supabase
@@ -118,9 +134,9 @@ export default function Dashboard() {
       .in("application_id", appIds);
 
     // Get advisor profiles
-    let advisorMap = new Map<string, string>(); // advisor.id -> advisor name
-    let advisorUserMap = new Map<string, string>(); // advisor.id -> advisor.user_id (for messaging)
-    let advisorPhotoMap = new Map<string, string>(); // advisor.id -> photo_url
+    const advisorMap = new Map<string, string>(); // advisor.id -> advisor name
+    const advisorUserMap = new Map<string, string>(); // advisor.id -> advisor.user_id (for messaging)
+    const advisorPhotoMap = new Map<string, string>(); // advisor.id -> photo_url
 
     if (assignments && assignments.length > 0) {
       const advisorIds = [...new Set(assignments.map((a) => a.advisor_id))];
@@ -306,78 +322,7 @@ export default function Dashboard() {
               </div>
             </Link>
 
-            {/* Developer Tools for Testing */}
-            <div className="pt-8 border-t mt-8">
-              <h3 className="text-sm font-mono font-bold text-muted-foreground mb-4">Geliştirici Araçları (Test)</h3>
-              <div className="bg-muted/30 p-4 rounded-lg border border-dashed">
-                <p className="text-xs font-mono mb-2 text-muted-foreground">User ID: {user.id}</p>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-600 border-red-200"
-                    onClick={async () => {
-                      try {
-                        const { error } = await supabase.from('user_roles').insert({
-                          user_id: user.id,
-                          role: 'admin'
-                        });
-                        if (error) throw error;
-                        alert("Admin rolü başarıyla atandı! Sayfayı yenileyin.");
-                        window.location.reload();
-                      } catch (e: any) {
-                        console.error(e);
-                        alert("Hata: " + (e.message || "Bilinmeyen hata") + "\n\nBu hatayı alıyorsanız, Supabase panelinden SQL editörüne gidip şunu çalıştırın:\n\nINSERT INTO user_roles (user_id, role) VALUES ('" + user.id + "', 'admin');");
-                      }
-                    }}
-                  >
-                    Admin Yap
-                  </Button>
 
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 text-xs bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 border-blue-200"
-                    onClick={async () => {
-                      try {
-                        // First role
-                        const { error: roleError } = await supabase.from('user_roles').insert({
-                          user_id: user.id,
-                          role: 'moderator'
-                        });
-                        if (roleError && !roleError.message.includes('duplicate')) throw roleError;
-
-                        // Then advisor record
-                        const { error: advError } = await supabase.from('advisors').insert({
-                          user_id: user.id
-                        });
-                        if (advError && !advError.message.includes('duplicate')) throw advError;
-
-                        alert("Danışman rolü başarıyla atandı! Sayfayı yenileyin.");
-                        window.location.reload();
-                      } catch (e: any) {
-                        console.error(e);
-                        alert("Hata: " + (e.message || "Bilinmeyen hata") + "\n\nBu hatayı alıyorsanız, Supabase panelinden SQL editörüne gidip şunu çalıştırın:\n\nINSERT INTO user_roles (user_id, role) VALUES ('" + user.id + "', 'moderator');\nINSERT INTO advisors (user_id) VALUES ('" + user.id + "');");
-                      }
-                    }}
-                  >
-                    Danışman Yap
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-8 text-xs"
-                    onClick={() => {
-                      navigator.clipboard.writeText(`INSERT INTO user_roles (user_id, role) VALUES ('${user.id}', 'admin');`);
-                      alert("SQL kopyalandı!");
-                    }}
-                  >
-                    SQL Kopyala
-                  </Button>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div className="space-y-6">

@@ -107,7 +107,7 @@ export default function JoinAdvisor() {
                 .getPublicUrl(filePath);
 
             // 2. Insert Application Record
-            const { error: dbError } = await (supabase as any)
+            const { error: dbError } = await supabase
                 .from('advisor_applications')
                 .insert({
                     user_id: user.id,
@@ -128,13 +128,21 @@ export default function JoinAdvisor() {
                 description: "Başvurunuz başarıyla gönderildi. Ekibimiz en kısa sürede inceleyecektir."
             });
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Submission error:', error);
-            toast({
-                title: "Hata",
-                description: error.message || "Başvuru sırasında bir hata oluştu.",
-                variant: "destructive"
-            });
+            if (error instanceof Error) {
+                toast({
+                    title: "Hata",
+                    description: error.message || "Başvuru sırasında bir hata oluştu.",
+                    variant: "destructive"
+                });
+            } else {
+                toast({
+                    title: "Hata",
+                    description: "Başvuru sırasında bilinmeyen bir hata oluştu.",
+                    variant: "destructive"
+                });
+            }
         } finally {
             setLoading(false);
         }

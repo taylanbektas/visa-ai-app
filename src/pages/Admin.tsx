@@ -98,10 +98,14 @@ type Advisor = {
 };
 
 type UserData = {
+  id: string;
   user_id: string;
+  full_name: string;
   email: string;
+  phone: string;
   created_at: string;
   roles: ("admin" | "moderator" | "user")[];
+  assigned_advisor_id?: string | null;
 };
 
 type AdvisorApplication = {
@@ -142,9 +146,9 @@ export default function Admin() {
     totalUsers: 0
   });
 
-  const [selectedUser, setSelectedUser] = useState<any>(null); // For assignment dialog
+  const [selectedUser, setSelectedUser] = useState<UserData & { advisor?: Advisor } | null>(null); // For assignment dialog
   const [assignmentOpen, setAssignmentOpen] = useState(false);
-  const [selectedAdvisor, setSelectedAdvisor] = useState<any>(null);
+  const [selectedAdvisor, setSelectedAdvisor] = useState<Advisor | null>(null);
   const [editAdvisorOpen, setEditAdvisorOpen] = useState(false);
 
   useEffect(() => {
@@ -171,7 +175,7 @@ export default function Admin() {
       .order("created_at", { ascending: false });
 
     if (apps) {
-      setApplications(apps as any[]);
+      setApplications(apps as unknown as Application[]);
       setStats(prev => ({ ...prev, totalApplications: apps.length, pendingReview: apps.filter(a => a.status === 'pending_review').length }));
     }
 
@@ -181,7 +185,7 @@ export default function Admin() {
       .select("*")
       .order("created_at", { ascending: false });
 
-    let advisorMap = new Map();
+    const advisorMap = new Map();
 
     if (realAdvisors && realAdvisors.length > 0) {
       const userIds = realAdvisors.map(a => a.user_id);
@@ -200,7 +204,7 @@ export default function Admin() {
         advisorMap.set(adv.id, fullAdvisor);
         return fullAdvisor;
       });
-      setActiveAdvisorsList(mergedAdvisors as any);
+      setActiveAdvisorsList(mergedAdvisors as Advisor[]);
       setStats(prev => ({ ...prev, activeAdvisors: mergedAdvisors.filter(a => a.is_active).length }));
     } else {
       setActiveAdvisorsList([]);
@@ -214,7 +218,7 @@ export default function Admin() {
 
     if (profiles) {
       // Map advisor details to users
-      const usersWithAdvisors = profiles.map((p: any) => {
+      const usersWithAdvisors = (profiles as unknown as UserData[]).map((p) => {
         if (p.assigned_advisor_id && advisorMap.has(p.assigned_advisor_id)) {
           return { ...p, advisor: advisorMap.get(p.assigned_advisor_id) };
         }
@@ -226,7 +230,7 @@ export default function Admin() {
     }
 
     // 4. Fetch Advisor Applications (NEW)
-    const { data: advApps } = await (supabase as any)
+    const { data: advApps } = await supabase
       .from("advisor_applications")
       .select("*")
       .order("created_at", { ascending: false });
@@ -241,7 +245,7 @@ export default function Admin() {
   const handleAssignAdvisor = async (userId: string, advisorId: string) => {
     const { error } = await supabase
       .from('profiles')
-      .update({ assigned_advisor_id: advisorId } as any)
+      .update({ assigned_advisor_id: advisorId } as never)
       .eq('id', userId);
 
     if (error) {
@@ -275,7 +279,7 @@ export default function Admin() {
       { applicant_name: "Mehmet Demir", passport_type: "TR", destination_country: "İtalya", visa_type: "Ticari", status: "completed", created_at: new Date(Date.now() - 172800000).toISOString() },
     ];
 
-    setApplications(dummyApps.map((a, i) => ({ ...a, id: `mock-${i}` } as any)));
+    setApplications(dummyApps.map((a, i) => ({ ...a, id: `mock-${i}` } as unknown as Application)));
 
     const dummyAdvApps = [
       { id: 'mock-adv-1', full_name: 'Canan Uzman', email: 'canan@example.com', phone: '5559998877', status: 'pending', created_at: new Date().toISOString(), bio: '5 yıllık deneyim', linkedin_url: '#', resume_url: '#' },
@@ -316,9 +320,9 @@ export default function Admin() {
       if (advError && !advError.message.includes('duplicate')) throw advError;
 
       // 3. Update Application Status
-      const { error: appError } = await (supabase as any)
+      const { error: appError } = await supabase
         .from('advisor_applications')
-        .update({ status: 'approved' })
+        .update({ status: 'approved' } as never)
         .eq('id', app.id);
 
       if (appError) throw appError;
@@ -326,24 +330,32 @@ export default function Admin() {
       toast({ title: "Başarılı", description: "Danışman onaylandı ve yetkileri verildi." });
       fetchData(); // Refresh list
 
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      toast({ title: "Hata", description: e.message, variant: "destructive" });
+      if (e instanceof Error) {
+        toast({ title: "Hata", description: e.message, variant: "destructive" });
+      } else {
+        toast({ title: "Hata", description: "Bilinmeyen bir hata oluştu.", variant: "destructive" });
+      }
     }
   };
 
   const handleRejectAdvisor = async (id: string) => {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('advisor_applications')
-        .update({ status: 'rejected' })
+        .update({ status: 'rejected' } as never)
         .eq('id', id);
 
       if (error) throw error;
       toast({ title: "Reddedildi", description: "Başvuru reddedildi." });
       fetchData();
-    } catch (e: any) {
-      toast({ title: "Hata", description: e.message, variant: "destructive" });
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        toast({ title: "Hata", description: e.message, variant: "destructive" });
+      } else {
+        toast({ title: "Hata", description: "Bilinmeyen bir hata oluştu.", variant: "destructive" });
+      }
     }
   };
 
@@ -853,7 +865,7 @@ export default function Admin() {
                 <TableBody>
                   {activeAdvisorsList.length === 0 ? (
                     <TableRow><TableCell colSpan={5} className="text-center h-24 text-muted-foreground">Danışman bulunamadı.</TableCell></TableRow>
-                  ) : activeAdvisorsList.map((adv: any) => (
+                  ) : activeAdvisorsList.map((adv: Advisor & { email?: string; phone?: string; rating?: string; review_count?: number; is_active?: boolean }) => (
                     <TableRow key={adv.id}>
                       <TableCell className="font-medium">
                         {adv.full_name}
@@ -888,7 +900,7 @@ export default function Admin() {
                               <div>
                                 <label className="text-sm font-medium mb-2 block">Hesap Durumu</label>
                                 <Select
-                                  defaultValue={selectedAdvisor?.is_active ? "active" : "passive"}
+                                  defaultValue={selectedAdvisor?.status === "Aktif" ? "active" : "passive"}
                                   onValueChange={(val) => handleUpdateAdvisorStatus(selectedAdvisor?.id, val === "active")}
                                 >
                                   <SelectTrigger>
@@ -929,7 +941,7 @@ export default function Admin() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {usersList.map((usr: any) => (
+                  {usersList.map((usr: UserData & { full_name?: string; phone?: string; id?: string; advisor?: Advisor }) => (
                     <TableRow key={usr.id}>
                       <TableCell className="font-medium">
                         {usr.full_name || 'İsimsiz'}

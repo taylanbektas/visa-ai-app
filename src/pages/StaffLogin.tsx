@@ -7,6 +7,7 @@ import { Lock, LogIn, Loader2, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function StaffLogin() {
     const [email, setEmail] = useState("");
@@ -22,7 +23,7 @@ export default function StaffLogin() {
         e.preventDefault();
         setIsLoading(true);
 
-        const { error } = await signIn(email, password);
+        const { data: { session }, error } = await signIn(email, password);
 
         if (error) {
             toast({ title: "Giriş başarısız", description: error.message, variant: "destructive" });
@@ -30,28 +31,27 @@ export default function StaffLogin() {
             return;
         }
 
-        // Delay to allow role hook to update
-        setTimeout(async () => {
-            // We can't easily check role inside this function immediately without refetching
-            // But the RoleRoute or the Layout will catch unauthorized users.
-            // For better UX, let's try to fetch role or rely on redirection.
-            // We navigate to /admin or /advisor based on best guess or default content.
+        if (session?.user) {
+            // Fetch roles immediately to decide where to go
+            const { data: roles } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', session.user.id);
 
-            // Actually, we should check if they are ALREADY a customer.
-            // But since we are client-side, let's redirect to a intermediate or rely on the hook if it updates fast enough
-            // Ideally we'd check the role.
+            const userRoles = roles?.map(r => r.role) || [];
 
-            // Let's navigate to a "checking" route or just try to go to admin and let strict routing handle it?
-            // User wants: "advisor rolü onaylanan herkes oradan girebilsin ama customer rolündekiler kesinlikle giremesin"
-            // So if they are just a 'user', strict route will kick them out to dashboard or login.
-
-            toast({ title: "Panel yönlendiriliyor..." });
-            // We can try to guess or just go to /admin which might redirect to /advisor if role is strictly checked there?
-            // Actually, let's use the getPanelPath() but it might be stale.
-            // Better: Navigate to a protected route like /staff-check that redirects.
-            // Or simply:
-            navigate("/advisor");
-        }, 1000);
+            if (userRoles.includes('admin')) {
+                toast({ title: "Yönetici paneline yönlendiriliyor..." });
+                navigate('/admin');
+            } else if (userRoles.includes('moderator')) {
+                toast({ title: "Danışman paneline yönlendiriliyor..." });
+                navigate('/advisor');
+            } else {
+                // Not authorized for staff panel
+                toast({ title: "Yetkisiz Giriş", description: "Bu panel sadece yetkili personel içindir.", variant: "destructive" });
+                navigate('/dashboard');
+            }
+        }
     };
 
     return (
