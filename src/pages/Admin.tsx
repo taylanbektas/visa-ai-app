@@ -483,7 +483,7 @@ export default function Admin() {
 
   const handleDeleteCustomer = async (userId: string) => {
     if (!window.confirm("Bu müşterinin profilini kalıcı olarak silmek istediğinize emin misiniz? (Üye girişi tamamen engellenecektir ve müşteri verileri veri tabanından silinecektir)")) return;
-    const { error } = await supabase.from('profiles').delete().eq('id', userId);
+    const { error } = await supabase.rpc('delete_user', { user_id: userId });
     if (error) {
       toast({ title: "Hata", description: "Müşteri silinemedi: " + error.message, variant: "destructive" });
     } else {

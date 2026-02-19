@@ -217,7 +217,7 @@ export default function Pricing() {
                     {t(`pricing.quiz.result.${recommendation}`)}
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Link to="/apply" className="flex-1">
+                    <Link to="/apply" state={{ plan: recommendation }} className="flex-1">
                       <Button className="w-full btn-gradient text-white font-bold h-12 rounded-xl text-[15px] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
                         {locale === "en" ?
                           <>{t("pricing.quiz.btnStartPlan")} {t(`pricing.plan.${recommendation}.id`)}</> :
@@ -284,11 +284,11 @@ export default function Pricing() {
                   ))}
                 </ul>
 
-                <Link to="/apply">
+                <Link to="/apply" state={{ plan: plan.id }}>
                   <Button
                     className={`w-full font-bold h-12 text-base rounded-xl transition-all duration-300 ${plan.popular || isRecommended
-                        ? "btn-gradient text-white shadow-lg hover:shadow-xl hover:scale-[1.02]"
-                        : "bg-secondary text-foreground hover:bg-secondary/80 hover:scale-[1.01]"
+                      ? "btn-gradient text-white shadow-lg hover:shadow-xl hover:scale-[1.02]"
+                      : "bg-secondary text-foreground hover:bg-secondary/80 hover:scale-[1.01]"
                       }`}
                   >
                     {locale === "en" ? <>{t("pricing.plan.btn")} {plan.name}</> : <>{plan.name} {t("pricing.plan.btn")}</>}

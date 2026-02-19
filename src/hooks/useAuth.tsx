@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<{ full_name: string | null; phone: string | null; assigned_advisor_id: string | null } | null>(null);
+  const [profile, setProfile] = useState<{ full_name: string | null; phone: string | null; assigned_advisor_id: string | null; is_suspended?: boolean } | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -45,10 +45,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, phone, assigned_advisor_id")
+      .select("full_name, phone, assigned_advisor_id, is_suspended")
       .eq("user_id", userId)
       .single();
-    if (data) setProfile(data);
+
+    if (data) {
+      if ((data as any).is_suspended) {
+        // If they are suspended, sign them out immediately
+        await supabase.auth.signOut();
+        setSession(null);
+        setUser(null);
+        setProfile(null);
+        return;
+      }
+      setProfile(data as any);
+    }
   };
 
   const signUp = async (email: string, password: string, fullName: string, phone?: string) => {

@@ -87,6 +87,8 @@ export default function Apply() {
 
   const preselectedDestination = location.state?.destination as string | undefined;
   const preselectedPassport = location.state?.passport as string | undefined; // Read passport from state
+  const preselectedPlan = location.state?.plan as string | undefined;
+
   const [step, setStep] = useState(1);
   const [selectedPassport, setSelectedPassport] = useState(preselectedPassport || "TR"); // Use state or default to TR
   const preselectedLabel = preselectedDestination
@@ -94,7 +96,7 @@ export default function Apply() {
     : "";
   const [destination, setDestination] = useState(preselectedLabel);
   const [visaType, setVisaType] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState("");
+  const [selectedPlan, setSelectedPlan] = useState(preselectedPlan || "");
 
   // Quiz
   const [quizDone, setQuizDone] = useState(false);
@@ -128,11 +130,13 @@ export default function Apply() {
       const visaFree = sharedVisaFreeMap[validPassport] || [];
       const destObj = destinations.find((d) => d.label === draftDest);
       const destAllowed = !draftDest || !destObj || !visaFree.includes(destObj.key);
-      setStep(draft.step ?? 1);
+      const hasOverrides = !!preselectedDestination || !!preselectedPassport || !!preselectedPlan;
+
+      setStep(hasOverrides ? 1 : (draft.step ?? 1));
       setSelectedPassport(validPassport);
       setDestination(destAllowed ? draftDest : "");
       setVisaType(draft.visaType ?? "");
-      setSelectedPlan(draft.selectedPlan ?? "");
+      setSelectedPlan(preselectedPlan || draft.selectedPlan || "");
       setQuizDone(Boolean(draft.quizDone));
       setQuizQ(draft.quizQ ?? 0);
       setQuizAnswers(draft.quizAnswers ?? []);
@@ -205,7 +209,7 @@ export default function Apply() {
     if (authMode === "login") {
       const { error } = await signIn(email, password);
       if (error) {
-        toast({ title: "Giriş başarısız", description: error.message, variant: "destructive" });
+        toast({ title: "Giriş başarısız", description: (error as Error).message, variant: "destructive" });
       } else {
         toast({ title: "Giriş yapıldı" });
         // User state will update automatically via useAuth, causing re-render and showing payment
@@ -230,7 +234,7 @@ export default function Apply() {
 
       const { error } = await signUp(email, password, fullName, phone);
       if (error) {
-        toast({ title: "Kayıt başarısız", description: error.message, variant: "destructive" });
+        toast({ title: "Kayıt başarısız", description: (error as Error).message, variant: "destructive" });
       } else {
         // Show verification screen
         setShowEmailVerification(true);
@@ -265,7 +269,10 @@ export default function Apply() {
                 <div
                   key={i}
                   className={`rounded-xl border px-3 py-3 md:py-4 text-center transition-colors ${isActive || isDone ? "border-accent/30 bg-accent/5" : "border-border bg-white"
-                    }`}
+                    } ${isDone ? "cursor-pointer hover:bg-accent/10" : ""}`}
+                  onClick={() => {
+                    if (isDone) setStep(stepNum);
+                  }}
                 >
                   <div className="flex items-center justify-center gap-3">
                     <div
@@ -303,22 +310,22 @@ export default function Apply() {
 
                 <div className="space-y-6">
                   <div>
-                    <label className="text-sm font-semibold text-foreground mb-2 block">Pasaportunuz</label>
+                    <label className="text-[15px] font-bold text-foreground mb-2 block">Pasaportunuz</label>
                     <Select onValueChange={setSelectedPassport} value={selectedPassport}>
-                      <SelectTrigger className="h-12 text-base font-semibold text-foreground">
+                      <SelectTrigger className="h-14 text-lg font-bold text-foreground">
                         <SelectValue>
-                          <span className="flex items-center gap-2">
-                            <span className="text-xl">{currentPassport.flag}</span>
-                            <span className="font-bold">{currentPassport.label}</span>
+                          <span className="flex items-center gap-3">
+                            <span className="text-2xl">{currentPassport.flag}</span>
+                            <span>{currentPassport.label}</span>
                           </span>
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent className="max-h-[280px]">
                         {passportOptions.map((p) => (
-                          <SelectItem key={p.code} value={p.code} className="py-3 text-lg font-semibold cursor-pointer">
-                            <span className="flex items-center gap-2.5">
+                          <SelectItem key={p.code} value={p.code} className="py-3 text-lg font-bold cursor-pointer">
+                            <span className="flex items-center gap-3">
                               <span className="text-2xl">{p.flag}</span>
-                              <span className="font-bold">{p.label}</span>
+                              <span>{p.label}</span>
                             </span>
                           </SelectItem>
                         ))}
@@ -327,17 +334,17 @@ export default function Apply() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-semibold text-foreground mb-2 block">Hedef Ülke</label>
+                    <label className="text-[15px] font-bold text-foreground mb-2 block">Hedef Ülke</label>
                     <Select
                       onValueChange={setDestination}
                       value={isDestinationStillAvailable ? destination : ""}
                     >
-                      <SelectTrigger className="h-12 text-base font-semibold text-foreground">
+                      <SelectTrigger className="h-14 text-lg font-bold text-foreground">
                         <SelectValue placeholder={availableDestinations.length === 0 ? "Pasaportunuzla vize gerektiren ülke yok" : "Ülke seçin"}>
                           {selectedDestination && isDestinationStillAvailable ? (
-                            <span className="flex items-center gap-2">
-                              <span className="text-xl">{selectedDestination.flag}</span>
-                              <span className="font-bold">{selectedDestination.label}</span>
+                            <span className="flex items-center gap-3">
+                              <span className="text-2xl">{selectedDestination.flag}</span>
+                              <span>{selectedDestination.label}</span>
                             </span>
                           ) : null}
                         </SelectValue>
@@ -349,10 +356,10 @@ export default function Apply() {
                           </div>
                         ) : (
                           availableDestinations.map((c) => (
-                            <SelectItem key={c.label} value={c.label} className="py-3 text-lg font-semibold cursor-pointer">
-                              <span className="flex items-center gap-2.5">
+                            <SelectItem key={c.label} value={c.label} className="py-3 text-lg font-bold cursor-pointer">
+                              <span className="flex items-center gap-3">
                                 <span className="text-2xl">{c.flag}</span>
-                                <span className="font-bold">{c.label}</span>
+                                <span>{c.label}</span>
                               </span>
                             </SelectItem>
                           ))
@@ -362,14 +369,14 @@ export default function Apply() {
                   </div>
 
                   <div>
-                    <label className="text-sm font-semibold text-foreground mb-2 block">Vize Türü</label>
+                    <label className="text-[15px] font-bold text-foreground mb-2 block">Vize Türü</label>
                     <Select onValueChange={setVisaType} value={visaType}>
-                      <SelectTrigger className="h-12 text-[15px]">
+                      <SelectTrigger className="h-14 text-lg font-bold text-foreground">
                         <SelectValue placeholder="Vize türü seçin" />
                       </SelectTrigger>
                       <SelectContent>
                         {visaTypes.map((v) => (
-                          <SelectItem key={v} value={v} className="text-lg py-2 cursor-pointer">{v}</SelectItem>
+                          <SelectItem key={v} value={v} className="py-3 text-lg font-bold cursor-pointer">{v}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -466,8 +473,8 @@ export default function Apply() {
                   })}
                 </div>
 
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                  <Button variant="outline" className="font-semibold h-12 rounded-xl" onClick={() => setStep(1)}>
+                <div className="mt-8 flex flex-col-reverse sm:flex-row gap-3">
+                  <Button variant="outline" className="font-bold h-14 rounded-xl sm:w-32" onClick={() => setStep(1)}>
                     Geri
                   </Button>
                   <Button
@@ -627,16 +634,13 @@ export default function Apply() {
                   </>
                 )}
 
-                <div className="mt-6 flex gap-3">
-                  <Button variant="outline" className="font-semibold h-12 rounded-xl" onClick={() => {
-                    // If user is logged in, going back might need to log them out if they want to switch accounts?
-                    // Or just go back to step 2.
-                    // The user said "login yapılmış olduktan sonra vizeni al diyince login istiyor".
-                    // So we keep them logged in.
+                <div className="mt-6 flex flex-col-reverse sm:flex-row gap-3">
+                  <Button variant="outline" className="font-bold h-14 rounded-xl sm:w-32" onClick={() => {
                     setStep(2);
                   }}>
                     Geri
                   </Button>
+                  {/* Keep alignment with full width if there was a continue button here, but since this is payment, the secure payment button is above. We just align the back button nicely. */}
                 </div>
               </div>
             </motion.div>

@@ -49,29 +49,28 @@ export default function StaffLogin() {
             } else {
                 // Not authorized for staff panel, kick them back out
                 await supabase.auth.signOut();
-                toast({ title: "Yetkisiz Giriş", description: "Bu panel sadece danışmanlar içindir. Müşteri girişi yapmalısınız.", variant: "destructive" });
-                navigate('/login');
+                toast({ title: "Giriş Başarısız", description: "Geçersiz e-posta veya şifre.", variant: "destructive" });
             }
         }
     };
 
     return (
-        <div className="page-shell bg-slate-50 flex items-center justify-center min-h-screen">
+        <div className="page-shell section-gradient-light flex items-center justify-center min-h-screen">
             <div className="container mx-auto px-4 md:px-6 max-w-sm">
                 <motion.div
-                    className="bg-white rounded-2xl border border-border p-8 shadow-xl"
+                    className="bg-white rounded-2xl border border-border p-8 shadow-lg"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                 >
                     <div className="text-center mb-8">
-                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-navy-dark text-white mb-4">
-                            <ShieldCheck size={24} />
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 text-blue-600 border border-blue-100 mb-4">
+                            <Lock size={24} strokeWidth={1.5} />
                         </div>
                         <h1 className="text-2xl font-extrabold text-navy-dark">
                             Danışman Girişi
                         </h1>
                         <p className="text-sm text-muted-foreground mt-2">
-                            Sadece Danışman ve Yöneticiler içindir.
+                            Danışman paneline erişmek için giriş yapın.
                         </p>
                     </div>
 
@@ -85,11 +84,11 @@ export default function StaffLogin() {
                             <Input className="h-11" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
                         </div>
 
-                        <Button type="submit" disabled={isLoading} className="w-full bg-navy-dark hover:bg-navy-dark/90 text-white font-bold h-12 text-sm rounded-xl mt-2">
+                        <Button type="submit" disabled={isLoading} className="w-full btn-gradient text-white font-bold h-12 text-sm rounded-xl mt-2 shadow-sm">
                             {isLoading ? (
                                 <Loader2 size={18} className="mr-2 animate-spin" />
                             ) : (
-                                <><LogIn size={18} className="mr-2" /> Panele Giriş Yap</>
+                                <><LogIn size={18} className="mr-2" /> Giriş Yap</>
                             )}
                         </Button>
                     </form>
