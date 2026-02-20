@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { sanitizeHtml } from "@/lib/sanitize";
 import { Link, useNavigate } from "react-router-dom";
 import useEmblaCarousel from "embla-carousel-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -359,7 +360,7 @@ export default function Index() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            dangerouslySetInnerHTML={{ __html: t("hero.subtitle") }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(t("hero.subtitle")) }}
           />
 
           {/* Visa Checker Widget */}
@@ -677,7 +678,7 @@ export default function Index() {
           </h2>
           <p
             className="text-lg text-white/70 mb-8 max-w-md mx-auto leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: t("newsletter.subtitle") }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(t("newsletter.subtitle")) }}
           />
           <div className="flex flex-col sm:flex-row gap-3 max-w-lg mx-auto">
             <Input

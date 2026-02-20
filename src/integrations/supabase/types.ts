@@ -92,6 +92,76 @@ export type Database = {
           },
         ]
       }
+      advisor_availability: {
+        Row: {
+          advisor_id: string
+          created_at: string | null
+          day_of_week: number
+          end_time: string
+          id: string
+          start_time: string
+        }
+        Insert: {
+          advisor_id: string
+          created_at?: string | null
+          day_of_week: number
+          end_time: string
+          id?: string
+          start_time: string
+        }
+        Update: {
+          advisor_id?: string
+          created_at?: string | null
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_availability_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advisor_blocked_slots: {
+        Row: {
+          advisor_id: string
+          created_at: string | null
+          end_time: string
+          id: string
+          reason: string | null
+          start_time: string
+        }
+        Insert: {
+          advisor_id: string
+          created_at?: string | null
+          end_time: string
+          id?: string
+          reason?: string | null
+          start_time: string
+        }
+        Update: {
+          advisor_id?: string
+          created_at?: string | null
+          end_time?: string
+          id?: string
+          reason?: string | null
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_blocked_slots_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       advisors: {
         Row: {
           about_me: string | null
@@ -137,17 +207,61 @@ export type Database = {
         }
         Relationships: []
       }
+      application_documents: {
+        Row: {
+          advisor_id: string | null
+          application_id: string | null
+          created_at: string | null
+          id: string
+          name: string
+          url: string
+        }
+        Insert: {
+          advisor_id?: string | null
+          application_id?: string | null
+          created_at?: string | null
+          id?: string
+          name: string
+          url: string
+        }
+        Update: {
+          advisor_id?: string | null
+          application_id?: string | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_documents_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "application_documents_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       applications: {
         Row: {
           created_at: string | null
           destination: string
           id: string
           notes: string | null
+          payment_status: string | null
           plan: string
           reference_id: string
           status: string | null
           travel_date: string | null
           updated_at: string | null
+          used_package_id: string | null
           user_id: string
           visa_type: string
         }
@@ -156,11 +270,13 @@ export type Database = {
           destination: string
           id?: string
           notes?: string | null
+          payment_status?: string | null
           plan: string
           reference_id: string
           status?: string | null
           travel_date?: string | null
           updated_at?: string | null
+          used_package_id?: string | null
           user_id: string
           visa_type: string
         }
@@ -169,18 +285,111 @@ export type Database = {
           destination?: string
           id?: string
           notes?: string | null
+          payment_status?: string | null
           plan?: string
           reference_id?: string
           status?: string | null
           travel_date?: string | null
           updated_at?: string | null
+          used_package_id?: string | null
           user_id?: string
           visa_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_used_package_id_fkey"
+            columns: ["used_package_id"]
+            isOneToOne: false
+            referencedRelation: "customer_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consultations: {
+        Row: {
+          advisor_id: string
+          created_at: string | null
+          customer_id: string
+          end_time: string
+          id: string
+          is_advisor_request: boolean | null
+          notes: string | null
+          start_time: string
+          status: string
+        }
+        Insert: {
+          advisor_id: string
+          created_at?: string | null
+          customer_id: string
+          end_time: string
+          id?: string
+          is_advisor_request?: boolean | null
+          notes?: string | null
+          start_time: string
+          status?: string
+        }
+        Update: {
+          advisor_id?: string
+          created_at?: string | null
+          customer_id?: string
+          end_time?: string
+          id?: string
+          is_advisor_request?: boolean | null
+          notes?: string | null
+          start_time?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultations_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "advisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_packages: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          package_type: string
+          purchased_at: string | null
+          remaining_count: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          package_type: string
+          purchased_at?: string | null
+          remaining_count?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          package_type?: string
+          purchased_at?: string | null
+          remaining_count?: number
+          user_id?: string
         }
         Relationships: []
       }
       messages: {
         Row: {
+          attachment_type: string | null
+          attachment_url: string | null
           content: string
           created_at: string | null
           id: string
@@ -189,6 +398,8 @@ export type Database = {
           sender_id: string
         }
         Insert: {
+          attachment_type?: string | null
+          attachment_url?: string | null
           content: string
           created_at?: string | null
           id?: string
@@ -197,6 +408,8 @@ export type Database = {
           sender_id: string
         }
         Update: {
+          attachment_type?: string | null
+          attachment_url?: string | null
           content?: string
           created_at?: string | null
           id?: string
@@ -208,28 +421,40 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_package: string | null
           assigned_advisor_id: string | null
           created_at: string
           full_name: string | null
           id: string
+          is_suspended: boolean | null
+          last_seen: string | null
+          package_assigned_at: string | null
           phone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          active_package?: string | null
           assigned_advisor_id?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
+          is_suspended?: boolean | null
+          last_seen?: string | null
+          package_assigned_at?: string | null
           phone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          active_package?: string | null
           assigned_advisor_id?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
+          is_suspended?: boolean | null
+          last_seen?: string | null
+          package_assigned_at?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string
@@ -259,6 +484,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_assign_advisor: {
+        Args: { p_advisor_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      delete_user: { Args: { user_id: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
