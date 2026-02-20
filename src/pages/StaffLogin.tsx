@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function StaffLogin() {
     const [email, setEmail] = useState("");
@@ -18,6 +19,18 @@ export default function StaffLogin() {
     const { getPanelPath } = useUserRole();
     const { toast } = useToast();
     const navigate = useNavigate();
+    const { t } = useLanguage();
+
+    const handleInvalid = (e: any) => {
+        e.target.setCustomValidity("");
+        if (!e.target.validity.valid) {
+            if (e.target.validity.valueMissing) {
+                e.target.setCustomValidity(t("auth.required_field"));
+            } else if (e.target.validity.typeMismatch && e.target.type === 'email') {
+                e.target.setCustomValidity(t("auth.invalid_email"));
+            }
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -26,7 +39,7 @@ export default function StaffLogin() {
         const { data: { session }, error } = await signIn(email, password);
 
         if (error) {
-            toast({ title: "Giriş başarısız", description: (error as Error).message, variant: "destructive" });
+            toast({ title: t("auth.login_failed"), description: t("auth.invalid_credentials"), variant: "destructive" });
             setIsLoading(false);
             return;
         }
@@ -49,7 +62,7 @@ export default function StaffLogin() {
             } else {
                 // Not authorized for staff panel, kick them back out
                 await supabase.auth.signOut();
-                toast({ title: "Giriş Başarısız", description: "Geçersiz e-posta veya şifre.", variant: "destructive" });
+                toast({ title: t("auth.login_failed"), description: t("auth.invalid_credentials"), variant: "destructive" });
                 setIsLoading(false);
             }
         }
@@ -81,11 +94,11 @@ export default function StaffLogin() {
                     <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
                         <div>
                             <label className="text-sm font-semibold text-foreground mb-1.5 block">E-posta</label>
-                            <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="email" placeholder="kullanici@visapath.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                            <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="email" placeholder="kullanici@visapath.com" value={email} onChange={(e) => { e.target.setCustomValidity(""); setEmail(e.target.value); }} onInvalid={handleInvalid} required />
                         </div>
                         <div>
                             <label className="text-sm font-semibold text-foreground mb-1.5 block">Şifre</label>
-                            <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                            <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="password" placeholder="••••••••" value={password} onChange={(e) => { e.target.setCustomValidity(""); setPassword(e.target.value); }} onInvalid={handleInvalid} required />
                         </div>
 
                         <Button type="submit" disabled={isLoading} className="w-full btn-gradient text-white font-extrabold h-14 text-lg rounded-xl mt-6 shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">

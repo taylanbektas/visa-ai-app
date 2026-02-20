@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function Login() {
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -23,6 +24,18 @@ export default function Login() {
   const { getPanelPath, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  const handleInvalid = (e: any) => {
+    e.target.setCustomValidity("");
+    if (!e.target.validity.valid) {
+      if (e.target.validity.valueMissing) {
+        e.target.setCustomValidity(t("auth.required_field"));
+      } else if (e.target.validity.typeMismatch && e.target.type === 'email') {
+        e.target.setCustomValidity(t("auth.invalid_email"));
+      }
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +44,7 @@ export default function Login() {
     if (mode === "login") {
       const { data: { session }, error } = await signIn(email, password);
       if (error) {
-        toast({ title: "Giriş başarısız", description: (error as Error).message, variant: "destructive" });
+        toast({ title: t("auth.login_failed"), description: t("auth.invalid_credentials"), variant: "destructive" });
       } else {
 
         if (session?.user) {
@@ -43,8 +56,8 @@ export default function Login() {
           if ((profile as any)?.is_suspended) {
             await supabase.auth.signOut();
             toast({
-              title: "Hesap Askıya Alındı",
-              description: "Hesabınız yönetici tarafından askıya alınmıştır. Giriş yapamazsınız.",
+              title: t("auth.login_failed"),
+              description: t("auth.account_suspended"),
               variant: "destructive"
             });
             setIsLoading(false);
@@ -53,32 +66,35 @@ export default function Login() {
 
           const userRoles = roles?.map(r => r.role) || [];
 
-          if (userRoles.includes('admin')) navigate('/admin');
-          else if (userRoles.includes('moderator')) navigate('/advisor');
-          else navigate('/dashboard');
+          if (userRoles.includes('admin') || userRoles.includes('moderator')) {
+            await supabase.auth.signOut();
+            toast({ title: t("auth.login_failed"), description: t("auth.invalid_credentials"), variant: "destructive" });
+          } else {
+            navigate('/dashboard');
+          }
         }
       }
     } else {
       // Registration Validation
       if (!fullName.trim() || !phone.trim()) {
-        toast({ title: "Eksik Bilgi", description: "Lütfen tüm alanları doldurun.", variant: "destructive" });
+        toast({ title: t("auth.login_failed"), description: t("auth.missing_info"), variant: "destructive" });
         setIsLoading(false);
         return;
       }
       if (password.length < 8) {
-        toast({ title: "Zayıf Şifre", description: "Şifre en az 8 karakter olmalıdır.", variant: "destructive" });
+        toast({ title: t("auth.login_failed"), description: t("auth.weak_password"), variant: "destructive" });
         setIsLoading(false);
         return;
       }
       if (password !== confirmPassword) {
-        toast({ title: "Hata", description: "Şifreler eşleşmiyor.", variant: "destructive" });
+        toast({ title: t("auth.login_failed"), description: t("auth.passwords_not_match"), variant: "destructive" });
         setIsLoading(false);
         return;
       }
 
       const { error } = await signUp(email, password, fullName, phone);
       if (error) {
-        toast({ title: "Kayıt başarısız", description: (error as Error).message, variant: "destructive" });
+        toast({ title: t("auth.login_failed"), description: (error as Error).message, variant: "destructive" });
       } else {
         // Show email verification screen instead of auto-login
         setShowEmailVerification(true);
@@ -153,26 +169,26 @@ export default function Login() {
             {mode === "register" && (
               <div>
                 <label className="text-sm font-semibold text-foreground mb-1.5 block">Ad Soyad</label>
-                <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" placeholder="Adınız Soyadınız" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+                <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" placeholder="Adınız Soyadınız" value={fullName} onChange={(e) => { e.target.setCustomValidity(""); setFullName(e.target.value); }} onInvalid={handleInvalid} required />
               </div>
             )}
             <div>
               <label className="text-sm font-semibold text-foreground mb-1.5 block">E-posta</label>
-              <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="email" placeholder="ornek@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="email" placeholder="ornek@email.com" value={email} onChange={(e) => { e.target.setCustomValidity(""); setEmail(e.target.value); }} onInvalid={handleInvalid} required />
             </div>
             <div>
               <label className="text-sm font-semibold text-foreground mb-1.5 block">Şifre</label>
-              <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="password" placeholder="En az 8 karakter" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="password" placeholder="En az 8 karakter" value={password} onChange={(e) => { e.target.setCustomValidity(""); setPassword(e.target.value); }} onInvalid={handleInvalid} required />
             </div>
             {mode === "register" && (
               <>
                 <div>
                   <label className="text-sm font-semibold text-foreground mb-1.5 block">Şifre Tekrar</label>
-                  <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="password" placeholder="Şifrenizi doğrulayın" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                  <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="password" placeholder="Şifrenizi doğrulayın" value={confirmPassword} onChange={(e) => { e.target.setCustomValidity(""); setConfirmPassword(e.target.value); }} onInvalid={handleInvalid} required />
                 </div>
                 <div>
                   <label className="text-sm font-semibold text-foreground mb-1.5 block">Telefon</label>
-                  <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="tel" placeholder="+90 5XX XXX XX XX" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                  <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="tel" placeholder="+90 5XX XXX XX XX" value={phone} onChange={(e) => { e.target.setCustomValidity(""); setPhone(e.target.value); }} onInvalid={handleInvalid} required />
                 </div>
               </>
             )}

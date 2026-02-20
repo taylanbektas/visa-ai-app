@@ -30,6 +30,9 @@ import StaffLogin from "./pages/StaffLogin";
 import Success from "./pages/Success";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import Cookies from "./pages/Cookies";
+import Refund from "./pages/Refund";
+import VideoGuides from "./pages/VideoGuides";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -159,6 +162,30 @@ const App = () => (
                 element={
                   <PublicLayout>
                     <Terms />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/cookies"
+                element={
+                  <PublicLayout>
+                    <Cookies />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/refund"
+                element={
+                  <PublicLayout>
+                    <Refund />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/video-guides"
+                element={
+                  <PublicLayout>
+                    <VideoGuides />
                   </PublicLayout>
                 }
               />

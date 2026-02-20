@@ -1,11 +1,11 @@
 
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, MessageSquare, Briefcase, Paperclip, X, Sparkles, ArrowRight, Calendar as CalendarIcon, Plus, type LucideIcon,
+  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, MessageSquare, Briefcase, Paperclip, X, Sparkles, ArrowRight, ArrowLeft, Calendar as CalendarIcon, Plus, type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -14,34 +14,25 @@ import { BookingCalendar } from "@/components/BookingCalendar";
 import { useAuth } from "@/hooks/useAuth";
 import ApplicationTimeline from "@/components/ApplicationTimeline";
 import DocumentChecklist from "@/components/DocumentChecklist";
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar";
+import { DashboardLayout, SidebarItem } from "@/components/layout/DashboardLayout";
 import { LayoutDashboard } from "lucide-react";
+import { destinations } from "@/data/countries";
+import { translations } from "@/i18n/translations";
 
 const statusIcons: Record<string, LucideIcon> = {
   "İnceleniyor": Clock,
   "Onaylandı": CheckCircle,
   "İşlem Gerekli": AlertCircle,
-  "Alındı": Clock,
+  "Başvuru Alındı": Clock,
   "Gönderildi": Clock,
   "Reddedildi": AlertCircle,
 };
 
 const statusColors: Record<string, string> = {
-  "İnceleniyor": "bg-gold/10 text-gold-dark",
+  "İnceleniyor": "bg-amber-500/10 text-amber-600",
   "Onaylandı": "bg-success/10 text-success",
   "İşlem Gerekli": "bg-orange-500/10 text-orange-700",
-  "Alındı": "bg-muted text-muted-foreground",
+  "Başvuru Alındı": "bg-yellow-400/10 text-yellow-600",
   "Gönderildi": "bg-blue-500/10 text-blue-700",
   "Reddedildi": "bg-destructive/10 text-destructive",
 };
@@ -58,6 +49,7 @@ interface AppWithAdvisor {
   advisorName: string | null;
   advisorId: string | null;
   advisorPhoto: string | null;
+  advisorRecordId: string | null;
   payment_status: string | null;
 }
 
@@ -80,8 +72,14 @@ export default function Dashboard() {
   const [uploadingAppId, setUploadingAppId] = useState<string | null>(null);
   const [appDocuments, setAppDocuments] = useState<Record<string, { name: string; url: string }[]>>({});
   const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview"); // overview | applications | messages | profile
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "overview";
+
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab });
+  };
   const [selectedApp, setSelectedApp] = useState<AppWithAdvisor | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -198,9 +196,21 @@ export default function Dashboard() {
           created_at: app.created_at,
           advisorName: advisorId ? advisorMap.get(advisorId) || null : null,
           advisorId: advisorId ? advisorUserMap.get(advisorId) || null : null,
+          advisorRecordId: advisorId || null,
           advisorPhoto: advisorId ? advisorPhotoMap.get(advisorId) || null : null,
           payment_status: app.payment_status || "pending",
         }
+      }).map(app => {
+        // Normalize status labels and map technical statuses to Turkish
+        let normalizedStatus = app.status;
+        if (normalizedStatus === "Alındı" || !normalizedStatus) normalizedStatus = "Başvuru Alındı";
+        if (normalizedStatus.toLowerCase() === "rejected") normalizedStatus = "Reddedildi";
+        if (normalizedStatus === "submitted") normalizedStatus = "Gönderildi";
+        if (normalizedStatus === "pending_review") normalizedStatus = "İnceleniyor";
+        if (normalizedStatus === "pending_documents") normalizedStatus = "Belge Bekliyor";
+        if (normalizedStatus === "İşlem Gerekli") normalizedStatus = "İşlem Gerekli"; // Keep as is
+
+        return { ...app, status: normalizedStatus };
       })
     );
 
@@ -226,440 +236,492 @@ export default function Dashboard() {
 
   const displayName = profile?.full_name || user.email?.split("@")[0] || "Kullanıcı";
 
+  const navItems: SidebarItem[] = [
+    { id: 'overview', label: 'Hızlı Bakış', icon: LayoutDashboard },
+    { id: 'applications', label: 'Başvurularım', icon: FileText },
+    { id: 'messages', label: 'Mesajlar', icon: MessageSquare, badgeCount: applications.some(a => a.status === 'İşlem Gerekli') ? 1 : undefined },
+    { id: 'profile', label: 'Profilim', icon: User },
+  ];
+
   return (
-    <SidebarProvider style={{ "--sidebar-width": "20rem" } as React.CSSProperties}>
-      <div className="flex min-h-screen w-full bg-[#f8fafc]">
-        {/* Sidebar */}
-        <Sidebar className="border-r border-slate-200/60 shadow-xl bg-white/80 backdrop-blur-xl">
-          <SidebarHeader className="border-b border-slate-100 px-10 py-10">
-            <h2 className="text-3xl font-black tracking-tight text-navy-dark px-2">
-              Müşteri <span className="text-emerald-500 font-extrabold uppercase text-xs tracking-[0.2em] block mt-1">Süreç Takibi</span>
-            </h2>
-          </SidebarHeader>
-          <SidebarContent className="px-6 py-6 overflow-y-auto">
-            <SidebarGroup>
-              <SidebarGroupLabel className="px-2 mb-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Gezinti</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu className="space-y-4">
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={activeTab === 'overview'}
-                      onClick={() => setActiveTab('overview')}
-                      size="lg"
-                      className="rounded-2xl h-16 gap-4 font-bold transition-all hover:translate-x-1"
-                    >
-                      <LayoutDashboard className={activeTab === 'overview' ? 'text-emerald-600 w-6 h-6' : 'text-slate-400 w-6 h-6'} />
-                      <span className={activeTab === 'overview' ? 'text-navy-dark text-lg' : 'text-slate-500 text-lg'}>Hızlı Bakış</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={activeTab === 'applications'}
-                      onClick={() => setActiveTab('applications')}
-                      size="lg"
-                      className="rounded-2xl h-16 gap-4 font-bold transition-all hover:translate-x-1"
-                    >
-                      <FileText className={activeTab === 'applications' ? 'text-emerald-600 w-6 h-6' : 'text-slate-400 w-6 h-6'} />
-                      <span className={activeTab === 'applications' ? 'text-navy-dark text-lg' : 'text-slate-500 text-lg'}>Başvurularım</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={activeTab === 'messages'}
-                      onClick={() => setActiveTab('messages')}
-                      size="lg"
-                      className="rounded-2xl h-16 gap-4 font-bold transition-all hover:translate-x-1"
-                    >
-                      <MessageSquare className={activeTab === 'messages' ? 'text-emerald-600 w-6 h-6' : 'text-slate-400 w-6 h-6'} />
-                      <span className={activeTab === 'messages' ? 'text-navy-dark text-lg' : 'text-slate-500 text-lg'}>Mesajlar</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      isActive={activeTab === 'profile'}
-                      onClick={() => setActiveTab('profile')}
-                      size="lg"
-                      className="rounded-2xl h-16 gap-4 font-bold transition-all hover:translate-x-1"
-                    >
-                      <User className={activeTab === 'profile' ? 'text-emerald-600 w-6 h-6' : 'text-slate-400 w-6 h-6'} />
-                      <span className={activeTab === 'profile' ? 'text-navy-dark text-lg' : 'text-slate-500 text-lg'}>Profilim</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            <div className="mt-auto pt-10 pb-8 px-4 space-y-4">
-              <Button
-                variant="ghost"
-                className="w-full h-16 justify-start text-navy-dark hover:bg-emerald-50 hover:text-emerald-600 rounded-2xl font-extrabold text-lg transition-all group border border-transparent hover:border-emerald-100"
-                onClick={() => navigate("/")}
-              >
-                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mr-4 group-hover:bg-emerald-100 transition-colors">
-                  <Plus className="h-5 w-5 text-navy-dark group-hover:text-emerald-600 rotate-45" />
-                </div>
-                Siteye Dön
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full h-14 justify-start text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-100 shadow-sm rounded-2xl font-extrabold text-base transition-all active:scale-[0.98]"
-                onClick={async () => { await signOut(); navigate("/"); }}
-              >
-                <div className="w-8 h-8 rounded-lg bg-rose-100/50 flex items-center justify-center mr-4">
-                  <LogOut className="h-4 w-4" />
-                </div>
-                Çıkış Yap
-              </Button>
+    <DashboardLayout
+      items={navItems}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      maxWidth={activeTab === 'applications' ? "max-w-none" : "max-w-[1200px]"}
+      noPadding={activeTab === 'messages'}
+    >
+      {activeTab === 'overview' && (
+        <div className="space-y-8 animate-in fade-in duration-500 w-full mb-10">
+          <header className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-black text-navy-dark tracking-tight mb-2">Hoş geldin, {displayName} 👋</h1>
+                <p className="text-slate-500 font-medium text-lg">Vize süreçlerin kontrol altında.</p>
+              </div>
             </div>
-          </SidebarContent>
-        </Sidebar>
+          </header>
 
-        {/* Main Content */}
-        <main className="flex-1 p-8 lg:p-12 pt-8 overflow-auto max-w-[1200px] mx-auto w-full">
-          {activeTab === 'overview' && (
-            <div className="space-y-8 animate-in fade-in duration-500 w-full">
-              <header className="bg-white p-12 rounded-[2.5rem] shadow-sm border border-slate-100 mb-8">
-                <h1 className="text-4xl font-black text-navy-dark mb-3 tracking-tight tracking-tight">Hoş geldin, {displayName} 👋</h1>
-                <p className="text-lg text-slate-500 font-medium">Vize süreçlerin kontrol altında.</p>
-              </header>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Active applications count summary box */}
-                <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-8 rounded-[2.5rem] shadow-xl shadow-blue-200/50 text-white relative overflow-hidden group">
-                  <div className="p-4 bg-white/20 backdrop-blur-md rounded-2xl w-fit mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column: Stats & Recent Apps */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                     <FileText size={28} />
                   </div>
-                  <p className="text-5xl font-black tracking-tighter">{applications.length}</p>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-80 mt-2">Toplam Başvuru</p>
-                </div>
-
-                {/* Pending messages summary box if applicable */}
-                <div className="bg-gradient-to-br from-emerald-600 to-emerald-700 p-8 rounded-[2.5rem] shadow-xl shadow-emerald-200/50 text-white relative overflow-hidden group">
-                  <div className="p-4 bg-white/20 backdrop-blur-md rounded-2xl w-fit mb-6">
-                    <MessageSquare size={28} />
+                  <div>
+                    <p className="text-3xl font-black text-navy-dark tracking-tight">{applications.length}</p>
+                    <p className="text-sm font-bold text-slate-400">Toplam Başvuru</p>
                   </div>
-                  <p className="text-5xl font-black tracking-tighter">1</p>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-80 mt-2">Yeni Mesaj</p>
                 </div>
-
-                {/* Status summary box */}
-                <div className="bg-gradient-to-br from-violet-600 to-violet-700 p-8 rounded-[2.5rem] shadow-xl shadow-violet-200/50 text-white relative overflow-hidden group">
-                  <div className="p-4 bg-white/20 backdrop-blur-md rounded-2xl w-fit mb-6">
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
                     <AlertCircle size={28} />
                   </div>
-                  <p className="text-5xl font-black tracking-tighter">{applications.filter(a => a.status === 'İşlem Gerekli').length}</p>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-80 mt-2">Dikkat Gereken</p>
+                  <div>
+                    <p className="text-3xl font-black text-navy-dark tracking-tight">{applications.filter(a => a.status === 'İşlem Gerekli').length}</p>
+                    <p className="text-sm font-bold text-slate-400">İşlem Bekleyen</p>
+                  </div>
                 </div>
               </div>
 
-              {/* Booking Banner */}
-              {(applications[0]?.advisorId || assignedAdvisor) && (
-                <div className="bg-white rounded-[2.5rem] p-8 border border-blue-50 shadow-sm relative overflow-hidden group mt-8">
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-blue-50 rounded-full -mr-20 -mt-20 blur-3xl transition-colors group-hover:bg-blue-100"></div>
-                  <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
-                    <div className="w-20 h-20 rounded-[1.5rem] bg-navy-dark flex items-center justify-center text-white shadow-xl shadow-navy-dark/20 flex-shrink-0">
-                      <CalendarIcon size={32} />
-                    </div>
-                    <div className="flex-1 text-center md:text-left">
-                      <h3 className="text-2xl font-black text-navy-dark mb-1 tracking-tight">Danışman Görüşmesi</h3>
-                      <p className="text-slate-500 font-medium">Süreçle ilgili aklınıza takılanları birebir sorun.</p>
-                    </div>
-                    <Button
-                      onClick={() => setIsBookingOpen(true)}
-                      className="bg-navy-dark hover:bg-navy-light text-white font-black px-8 h-14 rounded-2xl shadow-xl shadow-navy-dark/10 transition-all hover:-translate-y-1 active:scale-[0.98]"
-                    >
-                      Randevu Al
+              {applications.length > 0 && (
+                <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-black text-navy-dark">Son Başvurular</h3>
+                    <Button variant="ghost" className="text-emerald-600 font-bold hover:bg-emerald-50 rounded-xl" onClick={() => setActiveTab('applications')}>
+                      Tümünü Gör <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
+                  </div>
+                  <div className="space-y-4">
+                    {applications.slice(0, 3).map((app) => {
+                      const StatusIcon = statusIcons[app.status] || Clock;
+                      const countryData = destinations.find(d => d.key === app.destination.toLowerCase());
+                      const countryFlag = countryData?.flag || "🏳️";
+                      const turkishCountryName = translations.tr[`country.${app.destination.toLowerCase()}`] || app.destination;
+                      const turkishVisaType = translations.tr[`visa_type.${app.visa_type.toLowerCase()}`] || app.visa_type;
+
+                      return (
+                        <div key={app.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-emerald-200 hover:shadow-sm transition-all cursor-pointer group" onClick={() => { setActiveTab('applications'); setSelectedApp(app); }}>
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                              <span className="text-2xl">{countryFlag}</span>
+                            </div>
+                            <div>
+                              <p className="font-bold text-navy-dark text-lg group-hover:text-emerald-600 transition-colors">{turkishCountryName} - {turkishVisaType}</p>
+                              <p className="text-xs text-slate-400 font-medium">{new Date(app.created_at).toLocaleDateString("tr-TR")}</p>
+                            </div>
+                          </div>
+                          <Badge className={`${statusColors[app.status] || "bg-slate-50 text-slate-600"} border border-slate-100 font-bold py-1.5 px-3 flex items-center gap-1.5`}><StatusIcon size={14} />{app.status}</Badge>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}
-              {/* Active Package Banner */}
+            </div>
+
+            {/* Right Column: Active Package & Danışman */}
+            <div className="space-y-6">
               {profile?.active_package && applications.length === 0 && (
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-[2.5rem] p-8 text-white shadow-lg relative overflow-hidden mt-8">
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <Sparkles size={120} />
-                  </div>
+                <div className="bg-white p-8 rounded-[2rem] border border-emerald-100 shadow-sm relative overflow-hidden group">
+                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-50 rounded-full blur-2xl group-hover:bg-emerald-100 transition-colors"></div>
                   <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Badge className="bg-white/20 hover:bg-white/30 text-white border-transparent backdrop-blur-sm px-4 py-1.5 rounded-full font-bold">
-                        Aktif Paket: <span className="ml-1 uppercase">{profile.active_package}</span>
-                      </Badge>
-                    </div>
-                    <h2 className="text-3xl font-black mb-3 tracking-tight">Vize Başvurunuzu Hemen Başlatın</h2>
-                    <p className="text-blue-100 text-lg mb-8 max-w-lg font-medium">
-                      Paketiniz hazır. Hemen formları doldurmaya başlayarak süreci hızlandırabilirsiniz.
-                    </p>
+                    <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-100 mb-4 font-bold py-1.5 px-3 uppercase text-[10px] tracking-wider">Aktif Paket: {profile.active_package}</Badge>
+                    <h3 className="text-2xl font-black text-navy-dark mb-2 tracking-tight">Başvurunuzu Başlatın</h3>
+                    <p className="text-slate-500 text-sm mb-6 font-medium leading-relaxed">Paketiniz hazır, formu doldurarak süreci vakit kaybetmeden başlatabilirsiniz.</p>
                     <Link to="/apply" state={{ plan: profile.active_package }}>
-                      <Button className="bg-white text-blue-700 hover:bg-blue-50 font-black px-10 h-14 rounded-2xl shadow-xl transition-all hover:-translate-y-1">
-                        Başvuruyu Başlat <ArrowRight size={20} className="ml-2" />
+                      <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-14 rounded-xl shadow-lg shadow-emerald-200">
+                        Hemen Başla <ArrowRight size={18} className="ml-2" />
                       </Button>
                     </Link>
                   </div>
                 </div>
               )}
-            </div>
-          )}
 
-          {activeTab === 'applications' && (
-            <div className="space-y-8 animate-in fade-in duration-500">
-              <header className="flex justify-between items-center bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-                <div className="flex items-center gap-4">
-                  {selectedApp && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedApp(null)}
-                      className="rounded-xl h-10 w-10 p-0 hover:bg-slate-50 text-slate-400"
-                    >
-                      <X size={20} />
-                    </Button>
+              <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm text-center">
+                <div className="w-24 h-24 mx-auto rounded-3xl bg-slate-50 flex items-center justify-center mb-4 text-slate-300 overflow-hidden border-2 border-slate-100 shadow-inner">
+                  {(applications[0]?.advisorPhoto || assignedAdvisor?.avatar_url || assignedAdvisor?.photo_url) ? (
+                    <img
+                      src={applications[0]?.advisorPhoto || assignedAdvisor?.avatar_url || assignedAdvisor?.photo_url || ""}
+                      alt="Danışman"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User size={40} />
                   )}
-                  <h2 className="text-3xl font-black text-navy-dark tracking-tight">
-                    {selectedApp ? "Başvuru Detayı" : "Başvurularım"}
-                  </h2>
                 </div>
-                {!selectedApp && (
-                  <Badge className="bg-blue-50 text-blue-600 border-blue-100 px-6 py-2 rounded-full font-bold">{applications.length} Kayıt</Badge>
+                <h3 className="text-xl font-black text-navy-dark mb-1">Danışmanınız</h3>
+                <p className="text-slate-500 font-medium mb-6">
+                  {applications[0]?.advisorName || assignedAdvisor?.full_name || "Atanıyor..."}
+                </p>
+                {applications[0]?.advisorId || assignedAdvisor ? (
+                  <div className="space-y-3">
+                    <Button onClick={() => setActiveTab('messages')} className="w-full text-navy-dark bg-slate-50 font-bold h-12 rounded-xl border border-slate-100 hover:bg-slate-100 hover:border-slate-200 shadow-none transition-all">
+                      <MessageSquare size={16} className="mr-2" /> Mesaj Gönder
+                    </Button>
+                    <Button
+                      onClick={() => setIsBookingOpen(true)}
+                      className="w-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold h-12 rounded-xl transition-all shadow-none border border-emerald-100/50"
+                    >
+                      <CalendarIcon size={16} className="mr-2" /> Danışman Randevusu Al
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 font-bold p-3 bg-slate-50 rounded-xl">Başvuru sonrası danışman ataması yapılacaktır.</p>
                 )}
-              </header>
-
-              {dataLoading ? (
-                <div className="flex justify-center py-20">
-                  <Loader2 className="animate-spin text-muted-foreground" size={32} />
-                </div>
-              ) : selectedApp ? (
-                <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Left Column: Timeline & Summary */}
-                    <div className="lg:col-span-1 space-y-6">
-                      <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
-                        <h3 className="text-lg font-black text-navy-dark mb-8">Başvuru Durumu</h3>
-                        <ApplicationTimeline currentStatus={selectedApp.status} createdAt={selectedApp.created_at} />
-                      </div>
-
-                      <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
-                        <h3 className="text-lg font-black text-navy-dark mb-4">Özet Bilgiler</h3>
-                        <div className="space-y-4">
-                          <div className="flex justify-between items-center py-3 border-b border-slate-50">
-                            <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Referans No</span>
-                            <span className="text-sm font-mono font-bold text-navy-dark">{selectedApp.reference_id}</span>
-                          </div>
-                          <div className="flex justify-between items-center py-3 border-b border-slate-50">
-                            <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Gidilecek Ülke</span>
-                            <span className="text-sm font-bold text-navy-dark">{selectedApp.destination}</span>
-                          </div>
-                          <div className="flex justify-between items-center py-3 border-b border-slate-50">
-                            <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Vize Türü</span>
-                            <span className="text-sm font-bold text-navy-dark">{selectedApp.visa_type}</span>
-                          </div>
-                          <div className="flex justify-between items-center py-3">
-                            <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Plan</span>
-                            <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 uppercase text-[10px] font-black">{selectedApp.plan}</Badge>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="lg:col-span-2" id="document-checklist-section">
-                      <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm h-full">
-                        <DocumentChecklist
-                          applicationId={selectedApp.id}
-                          userId={user.id}
-                          destination={selectedApp.destination}
-                          visaType={selectedApp.visa_type}
-                        />
-
-                        {appDocuments[selectedApp.id] && appDocuments[selectedApp.id].length > 0 && (
-                          <div className="mt-12 pt-12 border-t border-slate-100">
-                            <h3 className="text-xl font-black text-navy-dark mb-6 flex items-center gap-3">
-                              <Sparkles className="text-emerald-500" size={24} /> Danışmanınızdan Gelen Belgeler
-                            </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              {appDocuments[selectedApp.id].map((doc, i) => (
-                                <a
-                                  key={i}
-                                  href={doc.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="group flex items-center justify-between p-6 bg-slate-50 hover:bg-white rounded-[2rem] border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300"
-                                >
-                                  <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
-                                      <FileText size={20} />
-                                    </div>
-                                    <span className="font-bold text-navy-dark group-hover:text-emerald-600 transition-colors">{doc.name}</span>
-                                  </div>
-                                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                                    <ArrowRight size={18} />
-                                  </div>
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : applications.length === 0 ? (
-                <div className="text-center py-20 bg-white rounded-[2.5rem] border border-dashed border-slate-200">
-                  <p className="text-slate-400 font-bold text-lg">Henüz bir başvurunuz bulunmuyor.</p>
-                  <Link to="/apply" className="mt-4 inline-block text-emerald-500 font-bold hover:underline">İlk başvurunuzu oluşturun →</Link>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {applications.map((app) => {
-                    const StatusIcon = statusIcons[app.status] || Clock;
-                    return (
-                      <div key={app.id} className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all">
-                        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                          <div>
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="font-mono text-xs font-bold text-slate-400 px-3 py-1 bg-slate-50 rounded-lg">{app.reference_id}</span>
-                              <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 uppercase text-[10px] font-black">{app.plan}</Badge>
-                            </div>
-                            <h3 className="text-2xl font-black text-navy-dark tracking-tight">{app.destination} — {app.visa_type}</h3>
-                          </div>
-                          <span className={`inline-flex items-center gap-2 px-6 py-2 rounded-full text-xs font-black ring-1 ring-inset ${statusColors[app.status] || ""}`}>
-                            <StatusIcon size={14} /> {app.status}
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-4 text-sm sm:flex-row sm:items-center sm:justify-between pt-6 border-t border-slate-50">
-                          <div className="flex items-center gap-3 text-slate-500 font-bold">
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-                              <User size={14} />
-                            </div>
-                            <span>Danışman: {app.advisorName || assignedAdvisor?.full_name || "Atanıyor..."}</span>
-                          </div>
-                          <span className="text-xs font-bold text-slate-400">
-                            Oluşturma: {new Date(app.created_at).toLocaleDateString("tr-TR")}
-                          </span>
-                        </div>
-                        <div className="mt-8 flex flex-wrap gap-4">
-                          <Button
-                            onClick={() => setSelectedApp(app)}
-                            className="bg-navy-dark hover:bg-navy-light text-white font-black px-8 h-12 rounded-xl shadow-lg shadow-navy-dark/10 transition-all hover:-translate-y-1"
-                          >
-                            Detayları Gör ve Takip Et
-                          </Button>
-                          {app.payment_status === 'paid' ? (
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedApp(app);
-                                setTimeout(() => {
-                                  const el = document.getElementById("document-checklist-section");
-                                  if (el) el.scrollIntoView({ behavior: "smooth" });
-                                }, 100);
-                              }}
-                              className="rounded-xl h-12 px-6 font-bold border-indigo-100 text-indigo-600 hover:bg-indigo-50"
-                            >
-                              <Paperclip size={16} className="mr-2" /> Belge Yükle
-                            </Button>
-                          ) : (
-                            <Link to="/apply" state={{ plan: app.plan }}>
-                              <Button className="bg-rose-500 hover:bg-rose-600 rounded-xl h-12 px-8 font-black text-white shadow-lg shadow-rose-200 transition-all">
-                                <AlertCircle size={16} className="mr-2" /> Ödemeyi Tamamla
-                              </Button>
-                            </Link>
-                          )}
-                        </div>
-
-                        {appDocuments[app.id] && appDocuments[app.id].length > 0 && !selectedApp && (
-                          <div className="mt-6 flex flex-wrap gap-3 p-4 bg-slate-50 rounded-2xl">
-                            {appDocuments[app.id].map((doc, i) => (
-                              <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs font-bold bg-white text-slate-600 px-4 py-2 rounded-xl border border-slate-100 hover:border-blue-200 transition-colors">
-                                <Paperclip size={12} /> {doc.name}
-                              </a>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              <Link to="/apply" className="block mt-12">
-                <div className="border-2 border-dashed border-slate-200 rounded-[2rem] p-12 text-center hover:border-emerald-300 hover:bg-emerald-50/30 transition-all group">
-                  <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-emerald-100 transition-colors">
-                    <Plus className="text-slate-400 group-hover:text-emerald-500" size={32} />
-                  </div>
-                  <p className="text-lg font-black text-slate-500 group-hover:text-emerald-600">Yeni Başvuru Oluştur</p>
-                </div>
-              </Link>
-            </div>
-          )}
-
-          {activeTab === 'messages' && (
-            <div className="h-[calc(100vh-8rem)] bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden animate-in fade-in duration-500">
-              {applications.length > 0 && (applications[0].advisorId || applications[0].advisorName) ? (
-                <MessageCenter
-                  currentUserId={user!.id}
-                  targetUserId={applications[0].advisorId || "placeholder"}
-                  targetUserName={applications[0].advisorName || "Danışman"}
-                  targetUserPhoto={applications[0].advisorPhoto}
-                />
-              ) : assignedAdvisor ? (
-                <MessageCenter
-                  currentUserId={user!.id}
-                  targetUserId={assignedAdvisor.user_id}
-                  targetUserName={assignedAdvisor.full_name}
-                  targetUserPhoto={assignedAdvisor.photo_url || assignedAdvisor.avatar_url}
-                />
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center text-center p-12">
-                  <div className="w-24 h-24 bg-slate-50 rounded-[2rem] flex items-center justify-center mb-6">
-                    <MessageSquare size={48} className="text-slate-300" />
-                  </div>
-                  <h3 className="text-2xl font-black text-navy-dark mb-2 tracking-tight">Mesajlara Erişilemiyor</h3>
-                  <p className="text-slate-500 font-medium max-w-sm">Henüz atanmış bir danışmanınız yok. Başvuru yaptığınızda sizinle buradan iletişime geçilecektir.</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'profile' && (
-            <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in duration-500">
-              <header className="bg-white p-12 rounded-[3rem] shadow-sm border border-slate-100 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-emerald-500 via-blue-500 to-indigo-500"></div>
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-32 h-32 rounded-[2.5rem] bg-slate-100 mb-6 flex items-center justify-center border-4 border-white shadow-lg overflow-hidden">
-                    <User size={64} className="text-slate-300" />
-                  </div>
-                  <h2 className="text-3xl font-black text-navy-dark tracking-tight">{displayName}</h2>
-                  <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">VisaPath Müşterisi</p>
-                </div>
-              </header>
-
-              <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ad Soyad</p>
-                    <div className="h-14 bg-slate-50 rounded-xl flex items-center px-4 font-bold text-navy-dark">{displayName}</div>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">E-posta</p>
-                    <div className="h-14 bg-slate-50 rounded-xl flex items-center px-4 font-bold text-navy-dark">{user.email}</div>
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Telefon</p>
-                    <div className="h-14 bg-slate-50 rounded-xl flex items-center px-4 font-bold text-navy-dark">{profile?.phone || "-"}</div>
-                  </div>
-                </div>
-                <Button variant="outline" className="w-full h-14 rounded-2xl font-black text-slate-400 border-slate-100 cursor-not-allowed">Bilgileri Güncelle (Yakında)</Button>
               </div>
             </div>
-          )}
-        </main>
-      </div>
+          </div>
+        </div>
+      )}
 
+      {activeTab === 'applications' && (
+        <div className="space-y-8 animate-in fade-in duration-500">
+          <header className="flex justify-between items-center bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+            <div className="flex items-center gap-4">
+              {selectedApp && (
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedApp(null)}
+                  className="rounded-xl h-10 px-4 font-bold border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-navy-dark transition-colors"
+                >
+                  <ArrowLeft size={18} className="mr-2" /> Tüm Başvurulara Dön
+                </Button>
+              )}
+              <h2 className="text-3xl font-black text-navy-dark tracking-tight">
+                {selectedApp ? (
+                  <div className="flex items-center gap-3">
+                    <span>{destinations.find(d => d.key === selectedApp.destination.toLowerCase())?.flag || "🏳️"}</span>
+                    <span>{translations.tr[`country.${selectedApp.destination.toLowerCase()}`] || selectedApp.destination}</span>
+                    <span className="text-slate-300 font-normal">/</span>
+                    <span className="text-2xl">{translations.tr[`visa_type.${selectedApp.visa_type.toLowerCase()}`] || selectedApp.visa_type}</span>
+                  </div>
+                ) : "Başvurularım"}
+              </h2>
+            </div>
+            {!selectedApp && (
+              <Badge className="bg-blue-50 text-blue-600 border-blue-100 px-6 py-2 rounded-full font-bold">{applications.length} Kayıt</Badge>
+            )}
+            {selectedApp && (
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col items-end gap-2">
+                  <div className="bg-emerald-500 text-white px-4 py-1.5 rounded-xl text-sm font-black tracking-wider shadow-sm shadow-emerald-200">
+                    {selectedApp.plan.toUpperCase()}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-slate-400 uppercase tracking-tight">Referans:</span>
+                    <span className="text-xl font-mono font-black text-navy-dark tracking-tighter">{selectedApp.reference_id}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </header>
+
+          {dataLoading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="animate-spin text-muted-foreground" size={32} />
+            </div>
+          ) : selectedApp ? (
+            <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Column: Timeline & Summary */}
+                <div className="lg:col-span-1 space-y-6">
+                  <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
+                    <h3 className="text-lg font-black text-navy-dark mb-8">Başvuru Durumu</h3>
+                    <ApplicationTimeline currentStatus={selectedApp.status} createdAt={selectedApp.created_at} />
+                  </div>
+                </div>
+
+                <div className="lg:col-span-2" id="document-checklist-section">
+                  <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm h-full">
+                    <DocumentChecklist
+                      applicationId={selectedApp.id}
+                      userId={user.id}
+                      destination={selectedApp.destination}
+                      visaType={selectedApp.visa_type}
+                      status={selectedApp.status}
+                      onStatusChange={(newStatus) => {
+                        setSelectedApp({ ...selectedApp, status: newStatus });
+                        setApplications(apps => apps.map(a => a.id === selectedApp.id ? { ...a, status: newStatus } : a));
+                      }}
+                    />
+
+                    {appDocuments[selectedApp.id] && appDocuments[selectedApp.id].length > 0 && (
+                      <div className="mt-12 pt-12 border-t border-slate-100">
+                        <h3 className="text-xl font-black text-navy-dark mb-6 flex items-center gap-3">
+                          <Sparkles className="text-emerald-500" size={24} /> Danışmanınızdan Gelen Belgeler
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {appDocuments[selectedApp.id].map((doc, i) => (
+                            <a
+                              key={i}
+                              href={doc.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group flex items-center justify-between p-6 bg-slate-50 hover:bg-white rounded-[2rem] border border-slate-100 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300"
+                            >
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+                                  <FileText size={20} />
+                                </div>
+                                <span className="font-bold text-navy-dark group-hover:text-emerald-600 transition-colors">{doc.name}</span>
+                              </div>
+                              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                                <ArrowRight size={18} />
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : applications.length === 0 ? (
+            <div className="text-center py-20 bg-white rounded-[2.5rem] border border-dashed border-slate-200">
+              <p className="text-slate-400 font-bold text-lg">Henüz bir başvurunuz bulunmuyor.</p>
+              <Link to="/apply" className="mt-4 inline-block text-emerald-500 font-bold hover:underline">İlk başvurunuzu oluşturun →</Link>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {applications.map((app) => {
+                const StatusIcon = statusIcons[app.status] || Clock;
+                return (
+                  <div key={app.id} className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all">
+                    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="font-mono text-xs font-bold text-slate-400 px-3 py-1 bg-slate-50 rounded-lg">{app.reference_id}</span>
+                          <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 uppercase text-[10px] font-black">{app.plan}</Badge>
+                        </div>
+                        <h3 className="text-2xl font-black text-navy-dark tracking-tight">
+                          {destinations.find(d => d.key === app.destination.toLowerCase())?.flag || "🏳️"} {translations.tr[`country.${app.destination.toLowerCase()}`] || app.destination} — {translations.tr[`visa_type.${app.visa_type.toLowerCase()}`] || app.visa_type}
+                        </h3>
+                      </div>
+                      <span className={`inline-flex items-center gap-2 px-6 py-2 rounded-full text-xs font-black ring-1 ring-inset ${statusColors[app.status] || ""}`}>
+                        <StatusIcon size={14} /> {app.status}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-4 text-sm sm:flex-row sm:items-center sm:justify-between pt-6 border-t border-slate-50">
+                      <div className="flex items-center gap-3 text-slate-500 font-bold">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                          <User size={14} />
+                        </div>
+                        <span>Danışman: {app.advisorName || assignedAdvisor?.full_name || "Atanıyor..."}</span>
+                      </div>
+                      <span className="text-xs font-bold text-slate-400">
+                        Oluşturma: {new Date(app.created_at).toLocaleDateString("tr-TR")}
+                      </span>
+                    </div>
+                    <div className="mt-8 flex flex-wrap gap-4">
+                      <Button
+                        onClick={() => setSelectedApp(app)}
+                        className="bg-navy-dark hover:bg-navy-light text-white font-black px-8 h-12 rounded-xl shadow-lg shadow-navy-dark/10 transition-all hover:-translate-y-1"
+                      >
+                        Detayları Gör ve Takip Et
+                      </Button>
+                      {app.payment_status === 'paid' ? (
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedApp(app);
+                            setTimeout(() => {
+                              const el = document.getElementById("document-checklist-section");
+                              if (el) el.scrollIntoView({ behavior: "smooth" });
+                            }, 100);
+                          }}
+                          className="rounded-xl h-12 px-6 font-bold border-indigo-100 text-indigo-600 hover:bg-indigo-50"
+                        >
+                          <Paperclip size={16} className="mr-2" /> Belge Yükle
+                        </Button>
+                      ) : (
+                        <Link to="/apply" state={{ plan: app.plan }}>
+                          <Button className="bg-rose-500 hover:bg-rose-600 rounded-xl h-12 px-8 font-black text-white shadow-lg shadow-rose-200 transition-all">
+                            <AlertCircle size={16} className="mr-2" /> Ödemeyi Tamamla
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+
+                    {appDocuments[app.id] && appDocuments[app.id].length > 0 && !selectedApp && (
+                      <div className="mt-6 flex flex-wrap gap-3 p-4 bg-slate-50 rounded-2xl">
+                        {appDocuments[app.id].map((doc, i) => (
+                          <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs font-bold bg-white text-slate-600 px-4 py-2 rounded-xl border border-slate-100 hover:border-blue-200 transition-colors">
+                            <Paperclip size={12} /> {doc.name}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {!selectedApp && (
+            <Link to="/apply" className="block mt-12">
+              <div className="border-2 border-dashed border-slate-200 rounded-[2rem] p-12 text-center hover:border-emerald-300 hover:bg-emerald-50/30 transition-all group">
+                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-emerald-100 transition-colors">
+                  <Plus className="text-slate-400 group-hover:text-emerald-500" size={32} />
+                </div>
+                <p className="text-lg font-black text-slate-500 group-hover:text-emerald-600">Yeni Başvuru Oluştur</p>
+              </div>
+            </Link>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'messages' && (
+        <div className="flex h-full w-full bg-[#E5DDD5] overflow-hidden animate-in fade-in duration-500 relative">
+          {applications.length > 0 && applications[0].advisorId ? (
+            <MessageCenter
+              currentUserId={user!.id}
+              targetUserId={applications[0].advisorId}
+              targetUserName={applications[0].advisorName || "Danışman"}
+              targetUserPhoto={applications[0].advisorPhoto}
+            />
+          ) : assignedAdvisor ? (
+            <MessageCenter
+              currentUserId={user!.id}
+              targetUserId={assignedAdvisor.user_id}
+              targetUserName={assignedAdvisor.full_name}
+              targetUserPhoto={assignedAdvisor.photo_url || assignedAdvisor.avatar_url}
+            />
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center text-center p-12 bg-slate-50 w-full">
+              <div className="w-24 h-24 bg-white rounded-[2rem] flex items-center justify-center mb-6 shadow-sm border border-slate-100">
+                <MessageSquare size={48} className="text-slate-300" />
+              </div>
+              <h3 className="text-2xl font-black text-navy-dark mb-2 tracking-tight">Mesajlara Erişilemiyor</h3>
+              <p className="text-slate-500 font-medium max-w-sm">Henüz atanmış bir danışmanınız yok. Başvuru yaptığınızda sizinle buradan iletişime geçilecektir.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'profile' && (
+        <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">
+          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-400"></div>
+
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-[1.5rem] bg-slate-50 flex items-center justify-center border border-slate-100">
+                  <User size={32} className="text-slate-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-navy-dark">{displayName}</h2>
+                  <p className="text-sm text-slate-500 font-medium">{user.email}</p>
+                </div>
+              </div>
+              {!isEditingProfile && (
+                <Button
+                  onClick={() => setIsEditingProfile(true)}
+                  variant="outline"
+                  className="rounded-xl font-semibold border-slate-200 text-slate-600 hover:bg-slate-50 shadow-none"
+                >
+                  Profil Düzenle
+                </Button>
+              )}
+            </div>
+
+            {!isEditingProfile ? (
+              <div className="space-y-4">
+                <div className="flex flex-col gap-1 pb-4 border-b border-slate-50">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ad Soyad</span>
+                  <span className="text-base font-medium text-navy-dark">{displayName}</span>
+                </div>
+                <div className="flex flex-col gap-1 pb-4 border-b border-slate-50">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Telefon Numarası</span>
+                  <span className="text-base font-medium text-navy-dark">{profile?.phone || "Belirtilmemiş"}</span>
+                </div>
+                <div className="flex flex-col gap-1 pb-4 border-b border-slate-50">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">E-posta Adresi</span>
+                  <span className="text-base font-medium text-navy-dark">{user.email}</span>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  const formData = new FormData(e.currentTarget);
+                  const updates = {
+                    full_name: formData.get('fullName') as string,
+                    phone: formData.get('phone') as string,
+                    updated_at: new Date().toISOString(),
+                  };
+
+                  const { error } = await supabase
+                    .from('profiles')
+                    .update(updates)
+                    .eq('user_id', user.id);
+
+                  if (error) throw error;
+                  toast.success('Profil bilgileriniz güncellendi.');
+                  setIsEditingProfile(false);
+                } catch (error: any) {
+                  toast.error('Hata: ' + error.message);
+                }
+              }} className="space-y-6">
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider ml-1">Ad Soyad</label>
+                    <input
+                      name="fullName"
+                      defaultValue={displayName}
+                      className="w-full h-12 rounded-xl border-slate-200 bg-white focus:bg-white transition-all text-sm font-medium px-4 border outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+                      placeholder="Adınız ve Soyadınız"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider ml-1">Telefon Numarası</label>
+                    <input
+                      name="phone"
+                      defaultValue={profile?.phone || ""}
+                      className="w-full h-12 rounded-xl border-slate-200 bg-white focus:bg-white transition-all text-sm font-medium px-4 border outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-400"
+                      placeholder="+90 555 ..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider ml-1">E-posta Adresi</label>
+                    <div className="h-12 rounded-xl border-slate-100 bg-slate-50 flex items-center px-4 text-sm font-medium text-slate-400 border cursor-not-allowed">
+                      {user.email}
+                    </div>
+                    <p className="text-xs font-medium text-slate-400 ml-1 mt-1">E-posta adresi değiştirilemez.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditingProfile(false)}
+                    className="flex-1 rounded-xl font-semibold h-12 border-slate-200 text-slate-600 hover:bg-slate-50 shadow-none"
+                  >
+                    İptal
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold h-12 rounded-xl shadow-sm shadow-emerald-200 transition-all shadow-none"
+                  >
+                    Değişiklikleri Kaydet
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
       <BookingCalendar
         isOpen={isBookingOpen}
         onClose={() => setIsBookingOpen(false)}
-        advisorId={applications[0]?.advisorId || assignedAdvisor?.user_id || ""}
+        advisorId={applications[0]?.advisorRecordId || assignedAdvisor?.id || ""}
         customerId={user!.id}
       />
-    </SidebarProvider>
+    </DashboardLayout>
   );
 }

@@ -196,100 +196,73 @@ export function Navbar() {
               </AnimatePresence>
             </div>
 
-            <div className="relative" ref={langRef}>
-              <button
-                onClick={() => {
-                  setLangOpen(!langOpen);
-                  setHelpOpen(false);
-                }}
-                className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-sm font-medium text-foreground/70 transition-colors hover:text-foreground"
-                aria-expanded={langOpen}
-                aria-haspopup="true"
-                aria-label={`Dil seçici: ${activeLang.label}`}
-              >
-                <span aria-hidden="true">{activeLang.flag}</span>
-                <span className="hidden lg:inline">{activeLang.code.toUpperCase()}</span>
-                <ChevronDown size={12} className={`transition-transform ${langOpen ? "rotate-180" : ""}`} aria-hidden="true" />
-              </button>
-              <AnimatePresence>
-                {langOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    className="absolute right-0 top-full z-50 mt-2 w-40 rounded-xl border border-border bg-white py-1 shadow-lg"
-                  >
-                    {languages.map((lang) => (
-                      <button
-                        key={lang.code}
-                        onClick={() => {
-                          setLocale(lang.code as Locale);
-                          setLangOpen(false);
-                        }}
-                        className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors hover:bg-secondary ${locale === lang.code ? "font-semibold text-accent" : "text-foreground/80"
-                          }`}
-                      >
-                        <span className="text-lg">{lang.flag}</span> {lang.label}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            <div className="flex items-center gap-1 rounded-full border border-border/60 bg-secondary/30 p-1">
+              {languages.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => setLocale(lang.code as Locale)}
+                  className={`relative flex items-center justify-center rounded-full px-3 py-1.5 text-sm font-bold transition-all ${locale === lang.code
+                    ? "text-navy-dark"
+                    : "text-muted-foreground hover:text-foreground hover:bg-black/5"
+                    }`}
+                  aria-label={`Dil: ${lang.label}`}
+                >
+                  {locale === lang.code && (
+                    <motion.div
+                      layoutId="active-lang-bg"
+                      className="absolute inset-0 rounded-full bg-white shadow-sm"
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10 mr-1.5 text-base" aria-hidden="true">{lang.flag}</span>
+                  <span className="relative z-10">{lang.code.toUpperCase()}</span>
+                </button>
+              ))}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {!loading && user ? (
-                <div className="relative" ref={userMenuRef}>
-                  <button
-                    onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex h-11 items-center gap-2 rounded-full bg-accent/10 px-4 text-base font-bold text-accent transition-colors hover:bg-accent/20"
-                  >
-                    <User size={16} />
-                    <span className="max-w-[120px] truncate">{displayName}</span>
-                    <ChevronDown size={12} className={`transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />
-                  </button>
-                  <AnimatePresence>
-                    {userMenuOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                        className="absolute right-0 top-full z-50 mt-2 w-52 rounded-xl border border-border bg-white py-2 shadow-lg"
-                      >
-                        <Link
-                          to={getPanelPath()}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 transition-colors hover:bg-secondary hover:text-accent"
-                        >
-                          <LayoutDashboard size={16} /> Panelim
-                        </Link>
-                        <button
-                          onClick={handleSignOut}
-                          className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/5"
-                        >
-                          <LogOut size={16} /> Çıkış Yap
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ) : !loading ? (
-                <Link to="/login">
-                  <Button className="h-11 rounded-full bg-navy-dark px-6 text-base font-bold text-white shadow-sm transition-colors hover:bg-navy-light">
-                    <LogIn size={16} className="mr-1.5" /> {t("nav.login")}
-                  </Button>
-                </Link>
-              ) : null}
+                <>
+                  <Link to={getPanelPath()}>
+                    <Button variant="outline" className="h-11 rounded-full border-2 border-navy-dark/10 bg-white px-5 text-base font-bold text-navy-dark shadow-sm transition-all hover:bg-navy-dark/5 hover:border-navy-dark/20 active:scale-95 flex items-center gap-2">
+                      <LayoutDashboard size={18} className="text-navy-dark/70" />
+                      {t("nav.panel")}
+                    </Button>
+                  </Link>
 
-              <Link to="/apply">
-                <Button className="btn-gradient h-11 rounded-full px-6 text-base font-bold text-white shadow-md">
-                  {t("nav.apply")}
-                </Button>
-              </Link>
+                  <Link to={getPanelPath() === '/dashboard' ? "/dashboard" : "/apply"}>
+                    <Button className="btn-gradient h-11 rounded-full px-6 text-base font-bold text-white shadow-md hover:shadow-lg transition-all hover:scale-[1.02]">
+                      {t("nav.apply")}
+                    </Button>
+                  </Link>
+
+                  <button
+                    onClick={handleSignOut}
+                    className="ml-1 flex h-11 w-11 items-center justify-center rounded-full border border-border/40 bg-white text-muted-foreground shadow-sm transition-all hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20"
+                    title="Çıkış Yap"
+                  >
+                    <LogOut size={18} />
+                  </button>
+                </>
+              ) : !loading ? (
+                <>
+                  <Link to="/login">
+                    <Button className="h-11 rounded-full bg-navy-dark px-6 text-base font-bold text-white shadow-sm transition-colors hover:bg-navy-light">
+                      <LogIn size={16} className="mr-1.5" /> {t("nav.login")}
+                    </Button>
+                  </Link>
+                  <Link to="/apply">
+                    <Button className="btn-gradient h-11 rounded-full px-6 text-base font-bold text-white shadow-md hover:shadow-lg transition-all hover:scale-[1.02]">
+                      {t("nav.apply")}
+                    </Button>
+                  </Link>
+                </>
+              ) : null}
             </div>
           </div>
 
           <div className="flex items-center gap-2 md:hidden">
-            <Link to="/apply">
+            <Link to={user && !loading ? (getPanelPath() === '/dashboard' ? "/dashboard" : "/apply") : "/apply"}>
               <Button className="btn-gradient h-10 rounded-full px-4 text-sm font-bold text-white">
                 {t("nav.apply")}
               </Button>
@@ -390,9 +363,10 @@ export function Navbar() {
                     <p className="text-sm font-semibold text-foreground">{displayName}</p>
                     <Link
                       to={getPanelPath()}
-                      className="block rounded-lg border border-border bg-white px-3 py-2.5 text-sm font-semibold text-foreground/80"
+                      className="flex items-center justify-center gap-2 rounded-xl border-2 border-navy-dark/10 bg-white px-4 py-3 text-base font-bold text-navy-dark shadow-sm transition-all active:scale-[0.98]"
                     >
-                      Panelim
+                      <LayoutDashboard size={18} className="text-navy-dark/70" />
+                      {t("nav.panel")}
                     </Link>
                     <button
                       onClick={handleSignOut}

@@ -13,6 +13,7 @@ export const translations: Record<Locale, Record<string, string>> = {
         "nav.whatsapp": "WhatsApp Destek",
         "nav.login": "Giriş",
         "nav.apply": "Başvuru Yap",
+        "nav.panel": "Panel",
 
         // Hero
         "hero.title.prefix": "Vize almanın en",
@@ -125,7 +126,7 @@ export const translations: Record<Locale, Record<string, string>> = {
         "footer.legal": "Yasal",
         "footer.rights": "Tüm hakları saklıdır.",
         "footer.helpCenter": "Yardım Merkezi",
-        "footer.videoGuides": "Video Guides",
+        "footer.videoGuides": "Video Rehberler",
         "footer.privacy": "Gizlilik Politikası",
         "footer.terms": "Kullanım Şartları",
         "footer.cookies": "Çerez Politikası",
@@ -411,6 +412,16 @@ export const translations: Record<Locale, Record<string, string>> = {
         "learn.searchPlaceholder": "Makale ara...",
         "learn.noResults": "Arama kriterlerinize uygun makale bulunamadı.",
         "learn.filter.all": "Tümü",
+
+        // Auth
+        "auth.invalid_credentials": "Geçersiz e-posta veya şifre.",
+        "auth.required_field": "Lütfen bu alanı doldurun.",
+        "auth.invalid_email": "Lütfen geçerli bir e-posta adresi girin.",
+        "auth.weak_password": "Şifre en az 8 karakter olmalıdır.",
+        "auth.passwords_not_match": "Şifreler eşleşmiyor.",
+        "auth.missing_info": "Lütfen tüm alanları doldurun.",
+        "auth.account_suspended": "Hesabınız yönetici tarafından askıya alınmıştır. Giriş yapamazsınız.",
+        "auth.login_failed": "Giriş başarısız",
     },
 
     en: {
@@ -425,6 +436,7 @@ export const translations: Record<Locale, Record<string, string>> = {
         "nav.whatsapp": "WhatsApp Support",
         "nav.login": "Login",
         "nav.apply": "Apply Now",
+        "nav.panel": "Panel",
 
         // Hero
         "hero.title.prefix": "The",
@@ -823,5 +835,15 @@ export const translations: Record<Locale, Record<string, string>> = {
         "learn.searchPlaceholder": "Search articles...",
         "learn.noResults": "No articles found matching your criteria.",
         "learn.filter.all": "All",
+
+        // Auth
+        "auth.invalid_credentials": "Invalid email or password.",
+        "auth.required_field": "Please fill out this field.",
+        "auth.invalid_email": "Please enter a valid email address.",
+        "auth.weak_password": "Password must be at least 8 characters.",
+        "auth.passwords_not_match": "Passwords do not match.",
+        "auth.missing_info": "Please fill out all fields.",
+        "auth.account_suspended": "Your account has been suspended by the administrator. You cannot log in.",
+        "auth.login_failed": "Login failed",
     },
 };

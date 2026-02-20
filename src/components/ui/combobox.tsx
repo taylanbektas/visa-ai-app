@@ -45,28 +45,57 @@ export function Combobox({
 }: ComboboxProps) {
     const [open, setOpen] = React.useState(false)
     const [inputValue, setInputValue] = React.useState("")
+    const [highlightedIndex, setHighlightedIndex] = React.useState(0)
     const inputRef = React.useRef<HTMLInputElement>(null)
+    const isSelecting = React.useRef(false)
+    const valueRef = React.useRef(value)
 
     const selectedOption = options.find((opt) => opt.value === value)
 
+    React.useEffect(() => {
+        valueRef.current = value
+    }, [value])
+
     // Sync internal input value when external value changes
     React.useEffect(() => {
-        if (selectedOption) {
-            setInputValue(selectedOption.label)
-        } else {
-            setInputValue("")
+        if (!open) {
+            if (selectedOption) {
+                setInputValue(selectedOption.label)
+            } else {
+                setInputValue("")
+            }
         }
-    }, [value, selectedOption])
+    }, [value, selectedOption, open])
 
     // Filter options based on input
     const filteredOptions = React.useMemo(() => {
         if (!inputValue) return options
-        const lowerVal = inputValue.toLowerCase()
-        return options.filter(opt =>
-            opt.label.toLowerCase().includes(lowerVal) ||
-            opt.value.toLowerCase().includes(lowerVal)
-        )
+        const lowerVal = inputValue.toLocaleLowerCase('tr-TR')
+
+        return options
+            .filter(opt =>
+                opt.label.toLocaleLowerCase('tr-TR').includes(lowerVal) ||
+                opt.value.toLocaleLowerCase('tr-TR').includes(lowerVal)
+            )
+            .sort((a, b) => {
+                const aLabel = a.label.toLocaleLowerCase('tr-TR')
+                const bLabel = b.label.toLocaleLowerCase('tr-TR')
+
+                const aStarts = aLabel.startsWith(lowerVal)
+                const bStarts = bLabel.startsWith(lowerVal)
+
+                if (aStarts && !bStarts) return -1
+                if (!aStarts && bStarts) return 1
+
+                // If both start with it or both don't, maintain alphabetical order
+                return aLabel.localeCompare(bLabel, 'tr-TR')
+            })
     }, [options, inputValue])
+
+    // Reset highlighted index when filtered options change
+    React.useEffect(() => {
+        setHighlightedIndex(0)
+    }, [inputValue, filteredOptions.length])
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -106,11 +135,22 @@ export function Combobox({
                         onKeyDown={(e) => {
                             if (e.key === "Enter" && filteredOptions.length > 0) {
                                 e.preventDefault()
-                                const autoSelect = filteredOptions[0]
+                                const autoSelect = filteredOptions[highlightedIndex] || filteredOptions[0]
+                                isSelecting.current = true
                                 onChange(autoSelect.value)
                                 setInputValue(autoSelect.label)
                                 setOpen(false)
                                 inputRef.current?.blur()
+                                setTimeout(() => { isSelecting.current = false }, 200)
+                            }
+                            if (e.key === "ArrowDown") {
+                                e.preventDefault()
+                                if (!open) setOpen(true)
+                                setHighlightedIndex(prev => Math.min(prev + 1, filteredOptions.length - 1))
+                            }
+                            if (e.key === "ArrowUp") {
+                                e.preventDefault()
+                                setHighlightedIndex(prev => Math.max(prev - 1, 0))
                             }
                             if (e.key === "Backspace" && selectedOption && inputValue === selectedOption.label) {
                                 e.preventDefault()
@@ -119,21 +159,16 @@ export function Combobox({
                             }
                         }}
                         onFocus={() => {
+                            setInputValue("")
                             setOpen(true)
-                            // Set cursor at the end
-                            setTimeout(() => {
-                                if (inputRef.current) {
-                                    const len = inputRef.current.value.length
-                                    inputRef.current.setSelectionRange(len, len)
-                                }
-                            }, 0)
                         }}
                         onBlur={(e) => {
+                            if (isSelecting.current) return;
+
                             // On blur, if they haven't made a valid selection, revert to the actual selected value
-                            // We'll delay it slightly so clicking an item has time to register `onChange`
                             setTimeout(() => {
-                                if (inputRef.current !== document.activeElement) {
-                                    const currSelected = options.find((opt) => opt.value === value)
+                                if (inputRef.current !== document.activeElement && !isSelecting.current) {
+                                    const currSelected = options.find((opt) => opt.value === valueRef.current)
                                     if (currSelected) {
                                         setInputValue(currSelected.label)
                                     } else {
@@ -165,17 +200,23 @@ export function Combobox({
                             <div className="py-6 text-center text-sm text-muted-foreground">{emptyText}</div>
                         ) : (
                             <CommandGroup>
-                                {filteredOptions.map((option) => (
+                                {filteredOptions.map((option, index) => (
                                     <CommandItem
                                         key={option.value}
                                         value={option.label}
                                         onSelect={() => {
+                                            isSelecting.current = true
                                             onChange(option.value)
                                             setInputValue(option.label)
                                             setOpen(false)
                                             inputRef.current?.blur()
+                                            setTimeout(() => { isSelecting.current = false }, 200)
                                         }}
-                                        className="py-4 text-lg cursor-pointer font-bold"
+                                        className={cn(
+                                            "py-4 text-lg cursor-pointer font-bold transition-colors",
+                                            highlightedIndex === index ? "bg-accent/10 text-accent" : ""
+                                        )}
+                                        onMouseEnter={() => setHighlightedIndex(index)}
                                     >
                                         <Check
                                             className={cn(

@@ -11,6 +11,8 @@ interface DocumentChecklistProps {
     userId: string;
     destination: string;
     visaType: string;
+    status?: string;
+    onStatusChange?: (newStatus: string) => void;
 }
 
 interface UploadedDoc {
@@ -19,7 +21,7 @@ interface UploadedDoc {
     requirementId: string;
 }
 
-const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, userId, destination, visaType }) => {
+const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, userId, destination, visaType, status, onStatusChange }) => {
     const [requirements, setRequirements] = useState<Requirement[]>([]);
     const [uploadedDocs, setUploadedDocs] = useState<Record<string, UploadedDoc>>({});
     const [uploadingId, setUploadingId] = useState<string | null>(null);
@@ -75,6 +77,16 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, us
 
             const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(filePath);
 
+            const { error: dbError } = await (supabase as any)
+                .from('application_documents')
+                .insert({
+                    application_id: applicationId,
+                    name: file.name,
+                    url: publicUrl
+                });
+
+            if (dbError) throw dbError;
+
             setUploadedDocs(prev => ({
                 ...prev,
                 [reqId]: { name: file.name, url: publicUrl, requirementId: reqId }
@@ -98,7 +110,34 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, us
         toast.error("Silme işlemi için yönetici ile iletişime geçin.");
     };
 
+    const handleSendForReview = async () => {
+        if (!applicationId) return;
+
+        setLoading(true);
+        try {
+            const { error } = await supabase
+                .from('applications')
+                .update({ status: 'İnceleniyor' } as any)
+                .eq('id', applicationId);
+
+            if (error) throw error;
+
+            toast.success("Belgeleriniz danışman incelemesine gönderildi.");
+            if (onStatusChange) {
+                onStatusChange('İnceleniyor');
+            }
+        } catch (err) {
+            console.error("Error updating status:", err);
+            toast.error("İşlem sırasında bir hata oluştu.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (loading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-slate-300" /></div>;
+
+    const allUploaded = requirements.length > 0 && Object.keys(uploadedDocs).length === requirements.length;
+    const canSendForReview = allUploaded && (status === 'Alındı' || status === 'İşlem Gerekli');
 
     return (
         <div className="space-y-4">
@@ -149,23 +188,29 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, us
                                                     <Eye size={16} className="mr-2" /> Görüntüle
                                                 </a>
                                             </Button>
-                                            <label className="cursor-pointer">
-                                                <input
-                                                    type="file"
-                                                    className="hidden"
-                                                    onChange={(e) => {
-                                                        const file = e.target.files?.[0];
-                                                        if (file) handleUpload(req.id, file);
-                                                    }}
-                                                />
-                                                <Button variant="ghost" size="sm" className="rounded-xl h-10 w-10 p-0 text-slate-400 hover:text-navy-dark hover:bg-slate-100">
-                                                    <Upload size={16} />
-                                                </Button>
-                                            </label>
+                                            <input
+                                                id={`file-reupload-${req.id}`}
+                                                type="file"
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) handleUpload(req.id, file);
+                                                    e.target.value = ''; // Reset for re-upload
+                                                }}
+                                            />
+                                            <Button
+                                                onClick={() => document.getElementById(`file-reupload-${req.id}`)?.click()}
+                                                variant="ghost"
+                                                size="sm"
+                                                className="rounded-xl h-10 w-10 p-0 text-slate-400 hover:text-navy-dark hover:bg-slate-100"
+                                            >
+                                                <Upload size={16} />
+                                            </Button>
                                         </>
                                     ) : (
-                                        <label className={"cursor-pointer" + (isUploading ? " pointer-events-none" : "")}>
+                                        <div className={isUploading ? "pointer-events-none opacity-70" : ""}>
                                             <input
+                                                id={`file-upload-${req.id}`}
                                                 type="file"
                                                 className="hidden"
                                                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
@@ -173,17 +218,18 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, us
                                                 onChange={(e) => {
                                                     const file = e.target.files?.[0];
                                                     if (file) handleUpload(req.id, file);
+                                                    e.target.value = ''; // Reset for re-upload
                                                 }}
                                             />
                                             <Button
+                                                onClick={() => document.getElementById(`file-upload-${req.id}`)?.click()}
                                                 className="bg-navy-dark hover:bg-navy-light text-white font-black px-6 h-11 rounded-xl shadow-lg shadow-navy-dark/10 transition-all flex items-center gap-2"
                                                 disabled={isUploading}
-                                                asChild={false}
                                             >
                                                 {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                                                 {isUploading ? "Yükleniyor..." : "Dosya Seç"}
                                             </Button>
-                                        </label>
+                                        </div>
                                     )}
                                 </div>
                             </div>
@@ -191,6 +237,21 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, us
                     );
                 })}
             </div>
+
+            {canSendForReview && (
+                <div className="mt-8 p-6 bg-emerald-50 rounded-[2rem] border border-emerald-100 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-4">
+                    <div>
+                        <h4 className="font-black text-navy-dark text-lg mb-1">Tüm Belgeler Tamam</h4>
+                        <p className="text-sm text-emerald-700 font-medium">Belgelerinizi danışmanınızın kontrol etmesi için gönderebilirsiniz.</p>
+                    </div>
+                    <Button
+                        onClick={handleSendForReview}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-black px-8 h-12 rounded-xl shadow-lg shadow-emerald-200 w-full sm:w-auto transition-all"
+                    >
+                        Danışman İncelemesine Gönder
+                    </Button>
+                </div>
+            )}
         </div>
     );
 };

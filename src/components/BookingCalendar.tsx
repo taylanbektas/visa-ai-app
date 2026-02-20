@@ -15,32 +15,65 @@ interface BookingCalendarProps {
     customerId: string;
     isOpen: boolean;
     onClose: () => void;
+    isDirectBooking?: boolean;
 }
 
-export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: BookingCalendarProps) {
+export function BookingCalendar({ advisorId, customerId, isOpen, onClose, isDirectBooking = false }: BookingCalendarProps) {
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
     const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [bookingLoading, setBookingLoading] = useState(false);
-    const [availableDays, setAvailableDays] = useState<number[]>([]);
+    const [availableDays, setAvailableDays] = useState<string[]>([]);
+    const [hasPackage, setHasPackage] = useState(false);
+    const [hasUsedFreeConsultation, setHasUsedFreeConsultation] = useState(false);
+    const [isCheckingEligibility, setIsCheckingEligibility] = useState(false);
     const { toast } = useToast();
 
     useEffect(() => {
         if (advisorId && isOpen) {
             fetchAdvisorAvailability();
+            checkEligibility();
         }
     }, [advisorId, isOpen]);
 
+    const checkEligibility = async () => {
+        setIsCheckingEligibility(true);
+        // check applications for any paid ones
+        const { data: apps } = await supabase.from('applications').select('id, payment_status').eq('user_id', customerId);
+        const hasPaidApp = apps?.some((a: any) => a.payment_status === 'paid') || false;
+
+        // check customer_packages
+        const { data: pkgs } = await (supabase as any).from('customer_packages').select('id').eq('user_id', customerId).gt('remaining_count', 0);
+        const hasActivePkg = pkgs && pkgs.length > 0;
+
+        const { data: profile } = await supabase.from('profiles').select('active_package').eq('id', customerId).maybeSingle();
+        const hasActiveProfilePkg = !!(profile && (profile as any).active_package);
+
+        const hasAnyPackage = hasPaidApp || hasActivePkg || hasActiveProfilePkg;
+        setHasPackage(hasAnyPackage);
+
+        if (!hasAnyPackage) {
+            // limit applies: check existing consultations
+            const { data: pastCons } = await (supabase as any).from('consultations').select('id').eq('customer_id', customerId);
+            setHasUsedFreeConsultation(pastCons && pastCons.length > 0);
+        }
+        setIsCheckingEligibility(false);
+    };
+
     const fetchAdvisorAvailability = async () => {
         const { data } = await supabase
-            .from('advisor_availability' as any)
-            .select('day_of_week')
-            .eq('advisor_id', advisorId) as { data: { day_of_week: number }[] | null };
+            .from('advisor_blocked_slots' as any)
+            .select('start_time')
+            .eq('advisor_id', advisorId)
+            .eq('reason', 'Müsait')
+            .gte('start_time', startOfDay(new Date()).toISOString()) as { data: { start_time: string }[] | null };
 
-        if (data) {
-            const days = Array.from(new Set(data.map(a => a.day_of_week)));
+        if (data && data.length > 0) {
+            const days = Array.from(new Set(data.map(slot => startOfDay(new Date(slot.start_time)).toISOString())));
             setAvailableDays(days);
+        } else {
+            setAvailableDays([]);
         }
     };
 
@@ -61,18 +94,19 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: Book
             allSlots.push(`${hour.toString().padStart(2, '0')}:30`);
         }
 
-        // 2. Fetch advisor recurring availability
-        const dayOfWeek = date.getDay();
-        const { data: recurringAvailability } = await supabase
-            .from('advisor_availability' as any)
-            .select('*')
-            .eq('advisor_id', advisorId)
-            .eq('day_of_week', dayOfWeek) as { data: any[] | null };
-
-        // 3. Fetch existing consultations for this day
+        // 2. Fetch advisor specific availability
         const dayStart = startOfDay(date).toISOString();
         const nextDay = addDays(startOfDay(date), 1).toISOString();
 
+        const { data: specificAvailability } = await supabase
+            .from('advisor_blocked_slots' as any)
+            .select('*')
+            .eq('advisor_id', advisorId)
+            .eq('reason', 'Müsait')
+            .gte('start_time', dayStart)
+            .lt('start_time', nextDay) as { data: any[] | null };
+
+        // 3. Fetch existing consultations for this day
         const { data: bookings } = await supabase
             .from('consultations' as any)
             .select('start_time')
@@ -80,14 +114,6 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: Book
             .gte('start_time', dayStart)
             .lt('start_time', nextDay)
             .in('status', ['pending', 'confirmed']) as { data: any[] | null };
-
-        // 4. Fetch blocked slots
-        const { data: blocked } = await supabase
-            .from('advisor_blocked_slots' as any)
-            .select('start_time, end_time')
-            .eq('advisor_id', advisorId)
-            .gte('start_time', dayStart)
-            .lt('start_time', nextDay) as { data: any[] | null };
 
         // Filter slots
         const bookedTimes = bookings?.map(b => format(new Date(b.start_time), 'HH:mm')) || [];
@@ -99,31 +125,19 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: Book
             slotDate.setHours(h, m, 0, 0);
             if (isBefore(slotDate, new Date())) return false;
 
-            // Check recurring availability
-            if (recurringAvailability && recurringAvailability.length > 0) {
-                const isAvailable = recurringAvailability.some(a => {
-                    const start = a.start_time.substring(0, 5);
-                    const end = a.end_time.substring(0, 5);
-                    return slot >= start && slot < end;
+            // Check specific availability
+            if (specificAvailability && specificAvailability.length > 0) {
+                const isAvailable = specificAvailability.some(a => {
+                    const start = format(new Date(a.start_time), 'HH:mm');
+                    return slot === start;
                 });
                 if (!isAvailable) return false;
             } else {
-                // If advisor hasn't set ANY availability for this day, no slots are available
                 return false;
             }
 
             // Check if already booked
             if (bookedTimes.includes(slot)) return false;
-
-            // Check blocked slots
-            if (blocked && blocked.length > 0) {
-                const isBlocked = blocked.some(b => {
-                    const start = format(new Date(b.start_time), 'HH:mm');
-                    const end = format(new Date(b.end_time), 'HH:mm');
-                    return slot >= start && slot < end;
-                });
-                if (isBlocked) return false;
-            }
 
             return true;
         });
@@ -139,7 +153,8 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: Book
         const [h, m] = selectedSlot.split(':').map(Number);
         const startTime = new Date(selectedDate);
         startTime.setHours(h, m, 0, 0);
-        const endTime = new Date(startTime.getTime() + 30 * 60000);
+        const durationMinutes = hasPackage ? 30 : 15;
+        const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
 
         const { error } = await supabase
             .from('consultations' as any)
@@ -148,13 +163,13 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: Book
                 customer_id: customerId,
                 start_time: startTime.toISOString(),
                 end_time: endTime.toISOString(),
-                status: 'pending'
+                status: isDirectBooking ? 'confirmed' : 'pending'
             });
 
         if (error) {
             toast({ title: "Hata", description: "Randevu oluşturulamadı: " + error.message, variant: "destructive" });
         } else {
-            toast({ title: "Başarılı", description: "Randevu isteğiniz danışmana iletildi." });
+            toast({ title: "Başarılı", description: isDirectBooking ? "Görüşme başarıyla oluşturuldu ve onaylandı." : "Randevu isteğiniz danışmana iletildi." });
             onClose();
         }
         setBookingLoading(false);
@@ -186,9 +201,9 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: Book
                                 const past = date < startOfDay(new Date());
                                 if (past) return true;
                                 if (availableDays.length > 0) {
-                                    return !availableDays.includes(date.getDay());
+                                    return !availableDays.includes(startOfDay(date).toISOString());
                                 }
-                                return false;
+                                return true;
                             }}
                             locale={tr}
                         />
@@ -202,6 +217,9 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: Book
                                     <Clock size={24} />
                                 </div>
                                 <h3 className="text-2xl font-black text-navy-dark tracking-tight">Saat Seçin</h3>
+                                {!isCheckingEligibility && !hasPackage && (
+                                    <Badge className="bg-amber-100 text-amber-700 ml-2">15 Dk Ücretsiz Görüşme</Badge>
+                                )}
                             </div>
                             {selectedSlot && (
                                 <Badge className="bg-emerald-500 text-white border-transparent px-4 py-1 rounded-full animate-in zoom-in duration-300">
@@ -211,9 +229,17 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: Book
                         </div>
 
                         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                            {loading ? (
+                            {isCheckingEligibility || loading ? (
                                 <div className="h-full flex items-center justify-center">
                                     <Loader2 className="animate-spin text-primary w-10 h-10" />
+                                </div>
+                            ) : !hasPackage && hasUsedFreeConsultation && !isDirectBooking ? (
+                                <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                                    <div className="p-6 bg-rose-50 rounded-full mb-4">
+                                        <X size={40} className="text-rose-400" />
+                                    </div>
+                                    <h4 className="font-black text-navy-dark mb-2 text-lg">Limit Doldu</h4>
+                                    <p className="font-medium text-slate-500 text-sm">Ücretsiz 15 dakikalık görüşme hakkınızı daha önce kullandınız. Yeni bir görüşme ayarlamak için lütfen paket satın alın.</p>
                                 </div>
                             ) : availableSlots.length > 0 ? (
                                 <div className="grid grid-cols-3 gap-3">
@@ -243,11 +269,11 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose }: Book
                         <div className="pt-8 border-t mt-auto">
                             <Button
                                 onClick={handleBooking}
-                                disabled={!selectedSlot || bookingLoading}
-                                className="w-full h-16 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-lg shadow-xl shadow-emerald-200/50 transition-all active:scale-[0.98]"
+                                disabled={!selectedSlot || bookingLoading || (!hasPackage && hasUsedFreeConsultation && !isDirectBooking)}
+                                className="w-full h-16 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-lg shadow-xl shadow-emerald-200/50 transition-all active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
                             >
                                 {bookingLoading ? <Loader2 className="animate-spin mr-2" /> : <Check className="mr-2" size={20} />}
-                                Randevu İsteği Gönder
+                                {isDirectBooking ? "Randevuyu Onayla ve Kaydet" : "Randevu İsteği Gönder"}
                             </Button>
                         </div>
                     </div>

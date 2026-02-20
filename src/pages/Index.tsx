@@ -381,7 +381,7 @@ export default function Index() {
                   }))}
                   value={selectedPassport}
                   onChange={setSelectedPassport}
-                  placeholder={t("checker.passport_placeholder") || "Pasaport Ülkesi Search..."}
+                  placeholder={t("checker.placeholder")}
                   className="h-16"
                 />
               </div>

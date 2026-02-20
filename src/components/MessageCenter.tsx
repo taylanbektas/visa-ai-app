@@ -34,7 +34,6 @@ export function MessageCenter({
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(true);
-    const [isOnline, setIsOnline] = useState(false);
 
     useEffect(() => {
         if (!currentUserId || !targetUserId) return;
@@ -93,23 +92,6 @@ export function MessageCenter({
     useEffect(() => {
         if (!targetUserId) return;
 
-        const fetchPresence = async () => {
-            const { data } = await supabase
-                .from('profiles')
-                .select('updated_at')
-                .eq('user_id', targetUserId)
-                .maybeSingle();
-
-            if (data?.updated_at) {
-                const lastSeenDate = new Date(data.updated_at);
-                const now = new Date();
-                setIsOnline(now.getTime() - lastSeenDate.getTime() < 120000);
-            }
-        };
-
-        fetchPresence();
-        const interval = setInterval(fetchPresence, 30000);
-
         const markAsRead = async () => {
             await supabase
                 .from('messages')
@@ -120,12 +102,10 @@ export function MessageCenter({
         };
 
         markAsRead();
-
-        return () => clearInterval(interval);
     }, [targetUserId, currentUserId]);
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        messagesEndRef.current?.scrollIntoView();
     }, [messages]);
 
     const handleSendMessage = async () => {
@@ -180,8 +160,7 @@ export function MessageCenter({
         const msgData = {
             sender_id: currentUserId,
             recipient_id: targetUserId,
-            content: file.type.startsWith('image/') ? 'Görsel' : file.name,
-            attachments: [attachment],
+            content: `FILE::${JSON.stringify([attachment])}`,
             read: false
         };
 
@@ -194,7 +173,7 @@ export function MessageCenter({
     };
 
     return (
-        <div className="flex flex-col h-full bg-white relative">
+        <div className="flex flex-col flex-1 w-full h-full bg-white relative">
             {/* Header */}
             <div className="p-4 px-6 border-b bg-white flex items-center justify-between shadow-sm z-10 relative">
                 <div className="flex items-center gap-4">
@@ -204,24 +183,13 @@ export function MessageCenter({
                     </Avatar>
                     <div>
                         <h3 className="font-black text-xl text-slate-800 tracking-tight">{targetUserName || "Sohbet"}</h3>
-                        <p className="text-[12px] font-bold">
-                            {isOnline ? (
-                                <span className="text-emerald-500 font-bold flex items-center gap-1.5 mt-0.5">
-                                    <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                                    çevrimiçi
-                                </span>
-                            ) : (
-                                <span className="text-slate-400">çevrimdışı</span>
-                            )}
-                        </p>
                     </div>
                 </div>
             </div>
 
             {/* Messages Area */}
             <div
-                className="flex-1 p-6 bg-[#E5DDD5] overflow-y-auto scroll-smooth"
-                style={{ backgroundImage: 'url("https://w7.pngwing.com/pngs/351/181/png-transparent-whatsapp-background-thumbnail.png")', backgroundBlendMode: 'overlay', backgroundColor: 'rgba(229, 221, 213, 0.95)' }}
+                className="flex-1 p-6 bg-slate-50 overflow-y-auto scroll-smooth"
             >
                 <div className="space-y-4 flex flex-col justify-end min-h-full">
                     {messages.length === 0 && !loading && (
@@ -233,16 +201,31 @@ export function MessageCenter({
                     )}
                     {messages.map((msg) => {
                         const isMe = msg.sender_id === currentUserId;
-                        const hasAttachments = msg.attachments && msg.attachments.length > 0;
-                        const firstAttachment = hasAttachments ? msg.attachments![0] : null;
-                        const isImage = firstAttachment?.type?.startsWith('image/');
+                        let actualContent = msg.content;
+                        let inlineAttachments: any[] | undefined = msg.attachments;
+
+                        if (actualContent && actualContent.startsWith('FILE::')) {
+                            try {
+                                const parsed = JSON.parse(actualContent.replace('FILE::', ''));
+                                inlineAttachments = parsed;
+                                actualContent = parsed[0]?.type?.startsWith('image/') ? 'Görsel' : parsed[0]?.name;
+                            } catch (e) {
+                                // Ignore
+                            }
+                        }
+
+                        const hasAttachments = inlineAttachments && inlineAttachments.length > 0;
+                        const firstAttachment = hasAttachments ? inlineAttachments![0] : null;
+                        const isImage = (firstAttachment?.type?.startsWith('image/') ||
+                            (firstAttachment?.url && /\.(jpeg|jpg|gif|png|webp|svg|bmp|ico)$/i.test(firstAttachment.url)) ||
+                            (actualContent && actualContent.includes('Görsel')));
 
                         return (
                             <div key={msg.id} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
                                 <div
-                                    className={`max-w-[75%] md:max-w-[65%] flex flex-col rounded-[1.25rem] px-4 pt-2.5 pb-2 shadow-sm relative ${isMe
-                                        ? 'bg-[#dcf8c6] text-[#111b21] rounded-tr-none'
-                                        : 'bg-white text-[#111b21] rounded-tl-none'
+                                    className={`max-w-[75%] md:max-w-[65%] flex flex-col rounded-[1.5rem] px-5 pt-3 pb-2.5 shadow-sm relative ${isMe
+                                        ? 'bg-emerald-500 text-white rounded-tr-sm'
+                                        : 'bg-white text-navy-dark border border-slate-100 rounded-tl-sm'
                                         }`}
                                 >
                                     {/* Attachment rendering */}
@@ -277,24 +260,24 @@ export function MessageCenter({
                                     )}
 
                                     <div className="flex flex-col relative pb-3">
-                                        {(!isImage || (msg.content && msg.content !== 'Görsel')) && (
-                                            <p className="text-[17px] md:text-[18px] leading-[1.5] whitespace-pre-wrap break-words pr-14 font-medium">
-                                                {msg.content}
+                                        {(!isImage || (actualContent && !actualContent.includes('Görsel')) || (isImage && !hasAttachments)) && (
+                                            <p className="text-[16px] md:text-[17px] leading-relaxed whitespace-pre-wrap break-words pr-14 font-medium mb-1.5">
+                                                {actualContent === 'Görsel' ? '📸 Görsel (Eski Mesaj)' : actualContent}
                                             </p>
                                         )}
-                                        <div className="absolute bottom-[-1px] right-[-4px] flex items-center gap-1.5 pl-4 bg-transparent">
-                                            <span className="text-[11px] text-gray-500 font-bold uppercase">
+                                        <div className="absolute bottom-[-2px] right-[-4px] flex items-center gap-1.5 pl-4 bg-transparent">
+                                            <span className={`text-[11px] font-bold uppercase ${isMe ? 'text-emerald-100' : 'text-slate-400'}`}>
                                                 {format(new Date(msg.created_at || Date.now()), 'HH:mm')}
                                             </span>
                                             {isMe && (
                                                 <div className="flex items-center ml-0.5">
                                                     <Check
-                                                        size={16}
-                                                        className={`${msg.read ? "text-[#53bdeb]" : "text-gray-400"} -mr-2.5`}
+                                                        size={14}
+                                                        className={`${msg.read ? "text-blue-200" : "text-emerald-200"} -mr-2.5`}
                                                     />
                                                     <Check
-                                                        size={16}
-                                                        className={`${msg.read ? "text-[#53bdeb]" : "text-gray-400"}`}
+                                                        size={14}
+                                                        className={`${msg.read ? "text-blue-200" : "text-emerald-200"}`}
                                                     />
                                                 </div>
                                             )}
@@ -309,7 +292,7 @@ export function MessageCenter({
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-[#f0f2f5] flex items-center gap-3">
+            <div className="p-4 bg-white border-t border-slate-100 flex items-center gap-2 sm:gap-4 px-4 sm:px-6">
                 <input
                     type="file"
                     ref={fileInputRef}
@@ -317,22 +300,22 @@ export function MessageCenter({
                     onChange={handleFileUpload}
                 />
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="text-gray-500 hover:text-emerald-600 hover:bg-gray-200 h-14 w-14 rounded-2xl transition-all"
+                        className="text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 h-12 w-12 sm:h-14 sm:w-14 rounded-full transition-all"
                         onClick={() => fileInputRef.current?.click()}
                     >
-                        <ImageIcon size={30} />
+                        <ImageIcon size={26} strokeWidth={2.5} />
                     </Button>
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="text-gray-500 hover:text-emerald-600 hover:bg-gray-200 h-14 w-14 rounded-2xl transition-all"
+                        className="text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 h-12 w-12 sm:h-14 sm:w-14 rounded-full transition-all"
                         onClick={() => fileInputRef.current?.click()}
                     >
-                        <Paperclip size={28} />
+                        <Paperclip size={24} strokeWidth={2.5} />
                     </Button>
                 </div>
 
@@ -341,17 +324,17 @@ export function MessageCenter({
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                     autoComplete="off"
-                    placeholder="Bir mesaj yazın..."
-                    className="flex-1 border-none bg-white shadow-sm rounded-2xl h-14 px-6 focus-visible:ring-1 focus-visible:ring-emerald-500/30 font-bold text-xl transition-all"
+                    placeholder="Mesajınızı yazın..."
+                    className="flex-1 bg-slate-50 border-none shadow-inner rounded-full h-12 sm:h-14 px-6 focus-visible:ring-1 focus-visible:ring-emerald-500/30 font-semibold text-lg sm:text-lg transition-all"
                 />
 
                 <Button
                     onClick={handleSendMessage}
                     size="icon"
-                    className="h-14 w-14 shrink-0 bg-[#00a884] hover:bg-[#06cf9c] text-white rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center p-0"
+                    className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full shadow-md shadow-emerald-500/20 transition-all active:scale-95 flex items-center justify-center p-0"
                     disabled={(!newMessage.trim() && !isUploading) || isUploading}
                 >
-                    {isUploading ? <Loader2 size={24} className="animate-spin" /> : <Send size={30} className="translate-x-[2px]" />}
+                    {isUploading ? <Loader2 size={24} className="animate-spin" /> : <Send size={24} strokeWidth={2.5} className="mr-0.5" />}
                 </Button>
             </div>
         </div>

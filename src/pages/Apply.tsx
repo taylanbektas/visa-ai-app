@@ -146,6 +146,7 @@ export default function Apply() {
   const [isLoading, setIsLoading] = useState(false);
   const [showEmailVerification, setShowEmailVerification] = useState(false);
   const [activeProfilePackage, setActiveProfilePackage] = useState<string | null>(null);
+  const [assignedAdvisorId, setAssignedAdvisorId] = useState<string | null>(null);
   const [userPackages, setUserPackages] = useState<any[]>([]);
   const [isSuccess, setIsSuccess] = useState(false);
   const [referenceId, setReferenceId] = useState<string | null>(null);
@@ -159,14 +160,18 @@ export default function Apply() {
     const fetchProfile = async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('active_package')
+        .select('active_package, assigned_advisor_id')
         .eq('id', user.id)
         .maybeSingle();
 
       if (!error && data) {
-        setActiveProfilePackage((data as any).active_package);
-        if ((data as any).active_package && !selectedPlan) {
-          setSelectedPlan((data as any).active_package);
+        const profileData = data as any;
+        setActiveProfilePackage(profileData.active_package);
+        if (profileData.active_package && !selectedPlan) {
+          setSelectedPlan(profileData.active_package);
+        }
+        if (profileData.assigned_advisor_id) {
+          setAssignedAdvisorId(profileData.assigned_advisor_id);
         }
       }
 
@@ -327,6 +332,11 @@ export default function Apply() {
     if (!user) return;
     setIsLoading(true);
 
+    if (!usePackageId && !isPackageAssigned) {
+      // Mock card payment processing
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+
     const refId = `VP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const { data: newApp, error } = await supabase
       .from("applications")
@@ -337,8 +347,8 @@ export default function Apply() {
         visa_type: visaType,
         plan: selectedPlan,
         status: "Alındı",
-        payment_status: usePackageId ? "paid" : "pending",
-        used_package_id: usePackageId
+        payment_status: "paid",
+        used_package_id: usePackageId || null
       })
       .select()
       .single();
@@ -355,14 +365,26 @@ export default function Apply() {
         .from('customer_packages')
         .update({ remaining_count: matchingPackage.remaining_count - 1 })
         .eq('id', usePackageId);
+    } else if (isPackageAssigned) {
+      // Clear active_package
+      await supabase
+        .from('profiles')
+        .update({ active_package: null } as any)
+        .eq('id', user.id);
     }
 
+    if (assignedAdvisorId && newApp) {
+      await supabase.from('advisor_assignments').insert({
+        application_id: newApp.id,
+        advisor_id: assignedAdvisorId
+      });
+    }
 
     setReferenceId(refId);
     // Redirect to the new success page instead of inline state
     window.location.href = `/success/${refId}`;
     setIsLoading(false);
-    toast({ title: "Başvuru Alındı", description: "Başvurunuz başarıyla oluşturuldu." });
+    toast({ title: "Başvuru Alındı", description: "Ödemeniz onaylandı ve başvurunuz başarıyla oluşturuldu." });
   };
 
   const handleQuizAnswer = (value: string) => {

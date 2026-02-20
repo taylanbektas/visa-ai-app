@@ -20,7 +20,7 @@ const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({ currentStatus
     const getStages = (status: string): Stage[] => {
         const baseStages: Stage[] = [
             { id: "received", label: "Başvuru Alındı", description: "Başvurunuz sisteme başarıyla kaydedildi.", status: "completed", date: new Date(createdAt).toLocaleDateString("tr-TR") },
-            { id: "advisor_assigned", label: "Danışman Atandı", description: "Uzman danışmanınız dosyanızı incelemeye başladı.", status: "completed" },
+            { id: "advisor_assigned", label: "Danışman Atandı", description: "Uzman danışmanınız atandı, belgelerinizi yüklemeniz bekleniyor.", status: "completed" },
             { id: "documents", label: "Belgeler İnceleniyor", description: "Yüklediğiniz belgeler kontrol ediliyor.", status: "pending" },
             { id: "submission", label: "Elçiliğe Gönderildi", description: "Başvurunuz yetkili makamlara iletildi.", status: "pending" },
             { id: "result", label: "Vize Kararı", description: "Süreç tamamlandı, sonuç bekleniyor.", status: "pending" },
@@ -29,11 +29,18 @@ const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({ currentStatus
         // Status mapping logic
         const statusMap: Record<string, number> = {
             "Alındı": 1,
+            "Başvuru Alındı": 1,
+            "pending_documents": 1,
             "İnceleniyor": 2,
+            "İncelemede": 2,
+            "pending_review": 2,
             "İşlem Gerekli": 2,
             "Gönderildi": 3,
+            "submitted": 3,
             "Onaylandı": 4,
+            "completed": 4,
             "Reddedildi": 4,
+            "rejected": 4,
         };
 
         const currentStep = statusMap[status] || 0;

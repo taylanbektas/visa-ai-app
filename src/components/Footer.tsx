@@ -11,14 +11,14 @@ export function Footer() {
       links: [
         { label: t("nav.contact"), to: "/contact" },
         { label: t("nav.whatsapp"), to: "https://wa.me/905XXXXXXXXX", external: true },
-        { label: t("footer.videoGuides"), to: "/learn" },
+        { label: t("footer.videoGuides"), to: "/video-guides" },
       ],
     },
     {
       title: "Kurumsal",
       links: [
-        { label: "Kariyer", to: "/join-advisor" },
         { label: "Danışman Girişi", to: "/staff-login" },
+        { label: "Danışman Ol", to: "/join-advisor" },
       ],
     },
     {
@@ -26,8 +26,8 @@ export function Footer() {
       links: [
         { label: t("footer.privacy"), to: "/privacy" },
         { label: t("footer.terms"), to: "/terms" },
-        { label: t("footer.cookies"), to: "/privacy#cookies" },
-        { label: t("footer.refund"), to: "/terms#refund" },
+        { label: t("footer.cookies"), to: "/cookies" },
+        { label: t("footer.refund"), to: "/refund" },
       ],
     },
   ];
