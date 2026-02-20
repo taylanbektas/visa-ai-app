@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getRequirements, Requirement } from "@/data/visaRequirements";
+import AIDocumentReview from "@/components/AIDocumentReview";
 
 interface DocumentChecklistProps {
     applicationId: string;
@@ -177,6 +178,15 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, us
                                         {req.required && <span className="text-[10px] bg-rose-50 text-rose-500 font-black px-2 py-0.5 rounded-full uppercase">Zorunlu</span>}
                                     </div>
                                     <p className="text-sm text-slate-500 font-medium">{req.description}</p>
+                                    {isUploaded && (
+                                      <AIDocumentReview
+                                        documentName={uploadedDocs[req.id].name}
+                                        documentType={req.name}
+                                        destination={destination}
+                                        visaType={visaType}
+                                        requirementId={req.id}
+                                      />
+                                    )}
                                 </div>
 
                                 <div className="flex items-center gap-3">

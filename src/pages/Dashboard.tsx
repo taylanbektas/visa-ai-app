@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
-  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, MessageSquare, Briefcase, Paperclip, X, Sparkles, ArrowRight, ArrowLeft, Calendar as CalendarIcon, Plus, type LucideIcon,
+  Bell, FileText, User, Settings, Upload, CheckCircle, Clock, AlertCircle, LogOut, Loader2, MessageSquare, Briefcase, Paperclip, X, Sparkles, ArrowRight, ArrowLeft, Calendar as CalendarIcon, Plus, Bot, type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -18,6 +18,8 @@ import { DashboardLayout, SidebarItem } from "@/components/layout/DashboardLayou
 import { LayoutDashboard } from "lucide-react";
 import { destinations } from "@/data/countries";
 import { translations } from "@/i18n/translations";
+import AIDashboardChat from "@/components/AIDashboardChat";
+import AIApplicationSummary from "@/components/AIApplicationSummary";
 
 const statusIcons: Record<string, LucideIcon> = {
   "İnceleniyor": Clock,
@@ -240,6 +242,7 @@ export default function Dashboard() {
     { id: 'overview', label: 'Hızlı Bakış', icon: LayoutDashboard },
     { id: 'applications', label: 'Başvurularım', icon: FileText },
     { id: 'messages', label: 'Mesajlar', icon: MessageSquare, badgeCount: applications.some(a => a.status === 'İşlem Gerekli') ? 1 : undefined },
+    { id: 'ai-assistant', label: 'AI Asistan', icon: Bot },
     { id: 'profile', label: 'Profilim', icon: User },
   ];
 
@@ -321,6 +324,23 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+
+            {/* AI Summary Card */}
+            {applications.length > 0 && (
+              <div className="lg:col-span-2">
+                <AIApplicationSummary
+                  applications={applications.map(a => ({
+                    destination: a.destination,
+                    visaType: a.visa_type,
+                    status: a.status,
+                    plan: a.plan,
+                    travelDate: a.travel_date,
+                    uploadedDocs: 0,
+                    totalDocs: 0,
+                  }))}
+                />
+              </div>
+            )}
 
             {/* Right Column: Active Package & Danışman */}
             <div className="space-y-6">
@@ -599,6 +619,19 @@ export default function Dashboard() {
               <p className="text-slate-500 font-medium max-w-sm">Henüz atanmış bir danışmanınız yok. Başvuru yaptığınızda sizinle buradan iletişime geçilecektir.</p>
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === 'ai-assistant' && (
+        <div className="animate-in fade-in duration-500 h-[calc(100vh-12rem)]">
+          <AIDashboardChat
+            context={applications[0] ? {
+              destination: applications[0].destination,
+              visaType: applications[0].visa_type,
+              status: applications[0].status,
+              travelDate: applications[0].travel_date || undefined,
+            } : undefined}
+          />
         </div>
       )}
 

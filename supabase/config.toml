@@ -1,1 +1,13 @@
 project_id = "seghhxmfkacfdidnilxl"
+
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.ai-document-review]
+verify_jwt = false
+
+[functions.ai-application-summary]
+verify_jwt = false
+
+[functions.ai-message-suggest]
+verify_jwt = false
