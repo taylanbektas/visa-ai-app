@@ -46,13 +46,14 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, us
             if (data) {
                 const docs: Record<string, UploadedDoc> = {};
                 for (const file of data) {
-                    // Assuming filename format: reqId_timestamp_filename
                     const parts = file.name.split('_');
                     if (parts.length >= 3) {
                         const reqId = parts[0];
                         const originalName = parts.slice(2).join('_');
-                        const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(`${userId}/${applicationId}/${file.name}`);
-                        docs[reqId] = { name: originalName, url: publicUrl, requirementId: reqId };
+                        const { data: signedUrlData } = await supabase.storage
+                            .from('documents')
+                            .createSignedUrl(`${userId}/${applicationId}/${file.name}`, 3600);
+                        docs[reqId] = { name: originalName, url: signedUrlData?.signedUrl || '', requirementId: reqId };
                     }
                 }
                 setUploadedDocs(docs);
@@ -75,21 +76,24 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, us
             const { error } = await supabase.storage.from('documents').upload(filePath, file);
             if (error) throw error;
 
-            const { data: { publicUrl } } = supabase.storage.from('documents').getPublicUrl(filePath);
+            const { data: signedUrlData } = await supabase.storage
+                .from('documents')
+                .createSignedUrl(filePath, 3600);
+            const fileUrl = signedUrlData?.signedUrl || '';
 
             const { error: dbError } = await (supabase as any)
                 .from('application_documents')
                 .insert({
                     application_id: applicationId,
                     name: file.name,
-                    url: publicUrl
+                    url: fileUrl
                 });
 
             if (dbError) throw dbError;
 
             setUploadedDocs(prev => ({
                 ...prev,
-                [reqId]: { name: file.name, url: publicUrl, requirementId: reqId }
+                [reqId]: { name: file.name, url: fileUrl, requirementId: reqId }
             }));
 
             toast.success(`${file.name} başarıyla yüklendi.`);
