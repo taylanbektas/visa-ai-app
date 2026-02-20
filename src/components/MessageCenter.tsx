@@ -147,12 +147,15 @@ export function MessageCenter({
             return;
         }
 
-        const { data: { publicUrl } } = supabase.storage
+        // Use signed URL instead of public URL for private bucket
+        const { data: signedUrlData } = await supabase.storage
             .from('message_attachments')
-            .getPublicUrl(fileName);
+            .createSignedUrl(fileName, 86400); // 24 hour expiry
+
+        const fileUrl = signedUrlData?.signedUrl || '';
 
         const attachment = {
-            url: publicUrl,
+            url: fileUrl,
             type: file.type,
             name: file.name
         };

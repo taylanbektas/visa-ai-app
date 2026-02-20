@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { sanitizeHtml } from "@/lib/sanitize";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -162,7 +163,7 @@ export default function Pricing() {
           <h1 className="text-3xl md:text-5xl font-extrabold text-navy-dark mb-4">
             {t("pricing.title")} <span className="text-gradient-mint">{t("pricing.titleHighlight")}</span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-md mx-auto" dangerouslySetInnerHTML={{ __html: t("pricing.subtitle") }} />
+          <p className="text-lg text-muted-foreground max-w-md mx-auto" dangerouslySetInnerHTML={{ __html: sanitizeHtml(t("pricing.subtitle")) }} />
         </div>
 
         {/* Quiz */}
@@ -310,7 +311,7 @@ export default function Pricing() {
           <h2 className="text-3xl md:text-4xl font-extrabold text-center text-navy-dark mb-4">
             {t("pricing.comp.title")} <span className="text-gradient-mint">{t("pricing.comp.highlight")}</span>
           </h2>
-          <p className="text-center text-muted-foreground text-xl mb-12 max-w-lg mx-auto" dangerouslySetInnerHTML={{ __html: t("pricing.comp.desc") }} />
+          <p className="text-center text-muted-foreground text-xl mb-12 max-w-lg mx-auto" dangerouslySetInnerHTML={{ __html: sanitizeHtml(t("pricing.comp.desc")) }} />
 
           <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-sm">
             {/* Desktop table header */}
@@ -445,7 +446,7 @@ export default function Pricing() {
               <ShieldCheck size={32} className="text-[#00D69E]" />
             </div>
             <h3 className="text-2xl md:text-3xl font-extrabold text-navy-dark mb-3">{t("pricing.guarantee.title")}</h3>
-            <p className="text-base md:text-lg text-foreground/80 leading-relaxed max-w-md mx-auto mb-4" dangerouslySetInnerHTML={{ __html: t("pricing.guarantee.text") }} />
+            <p className="text-base md:text-lg text-foreground/80 leading-relaxed max-w-md mx-auto mb-4" dangerouslySetInnerHTML={{ __html: sanitizeHtml(t("pricing.guarantee.text")) }} />
             <p className="text-sm text-muted-foreground">{t("pricing.guarantee.note")}</p>
           </div>
         </div>

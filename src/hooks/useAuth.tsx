@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const updateLastSeen = async () => {
       await supabase
         .from("profiles")
-        .update({ last_seen: new Date().toISOString() })
+        .update({ last_seen: new Date().toISOString() } as any)
         .eq("user_id", user.id);
     };
 

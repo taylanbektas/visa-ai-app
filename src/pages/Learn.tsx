@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { sanitizeHtml } from "@/lib/sanitize";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
@@ -72,7 +73,7 @@ export default function Learn() {
           </h1>
           <p
             className="text-muted-foreground text-lg md:text-xl"
-            dangerouslySetInnerHTML={{ __html: t("learn.subtitle") }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(t("learn.subtitle")) }}
           />
         </motion.div>
 
