@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Send, User, Paperclip, Loader2, X, Check, File as FileIcon, Image as ImageIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
+import AIMessageSuggest from "@/components/AIMessageSuggest";
 
 type Message = {
     id: string;
@@ -304,6 +305,7 @@ export function MessageCenter({
                 />
 
                 <div className="flex items-center gap-1">
+                    <AIMessageSuggest onSelect={(msg) => setNewMessage(msg)} />
                     <Button
                         variant="ghost"
                         size="icon"
