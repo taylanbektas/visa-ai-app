@@ -128,7 +128,7 @@ export default function Login() {
                 setMode("login");
               }}
             >
-              Giriş Ekranına Dön
+              {t("login.backToLogin")}
             </Button>
           </motion.div>
         </div>
@@ -157,39 +157,39 @@ export default function Login() {
               </span>
             </Link>
             <h1 className="text-3xl font-extrabold text-navy-dark tracking-tight">
-              {mode === "login" ? "Giriş Yapın" : "Hesap Oluşturun"}
+              {mode === "login" ? t("login.title") : t("login.registerTitle")}
             </h1>
             <p className="text-base text-muted-foreground mt-3">
               {mode === "login"
-                ? "Başvurularınızı takip edin ve belgelerinizi yönetin."
-                : "Hızlı ve güvenli bir şekilde hesabınızı oluşturun."}
+                ? t("login.subtitle")
+                : t("login.registerSubtitle")}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
             {mode === "register" && (
               <div>
-                <label className="text-sm font-semibold text-foreground mb-1.5 block">Ad Soyad</label>
-                <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" placeholder="Adınız Soyadınız" value={fullName} onChange={(e) => { e.target.setCustomValidity(""); setFullName(e.target.value); }} onInvalid={handleInvalid} required />
+                <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("login.fullName")}</label>
+                <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" placeholder={t("login.placeholder.fullName")} value={fullName} onChange={(e) => { e.target.setCustomValidity(""); setFullName(e.target.value); }} onInvalid={handleInvalid} required />
               </div>
             )}
             <div>
-              <label className="text-sm font-semibold text-foreground mb-1.5 block">E-posta</label>
-              <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="email" placeholder="ornek@email.com" value={email} onChange={(e) => { e.target.setCustomValidity(""); setEmail(e.target.value); }} onInvalid={handleInvalid} required />
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("login.email")}</label>
+              <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="email" placeholder={t("login.placeholder.email")} value={email} onChange={(e) => { e.target.setCustomValidity(""); setEmail(e.target.value); }} onInvalid={handleInvalid} required />
             </div>
             <div>
-              <label className="text-sm font-semibold text-foreground mb-1.5 block">Şifre</label>
-              <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="password" placeholder="En az 8 karakter" value={password} onChange={(e) => { e.target.setCustomValidity(""); setPassword(e.target.value); }} onInvalid={handleInvalid} required />
+              <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("login.password")}</label>
+              <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="password" placeholder={t("login.placeholder.password")} value={password} onChange={(e) => { e.target.setCustomValidity(""); setPassword(e.target.value); }} onInvalid={handleInvalid} required />
             </div>
             {mode === "register" && (
               <>
                 <div>
-                  <label className="text-sm font-semibold text-foreground mb-1.5 block">Şifre Tekrar</label>
-                  <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="password" placeholder="Şifrenizi doğrulayın" value={confirmPassword} onChange={(e) => { e.target.setCustomValidity(""); setConfirmPassword(e.target.value); }} onInvalid={handleInvalid} required />
+                  <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("login.passwordConfirm")}</label>
+                  <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="password" placeholder={t("login.placeholder.passwordConfirm")} value={confirmPassword} onChange={(e) => { e.target.setCustomValidity(""); setConfirmPassword(e.target.value); }} onInvalid={handleInvalid} required />
                 </div>
                 <div>
-                  <label className="text-sm font-semibold text-foreground mb-1.5 block">Telefon</label>
-                  <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="tel" placeholder="+90 5XX XXX XX XX" value={phone} onChange={(e) => { e.target.setCustomValidity(""); setPhone(e.target.value); }} onInvalid={handleInvalid} required />
+                  <label className="text-sm font-semibold text-foreground mb-1.5 block">{t("login.phone")}</label>
+                  <Input className="h-14 text-base rounded-xl bg-gray-50/50 border-gray-200 focus:bg-white transition-colors" type="tel" placeholder={t("login.placeholder.phone")} value={phone} onChange={(e) => { e.target.setCustomValidity(""); setPhone(e.target.value); }} onInvalid={handleInvalid} required />
                 </div>
               </>
             )}
@@ -198,9 +198,9 @@ export default function Login() {
               {isLoading ? (
                 <Loader2 size={24} className="mr-2 animate-spin" />
               ) : mode === "login" ? (
-                <><LogIn size={20} className="mr-2" /> Giriş Yap</>
+                <><LogIn size={20} className="mr-2" /> {t("login.submit")}</>
               ) : (
-                <><User size={18} className="mr-2" /> Üye Ol</>
+                <><User size={18} className="mr-2" /> {t("login.signUp")}</>
               )}
             </Button>
           </form>
@@ -208,7 +208,7 @@ export default function Login() {
           {/* Google Sign In Separator */}
           <div className="flex items-center gap-4 mt-6">
             <div className="flex-1 h-px bg-border"></div>
-            <span className="text-sm text-muted-foreground font-medium">veya</span>
+            <span className="text-sm text-muted-foreground font-medium">{t("login.or")}</span>
             <div className="flex-1 h-px bg-border"></div>
           </div>
 
@@ -223,7 +223,7 @@ export default function Login() {
                 redirect_uri: window.location.origin,
               });
               if (result?.error) {
-                toast({ title: "Google ile giriş başarısız", description: (result.error as Error).message, variant: "destructive" });
+                toast({ title: t("login.googleFailed"), description: (result.error as Error).message, variant: "destructive" });
                 setIsLoading(false);
               }
               // If redirected, page will reload; if session set, onAuthStateChange will handle
@@ -235,18 +235,18 @@ export default function Login() {
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
             </svg>
-            Google ile {mode === "login" ? "Giriş Yap" : "Kaydol"}
+            {mode === "login" ? t("login.withGoogle") : t("login.withGoogleRegister")}
           </Button>
 
           <div className="border-t border-border mt-7 pt-5 text-center">
             <p className="text-sm text-muted-foreground">
               {mode === "login" ? (
-                <>Hesabınız yok mu?{" "}
-                  <button onClick={() => setMode("register")} className="text-accent font-semibold hover:underline">Üye Olun</button>
+                <>{t("login.noAccountShort")}{" "}
+                  <button onClick={() => setMode("register")} className="text-accent font-semibold hover:underline">{t("login.signUp")}</button>
                 </>
               ) : (
-                <>Zaten hesabınız var mı?{" "}
-                  <button onClick={() => setMode("login")} className="text-accent font-semibold hover:underline">Giriş Yapın</button>
+                <>{t("login.alreadyHaveAccount")}{" "}
+                  <button onClick={() => setMode("login")} className="text-accent font-semibold hover:underline">{t("login.submit")}</button>
                 </>
               )}
             </p>
@@ -254,7 +254,7 @@ export default function Login() {
 
           <div className="flex items-center justify-center gap-2 mt-6 text-xs text-muted-foreground">
             <Lock size={12} className="text-accent" />
-            256-bit SSL ile korunmaktadır
+            {t("login.secureNote")}
           </div>
         </motion.div>
       </div>

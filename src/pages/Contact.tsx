@@ -94,7 +94,7 @@ export default function Contact() {
                                     animate={{ opacity: 1 }}
                                     transition={{ delay: 0.3 }}
                                 >
-                                    En kısa sürede size geri dönüş yapacağız.
+                                    {t("contact.form.successShort")}
                                 </motion.p>
                             </div>
                         ) : (
@@ -107,7 +107,7 @@ export default function Contact() {
                                             value={formFields.name}
                                             onChange={(e) => setFormFields(p => ({ ...p, name: e.target.value }))}
                                             className="h-14 text-base rounded-2xl bg-white/50 border-white/60 focus:bg-white focus:border-mint transition-all duration-300 shadow-sm px-5"
-                                            placeholder="Adınız Soyadınız"
+                                            placeholder={t("contact.form.namePlaceholder")}
                                         />
                                     </div>
                                     <div className="space-y-2">

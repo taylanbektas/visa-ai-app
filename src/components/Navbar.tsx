@@ -240,7 +240,7 @@ export function Navbar() {
                   <button
                     onClick={handleSignOut}
                     className="ml-1 flex h-11 w-11 items-center justify-center rounded-full border border-border/40 bg-white text-muted-foreground shadow-sm transition-all hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20"
-                    title="Çıkış Yap"
+                    title={t("nav.signOut")}
                   >
                     <LogOut size={18} />
                   </button>
@@ -341,7 +341,7 @@ export function Navbar() {
               </div>
 
               <div className="mt-6">
-                <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">Language</p>
+                <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">{t("common.language")}</p>
                 <div className="flex gap-2">
                   {languages.map((lang) => (
                     <button
@@ -373,7 +373,7 @@ export function Navbar() {
                       onClick={handleSignOut}
                       className="block w-full rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm font-semibold text-destructive"
                     >
-                      Çıkış Yap
+                      {t("nav.signOut")}
                     </button>
                   </div>
                 ) : !loading ? (

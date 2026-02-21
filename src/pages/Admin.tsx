@@ -391,9 +391,9 @@ export default function Admin() {
   };
 
   const handleAssignAdvisor = async (userId: string, authUserId: string, advisorId: string | null) => {
-    // Try to update profile via RPC to bypass RLS
+    // RPC expects auth user_id to update profile (profiles.user_id = auth user)
     const { error: profileError } = await (supabase.rpc as any)('admin_assign_advisor', {
-      p_user_id: userId,
+      p_user_id: authUserId,
       p_advisor_id: advisorId
     });
 
@@ -402,7 +402,7 @@ export default function Admin() {
       return;
     }
 
-    // Assign existing applications
+    // Assign or unassign applications so advisor panel stays in sync
     const { data: apps } = await supabase
       .from('applications')
       .select('id')
@@ -412,15 +412,19 @@ export default function Admin() {
       const appIds = apps.map(a => a.id);
       await supabase.from('advisor_assignments').delete().in('application_id', appIds);
 
-      const assignments = apps.map(app => ({
-        id: crypto.randomUUID(), // Assuming UUID is required if it's not auto-generated properly
-        application_id: app.id,
-        advisor_id: advisorId
-      }));
-
-      const { error: assignError } = await supabase.from('advisor_assignments').insert(assignments);
-      if (assignError) {
-        console.error("Assignment error:", assignError);
+      if (advisorId) {
+        const assignments = apps.map(app => ({
+          application_id: app.id,
+          advisor_id: advisorId
+        }));
+        const { error: assignError } = await supabase.from('advisor_assignments').insert(assignments);
+        if (assignError) {
+          toast({ title: "Hata", description: "Danışman atandı ancak başvuru eşlemesi yapılamadı: " + assignError.message, variant: "destructive" });
+          setAssignmentOpen(false);
+          setAssignCustomerOpen(false);
+          fetchData();
+          return;
+        }
       }
     }
 
