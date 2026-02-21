@@ -106,8 +106,10 @@ export function MessageCenter({
     }, [targetUserId, currentUserId]);
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView();
-    }, [messages]);
+        // Use auto for initial load (when loading is false) and smooth for new messages if already loaded
+        const behavior = loading ? 'auto' : 'smooth';
+        messagesEndRef.current?.scrollIntoView({ behavior });
+    }, [messages, loading]);
 
     const handleSendMessage = async () => {
         if (!newMessage.trim()) return;
@@ -193,7 +195,7 @@ export function MessageCenter({
 
             {/* Messages Area */}
             <div
-                className="flex-1 p-6 bg-slate-50 overflow-y-auto scroll-smooth"
+                className="flex-1 p-6 bg-slate-50 overflow-y-auto"
             >
                 <div className="space-y-4 flex flex-col justify-end min-h-full">
                     {messages.length === 0 && !loading && (

@@ -420,25 +420,25 @@ export default function Dashboard() {
       )}
 
       {activeTab === 'applications' && (
-        <div className="space-y-8 animate-in fade-in duration-500">
-          <header className="flex justify-between items-center bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-            <div className="flex items-center gap-4">
+        <div className="space-y-6 animate-in fade-in duration-500">
+          <header className="flex justify-between items-center bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">
+            <div className="flex items-center gap-3">
               {selectedApp && (
                 <Button
                   variant="outline"
                   onClick={() => setSelectedApp(null)}
-                  className="rounded-xl h-10 px-4 font-bold border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-navy-dark transition-colors"
+                  className="rounded-xl h-9 px-3 font-bold border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-navy-dark transition-colors text-xs"
                 >
-                  <ArrowLeft size={18} className="mr-2" /> Tüm Başvurulara Dön
+                  <ArrowLeft size={16} className="mr-1.5" /> Geri
                 </Button>
               )}
-              <h2 className="text-3xl font-black text-navy-dark tracking-tight">
+              <h2 className="text-2xl font-black text-navy-dark tracking-tight">
                 {selectedApp ? (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <span>{destinations.find(d => d.key === selectedApp.destination.toLowerCase())?.flag || "🏳️"}</span>
                     <span>{translations.tr[`country.${selectedApp.destination.toLowerCase()}`] || selectedApp.destination}</span>
-                    <span className="text-slate-300 font-normal">/</span>
-                    <span className="text-2xl">{translations.tr[`visa_type.${selectedApp.visa_type.toLowerCase()}`] || selectedApp.visa_type}</span>
+                    <span className="text-slate-200">/</span>
+                    <span className="text-xl">{translations.tr[`visa_type.${selectedApp.visa_type.toLowerCase()}`] || selectedApp.visa_type}</span>
                   </div>
                 ) : "Başvurularım"}
               </h2>
@@ -447,14 +447,14 @@ export default function Dashboard() {
               <Badge className="bg-blue-50 text-blue-600 border-blue-100 px-6 py-2 rounded-full font-bold">{applications.length} Kayıt</Badge>
             )}
             {selectedApp && (
-              <div className="flex items-center gap-6">
-                <div className="flex flex-col items-end gap-2">
-                  <div className="bg-emerald-500 text-white px-4 py-1.5 rounded-xl text-sm font-black tracking-wider shadow-sm shadow-emerald-200">
+              <div className="flex items-center gap-4">
+                <div className="flex flex-col items-end gap-1">
+                  <div className="bg-emerald-500 text-white px-3 py-1 rounded-lg text-xs font-black tracking-wider shadow-sm shadow-emerald-200/50">
                     {selectedApp.plan.toUpperCase()}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-400 uppercase tracking-tight">Referans:</span>
-                    <span className="text-xl font-mono font-black text-navy-dark tracking-tighter">{selectedApp.reference_id}</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">REF:</span>
+                    <span className="text-lg font-mono font-black text-navy-dark tracking-tighter">{selectedApp.reference_id}</span>
                   </div>
                 </div>
               </div>
@@ -532,69 +532,44 @@ export default function Dashboard() {
               {applications.map((app) => {
                 const StatusIcon = statusIcons[app.status] || Clock;
                 return (
-                  <div key={app.id} className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-sm hover:shadow-md transition-all">
-                    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="font-mono text-xs font-bold text-slate-400 px-3 py-1 bg-slate-50 rounded-lg">{app.reference_id}</span>
-                          <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 uppercase text-[10px] font-black">{app.plan}</Badge>
+                  <div key={app.id} className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 shrink-0 border border-slate-100">
+                          <StatusIcon size={24} />
                         </div>
-                        <h3 className="text-2xl font-black text-navy-dark tracking-tight">
-                          {destinations.find(d => d.key === app.destination.toLowerCase())?.flag || "🏳️"} {translations.tr[`country.${app.destination.toLowerCase()}`] || app.destination} — {translations.tr[`visa_type.${app.visa_type.toLowerCase()}`] || app.visa_type}
-                        </h3>
-                      </div>
-                      <span className={`inline-flex items-center gap-2 px-6 py-2 rounded-full text-xs font-black ring-1 ring-inset ${statusColors[app.status] || ""}`}>
-                        <StatusIcon size={14} /> {app.status}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-4 text-sm sm:flex-row sm:items-center sm:justify-between pt-6 border-t border-slate-50">
-                      <div className="flex items-center gap-3 text-slate-500 font-bold">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-                          <User size={14} />
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono text-[9px] font-black text-slate-400 px-2 py-0.5 bg-slate-100 rounded-md">{app.reference_id}</span>
+                            <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 uppercase text-[9px] font-black h-4 px-1.5">{app.plan}</Badge>
+                          </div>
+                          <h3 className="text-xl font-black text-navy-dark tracking-tight">
+                            {destinations.find(d => d.key === app.destination.toLowerCase())?.flag || "🏳️"} {translations.tr[`country.${app.destination.toLowerCase()}`] || app.destination} — {translations.tr[`visa_type.${app.visa_type.toLowerCase()}`] || app.visa_type}
+                          </h3>
                         </div>
-                        <span>Danışman: {app.advisorName || assignedAdvisor?.full_name || "Atanıyor..."}</span>
                       </div>
-                      <span className="text-xs font-bold text-slate-400">
-                        Oluşturma: {new Date(app.created_at).toLocaleDateString("tr-TR")}
-                      </span>
-                    </div>
-                    <div className="mt-8 flex flex-wrap gap-4">
-                      <Button
-                        onClick={() => setSelectedApp(app)}
-                        className="bg-navy-dark hover:bg-navy-light text-white font-black px-8 h-12 rounded-xl shadow-lg shadow-navy-dark/10 transition-all hover:-translate-y-1"
-                      >
-                        Detayları Gör ve Takip Et
-                      </Button>
-                      {app.payment_status === 'paid' ? (
+                      <div className="flex items-center gap-3">
+                        <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[10px] font-black ring-1 ring-inset ${statusColors[app.status] || ""}`}>
+                          {app.status}
+                        </span>
                         <Button
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedApp(app);
-                            setTimeout(() => {
-                              const el = document.getElementById("document-checklist-section");
-                              if (el) el.scrollIntoView({ behavior: "smooth" });
-                            }, 100);
-                          }}
-                          className="rounded-xl h-12 px-6 font-bold border-indigo-100 text-indigo-600 hover:bg-indigo-50"
+                          onClick={() => setSelectedApp(app)}
+                          className="bg-navy-dark hover:bg-navy-light text-white font-black px-5 h-10 rounded-xl shadow-lg shadow-navy-dark/10 transition-all hover:-translate-y-0.5 text-xs"
                         >
-                          <Paperclip size={16} className="mr-2" /> Belge Yükle
+                          Detaylar
                         </Button>
-                      ) : (
-                        <Link to="/apply" state={{ plan: app.plan }}>
-                          <Button className="bg-rose-500 hover:bg-rose-600 rounded-xl h-12 px-8 font-black text-white shadow-lg shadow-rose-200 transition-all">
-                            <AlertCircle size={16} className="mr-2" /> Ödemeyi Tamamla
-                          </Button>
-                        </Link>
-                      )}
+                      </div>
                     </div>
-
-                    {appDocuments[app.id] && appDocuments[app.id].length > 0 && !selectedApp && (
-                      <div className="mt-6 flex flex-wrap gap-3 p-4 bg-slate-50 rounded-2xl">
-                        {appDocuments[app.id].map((doc, i) => (
-                          <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-xs font-bold bg-white text-slate-600 px-4 py-2 rounded-xl border border-slate-100 hover:border-blue-200 transition-colors">
-                            <Paperclip size={12} /> {doc.name}
-                          </a>
+                    {appDocuments[app.id] && appDocuments[app.id].length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2 pt-4 border-t border-slate-50">
+                        {appDocuments[app.id].slice(0, 3).map((doc, i) => (
+                          <span key={i} className="inline-flex items-center gap-1.5 text-[10px] font-bold bg-slate-50 text-slate-500 px-3 py-1.5 rounded-lg border border-slate-100">
+                            <FileText size={12} /> {doc.name}
+                          </span>
                         ))}
+                        {appDocuments[app.id].length > 3 && (
+                          <span className="text-[10px] font-black text-slate-400 self-center">+{appDocuments[app.id].length - 3} Diğer</span>
+                        )}
                       </div>
                     )}
                   </div>

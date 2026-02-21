@@ -205,34 +205,25 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, us
                                                 destination={destination}
                                                 visaType={visaType}
                                                 requirementId={req.id}
-                                                autoStart={true}
+                                                autoStart={!aiStatuses[req.id]}
                                                 onReviewResult={(res) => setAiStatuses(prev => ({ ...prev, [req.id]: res }))}
                                             />
-                                            {aiStatuses[req.id] && aiStatuses[req.id] !== 'uygun' && (
-                                                <Button
-                                                    onClick={() => document.getElementById(`file-reupload-${req.id}`)?.click()}
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="w-full md:w-auto bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 font-black text-xs h-9 rounded-xl gap-2"
-                                                >
-                                                    <Upload size={14} /> Yeni Belge Yükle
-                                                </Button>
-                                            )}
+
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="flex items-center gap-3">
+                                <div className="flex flex-row md:flex-col items-center md:items-end gap-3 shrink-0">
                                     {isUploaded ? (
-                                        <>
+                                        <div className="flex flex-col gap-2 min-w-[140px]">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                className="rounded-xl border-slate-200 h-10 px-4 font-bold text-slate-600 hover:bg-slate-50"
+                                                className="w-full rounded-xl border-slate-200 h-10 px-4 font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
                                                 asChild
                                             >
                                                 <a href={uploadedDocs[req.id].url} target="_blank" rel="noopener noreferrer">
-                                                    <Eye size={16} className="mr-2" /> Görüntüle
+                                                    <Eye size={16} /> Görüntüle
                                                 </a>
                                             </Button>
                                             <input
@@ -247,13 +238,13 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, us
                                             />
                                             <Button
                                                 onClick={() => document.getElementById(`file-reupload-${req.id}`)?.click()}
-                                                variant="ghost"
+                                                variant="outline"
                                                 size="sm"
-                                                className="rounded-xl h-10 w-10 p-0 text-slate-400 hover:text-navy-dark hover:bg-slate-100"
+                                                className={`w-full rounded-xl h-10 px-4 font-black transition-all flex items-center justify-center gap-2 ${aiStatuses[req.id] === 'uygunsuz' ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100' : 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100'}`}
                                             >
-                                                <Upload size={16} />
+                                                <Upload size={16} /> Yeniden Yükle
                                             </Button>
-                                        </>
+                                        </div>
                                     ) : (
                                         <div className={isUploading ? "pointer-events-none opacity-70" : ""}>
                                             <input
