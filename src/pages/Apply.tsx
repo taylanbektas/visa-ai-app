@@ -327,6 +327,63 @@ export default function Apply() {
   const canUsePackage = isPackageAssigned || (matchingPackage && matchingPackage.remaining_count > 0);
 
   const finalTotal = (isPackageAssigned || canUsePackage) ? 0 : (totalBasePrice + totalProcPrice + totalGovFee);
+  const autoAssignAdvisor = async (userId: string) => {
+    try {
+      // 1. Fetch all advisors
+      const { data: advisors, error: advError } = await supabase
+        .from('advisors')
+        .select('id');
+
+      if (advError || !advisors || advisors.length === 0) {
+        console.error("No advisors found for auto-assignment");
+        return null;
+      }
+
+      // 2. Fetch all profiles to count assignments
+      const { data: profiles, error: profError } = await supabase
+        .from('profiles')
+        .select('assigned_advisor_id');
+
+      if (profError) {
+        console.error("Error fetching profiles for advisor counting:", profError);
+        return advisors[0].id;
+      }
+
+      const counts: Record<string, number> = {};
+      advisors.forEach(a => counts[a.id] = 0);
+      profiles.forEach(p => {
+        if (p.assigned_advisor_id && counts[p.assigned_advisor_id] !== undefined) {
+          counts[p.assigned_advisor_id]++;
+        }
+      });
+
+      // 3. Find advisor with minimum count
+      let minCount = Infinity;
+      let selectedAdvisorId = advisors[0].id;
+
+      advisors.forEach(a => {
+        if (counts[a.id] < minCount) {
+          minCount = counts[a.id];
+          selectedAdvisorId = a.id;
+        }
+      });
+
+      // 4. Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ assigned_advisor_id: selectedAdvisorId } as any)
+        .eq('id', userId);
+
+      if (updateError) {
+        console.error("Error updating profile with assigned advisor:", updateError);
+      }
+
+      return selectedAdvisorId;
+    } catch (err) {
+      console.error("Unexpected error in autoAssignAdvisor:", err);
+      return null;
+    }
+  };
 
   const handleCompleteApplication = async (usePackageId?: string) => {
     if (!user) return;
@@ -373,10 +430,15 @@ export default function Apply() {
         .eq('id', user.id);
     }
 
-    if (assignedAdvisorId && newApp) {
+    let currentAdvisorId = assignedAdvisorId;
+    if (!currentAdvisorId) {
+      currentAdvisorId = await autoAssignAdvisor(user.id);
+    }
+
+    if (currentAdvisorId) {
       await supabase.from('advisor_assignments').insert({
         application_id: newApp.id,
-        advisor_id: assignedAdvisorId
+        advisor_id: currentAdvisorId
       });
     }
 

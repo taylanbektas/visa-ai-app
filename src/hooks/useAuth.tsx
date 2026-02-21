@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  profile: { full_name: string | null; phone: string | null; assigned_advisor_id: string | null; active_package?: string | null; last_seen?: string | null } | null;
+  profile: { id: string; full_name: string | null; phone: string | null; assigned_advisor_id: string | null; active_package?: string | null; last_seen?: string | null } | null;
   signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<{ error: unknown }>;
   signIn: (email: string, password: string) => Promise<{ data: { user: User | null; session: Session | null }; error: unknown }>;
   signOut: () => Promise<void>;
@@ -18,7 +18,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<{ full_name: string | null; phone: string | null; assigned_advisor_id: string | null; is_suspended?: boolean; active_package?: string | null; last_seen?: string | null } | null>(null);
+  const [profile, setProfile] = useState<{ id: string; full_name: string | null; phone: string | null; assigned_advisor_id: string | null; is_suspended?: boolean; active_package?: string | null; last_seen?: string | null } | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from("profiles")
-      .select("full_name, phone, assigned_advisor_id, is_suspended, active_package, last_seen")
+      .select("id, full_name, phone, assigned_advisor_id, is_suspended, active_package, last_seen")
       .eq("user_id", userId)
       .single();
 

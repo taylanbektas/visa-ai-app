@@ -12,13 +12,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 
 interface BookingCalendarProps {
     advisorId: string;
-    customerId: string;
+    userId: string;
+    profileId: string;
     isOpen: boolean;
     onClose: () => void;
     isDirectBooking?: boolean;
 }
 
-export function BookingCalendar({ advisorId, customerId, isOpen, onClose, isDirectBooking = false }: BookingCalendarProps) {
+export function BookingCalendar({ advisorId, userId, profileId, isOpen, onClose, isDirectBooking = false }: BookingCalendarProps) {
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
     const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -40,14 +41,14 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose, isDire
     const checkEligibility = async () => {
         setIsCheckingEligibility(true);
         // check applications for any paid ones
-        const { data: apps } = await supabase.from('applications').select('id, payment_status').eq('user_id', customerId);
+        const { data: apps } = await supabase.from('applications').select('id, payment_status').eq('user_id', userId);
         const hasPaidApp = apps?.some((a: any) => a.payment_status === 'paid') || false;
 
         // check customer_packages
-        const { data: pkgs } = await (supabase as any).from('customer_packages').select('id').eq('user_id', customerId).gt('remaining_count', 0);
+        const { data: pkgs } = await (supabase as any).from('customer_packages').select('id').eq('user_id', userId).gt('remaining_count', 0);
         const hasActivePkg = pkgs && pkgs.length > 0;
 
-        const { data: profile } = await supabase.from('profiles').select('active_package').eq('id', customerId).maybeSingle();
+        const { data: profile } = await supabase.from('profiles').select('active_package').eq('id', profileId).maybeSingle();
         const hasActiveProfilePkg = !!(profile && (profile as any).active_package);
 
         const hasAnyPackage = hasPaidApp || hasActivePkg || hasActiveProfilePkg;
@@ -55,7 +56,7 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose, isDire
 
         if (!hasAnyPackage) {
             // limit applies: check existing consultations
-            const { data: pastCons } = await (supabase as any).from('consultations').select('id').eq('customer_id', customerId);
+            const { data: pastCons } = await (supabase as any).from('consultations').select('id').eq('customer_id', profileId);
             setHasUsedFreeConsultation(pastCons && pastCons.length > 0);
         }
         setIsCheckingEligibility(false);
@@ -160,7 +161,7 @@ export function BookingCalendar({ advisorId, customerId, isOpen, onClose, isDire
             .from('consultations' as any)
             .insert({
                 advisor_id: advisorId,
-                customer_id: customerId,
+                customer_id: profileId,
                 start_time: startTime.toISOString(),
                 end_time: endTime.toISOString(),
                 status: isDirectBooking ? 'confirmed' : 'pending'

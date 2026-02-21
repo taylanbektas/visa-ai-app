@@ -61,6 +61,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import AIApplicationSummary from "@/components/AIApplicationSummary";
+import AIDocumentReview from "@/components/AIDocumentReview";
+import AIDashboardChat from "@/components/AIDashboardChat";
+import { Sparkles, Bot } from "lucide-react";
 
 // Types
 type Application = {
@@ -73,6 +77,7 @@ type Application = {
   created_at: string;
   assigned_to?: string;
   user_id: string; // Needed for messaging
+  profile_id: string; // Needed for consultations FK
   phone?: string | null;
   plan?: string;
 };
@@ -289,21 +294,30 @@ export default function AdvisorPanel() {
         specialties: advisorData.specializations || []
       });
 
-      // 2. Fetch assigned applications
+      // 2. Fetch assigned customers from profiles
+      const { data: profileCustomers } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('assigned_advisor_id', advisorData.id);
+
+      // 3. Fetch applications assigned to this advisor
       const { data: assignments } = await supabase
         .from('advisor_assignments')
         .select('application_id')
         .eq('advisor_id', advisorData.id);
 
+      let mappedApps: Application[] = [];
+      let appIds: string[] = [];
+
       if (assignments && assignments.length > 0) {
-        const appIds = assignments.map(a => a.application_id);
+        appIds = assignments.map(a => a.application_id);
         const { data: appsData } = await supabase
           .from('applications')
           .select('*, profiles(full_name, phone)')
           .in('id', appIds);
 
         if (appsData) {
-          const mappedApps = appsData.map((app: any) => ({
+          mappedApps = appsData.map((app: any) => ({
             id: app.id,
             applicant_name: app.profiles?.full_name || 'İsimsiz',
             passport_type: '-',
@@ -312,69 +326,97 @@ export default function AdvisorPanel() {
             status: app.status || 'Alındı',
             created_at: app.created_at,
             user_id: app.user_id,
+            profile_id: app.profiles?.id || "",
             phone: app.profiles?.phone,
             plan: app.plan
           }));
-          setApplications(mappedApps);
+        }
+      }
 
-          // Fetch pending messages count
-          let pendingCount = 0;
-          for (const app of mappedApps) {
-            const { data: latestMsg } = await supabase
-              .from('messages')
-              .select('sender_id')
-              .or(`and(sender_id.eq.${user?.id},recipient_id.eq.${app.user_id}),and(sender_id.eq.${app.user_id},recipient_id.eq.${user?.id})`)
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .maybeSingle();
-
-            if (latestMsg && latestMsg.sender_id !== user?.id) {
-              pendingCount++;
-            }
+      // 4. Add customers who are assigned but have no applications shown in the list
+      if (profileCustomers) {
+        profileCustomers.forEach((profile: any) => {
+          const hasApp = mappedApps.some(app => app.user_id === profile.user_id);
+          if (!hasApp) {
+            mappedApps.push({
+              id: `no-app-${profile.id}`,
+              applicant_name: profile.full_name || 'İsimsiz',
+              passport_type: '-',
+              destination_country: '-',
+              visa_type: 'Başvuru Yok',
+              status: 'Yeni Müşteri',
+              created_at: profile.created_at,
+              user_id: profile.user_id,
+              profile_id: profile.id,
+              phone: profile.phone,
+              plan: profile.active_package || '-'
+            });
           }
+        });
+      }
 
-          // Fetch completed applications
-          const completedApps = appsData.filter(a => a.status === 'Onaylandı' || a.status === 'Tamamlandı');
+      setApplications(mappedApps);
 
-          const planPrices: Record<string, number> = {
-            'starter': 49,
-            'pro': 149,
-            'elite': 349
-          };
+      if (mappedApps.length > 0) {
+        // Fetch pending messages count
+        let pendingCount = 0;
+        for (const app of mappedApps) {
+          const { data: latestMsg } = await supabase
+            .from('messages')
+            .select('sender_id')
+            .or(`and(sender_id.eq.${user?.id},recipient_id.eq.${app.user_id}),and(sender_id.eq.${app.user_id},recipient_id.eq.${user?.id})`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-          const withdrawableStatuses = ['Onaylandı', 'Tamamlandı'];
+          if (latestMsg && latestMsg.sender_id !== user?.id) {
+            pendingCount++;
+          }
+        }
 
-          let expectedRevenue = 0;
-          let withdrawableBalance = 0;
-          let pendingRevenue = 0;
+        const appsData = mappedApps.filter(a => !a.id.startsWith('no-app-'));
+        const completedApps = appsData.filter(a => a.status === 'Onaylandı' || a.status === 'Tamamlandı');
 
-          appsData.forEach((app: any) => {
-            const price = planPrices[app.plan?.toLowerCase()] || 0;
-            const commission = price * 0.30; // Advisor commission
-            expectedRevenue += commission;
+        const planPrices: Record<string, number> = {
+          'starter': 49,
+          'pro': 149,
+          'elite': 349
+        };
 
-            if (withdrawableStatuses.includes(app.status)) {
-              withdrawableBalance += commission;
-            } else {
-              pendingRevenue += commission;
-            }
-          });
+        const withdrawableStatuses = ['Onaylandı', 'Tamamlandı'];
 
-          setStats({
-            assigned: appsData.length,
-            completed: completedApps.length,
-            pendingMessages: pendingCount,
-            totalRevenue: expectedRevenue,
-            withdrawableBalance: withdrawableBalance,
-            pendingRevenue: pendingRevenue,
-            activeApps: appsData.length - completedApps.length,
-            pendingConsultations: 0, // Will be updated below
-            avgResponseTime: "1.2s", // Simulated for now
-            satisfactionRate: 98,
-            completionRate: Math.round((completedApps.length / (appsData.length || 1)) * 100)
-          });
+        let expectedRevenue = 0;
+        let withdrawableBalance = 0;
+        let pendingRevenue = 0;
 
-          // Fetch documents for these applications
+        appsData.forEach((app: any) => {
+          const price = planPrices[app.plan?.toLowerCase()] || 0;
+          const commission = price * 0.30; // Advisor commission
+          expectedRevenue += commission;
+
+          if (withdrawableStatuses.includes(app.status)) {
+            withdrawableBalance += commission;
+          } else {
+            pendingRevenue += commission;
+          }
+        });
+
+        setStats({
+          assigned: profileCustomers?.length || appsData.length,
+          completed: completedApps.length,
+          pendingMessages: pendingCount,
+          totalRevenue: expectedRevenue,
+          withdrawableBalance: withdrawableBalance,
+          pendingRevenue: pendingRevenue,
+          activeApps: appsData.length - completedApps.length,
+          pendingConsultations: 0, // Will be updated below
+          avgResponseTime: "1.2s", // Simulated for now
+          satisfactionRate: 98,
+          completionRate: Math.round((completedApps.length / (appsData.length || 1)) * 100)
+        });
+
+        // Fetch documents for these applications
+        if (appIds.length > 0) {
           const { data: docsData } = await supabase
             .from('application_documents' as any)
             .select('*')
@@ -992,6 +1034,69 @@ export default function AdvisorPanel() {
                   </div>
 
                   <div className="flex-1 p-8 -mt-8 space-y-6">
+                    {/* AI Application Summary for Advisor */}
+                    <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white">
+                          <Bot size={18} />
+                        </div>
+                        <h4 className="text-sm font-black text-navy-dark uppercase tracking-widest">AI Başvuru Özeti</h4>
+                      </div>
+                      <AIApplicationSummary
+                        applications={[{
+                          destination: selectedCustomerDetails.destination_country,
+                          visaType: selectedCustomerDetails.visa_type,
+                          status: selectedCustomerDetails.status,
+                          plan: selectedCustomerDetails.plan || 'Starter',
+                          travelDate: null,
+                          uploadedDocs: appDocs[selectedCustomerDetails.id]?.length || 0,
+                          totalDocs: 10 // Placeholder for total docs
+                        }]}
+                      />
+                    </div>
+
+                    {/* AI Advisor Actions Panel */}
+                    <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/20">
+                      <div className="flex items-center justify-between mb-6">
+                        <h4 className="text-sm font-black text-navy-dark uppercase tracking-widest flex items-center gap-2">
+                          <Sparkles size={16} className="text-emerald-500" /> Akıllı Danışman Araçları
+                        </h4>
+                        <Badge className="bg-emerald-500 text-white border-none text-[10px] font-black tracking-widest uppercase">Beta</Badge>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {[
+                          { label: "Durum Analizi", icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-50" },
+                          { label: "Eksik Kontrolü", icon: AlertCircle, color: "text-amber-600", bg: "bg-amber-50" },
+                          { label: "Mesaj Taslağı", icon: MessageSquare, color: "text-emerald-600", bg: "bg-emerald-50" }
+                        ].map((action) => (
+                          <Button
+                            key={action.label}
+                            variant="outline"
+                            className={`h-auto py-4 rounded-2xl border-slate-100 flex flex-col gap-2 hover:border-emerald-200 hover:shadow-md transition-all ${action.bg}`}
+                          >
+                            <action.icon size={20} className={action.color} />
+                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">{action.label}</span>
+                          </Button>
+                        ))}
+                      </div>
+
+                      <div className="mt-6 pt-6 border-t border-slate-100">
+                        <div className="h-40 overflow-hidden relative rounded-2xl border border-slate-100 bg-slate-50/50">
+                          <AIDashboardChat
+                            context={{
+                              destination: selectedCustomerDetails.destination_country,
+                              visaType: selectedCustomerDetails.visa_type,
+                              status: selectedCustomerDetails.status
+                            }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-center text-slate-400 font-bold mt-2 italic px-4">
+                          * AI ile bu başvuru özelinde konuşarak detaylı analiz isteyebilirsiniz.
+                        </p>
+                      </div>
+                    </div>
+
                     {/* Travel Info */}
                     <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 relative overflow-hidden group hover:border-blue-200 transition-colors">
                       <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -1072,18 +1177,30 @@ export default function AdvisorPanel() {
                       {appDocs[selectedCustomerDetails.id] && appDocs[selectedCustomerDetails.id].length > 0 ? (
                         <div className="space-y-3">
                           {appDocs[selectedCustomerDetails.id].map((doc, idx) => (
-                            <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-blue-200 transition-colors group">
-                              <div className="flex items-center gap-3">
-                                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-                                  <FileText size={16} />
+                            <div key={idx} className="flex flex-col bg-slate-50 rounded-2xl border border-slate-100 hover:border-blue-200 transition-colors group overflow-hidden">
+                              <div className="flex items-center justify-between p-4 bg-white/50">
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
+                                    <FileText size={16} />
+                                  </div>
+                                  <span className="font-bold text-navy-dark text-sm">{doc.name}</span>
                                 </div>
-                                <span className="font-bold text-navy-dark text-sm">{doc.name}</span>
+                                <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-black text-xs uppercase tracking-widest">
+                                    Görüntüle
+                                  </Button>
+                                </a>
                               </div>
-                              <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                                <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-black text-xs uppercase tracking-widest">
-                                  Görüntüle
-                                </Button>
-                              </a>
+                              {/* AI Document Review for Advisor */}
+                              <div className="px-5 pb-5 pt-2">
+                                <AIDocumentReview
+                                  documentName={doc.name}
+                                  documentType={doc.name.includes("Pasaport") ? "Pasaport" : "Belge"}
+                                  destination={selectedCustomerDetails.destination_country}
+                                  visaType={selectedCustomerDetails.visa_type}
+                                  requirementId={(doc as any).id || idx.toString()}
+                                />
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -1514,103 +1631,106 @@ export default function AdvisorPanel() {
       }
 
       {/* FINANCIALS TAB (Hak Ediş) */}
-      {activeTab === 'financials' && (
-        <div className="space-y-6 animate-in fade-in duration-500">
-          {/* Header */}
-          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center">
-            <div>
-              <h2 className="text-3xl font-black text-navy-dark tracking-tight">Finansal Kayıtlar</h2>
-              <p className="text-slate-500 font-medium mt-1">Hak ediş (komisyon) geçmişi tablosu</p>
-            </div>
-          </div>
-
-          {/* Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-blue-200 transition-all cursor-default group relative overflow-hidden min-h-[160px]">
-              <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                <TrendingUp size={100} className="text-blue-900" />
-              </div>
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl w-fit mb-4">
-                <TrendingUp size={24} />
-              </div>
-              <div className="relative z-10">
-                <p className="text-4xl font-black tracking-tighter text-navy-dark">€{stats.totalRevenue.toLocaleString()}</p>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">Toplam Hak Ediş</p>
+      {
+        activeTab === 'financials' && (
+          <div className="space-y-6 animate-in fade-in duration-500">
+            {/* Header */}
+            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center">
+              <div>
+                <h2 className="text-3xl font-black text-navy-dark tracking-tight">Finansal Kayıtlar</h2>
+                <p className="text-slate-500 font-medium mt-1">Hak ediş (komisyon) geçmişi tablosu</p>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-emerald-200 transition-all cursor-default group relative overflow-hidden min-h-[160px]">
-              <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                <TrendingUp size={100} className="text-emerald-900" />
+            {/* Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-blue-200 transition-all cursor-default group relative overflow-hidden min-h-[160px]">
+                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <TrendingUp size={100} className="text-blue-900" />
+                </div>
+                <div className="p-3 bg-blue-50 text-blue-600 rounded-xl w-fit mb-4">
+                  <TrendingUp size={24} />
+                </div>
+                <div className="relative z-10">
+                  <p className="text-4xl font-black tracking-tighter text-navy-dark">€{stats.totalRevenue.toLocaleString()}</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">Toplam Hak Ediş</p>
+                </div>
               </div>
-              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl w-fit mb-4">
-                <TrendingUp size={24} />
+
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-emerald-200 transition-all cursor-default group relative overflow-hidden min-h-[160px]">
+                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <TrendingUp size={100} className="text-emerald-900" />
+                </div>
+                <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl w-fit mb-4">
+                  <TrendingUp size={24} />
+                </div>
+                <div className="relative z-10">
+                  <p className="text-4xl font-black tracking-tighter text-navy-dark">€{stats.withdrawableBalance.toLocaleString()}</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">Çekilebilir Bakiye</p>
+                </div>
               </div>
-              <div className="relative z-10">
-                <p className="text-4xl font-black tracking-tighter text-navy-dark">€{stats.withdrawableBalance.toLocaleString()}</p>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">Çekilebilir Bakiye</p>
+
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-amber-200 transition-all cursor-default group relative overflow-hidden min-h-[160px]">
+                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <Clock size={100} className="text-amber-900" />
+                </div>
+                <div className="p-3 bg-amber-50 text-amber-600 rounded-xl w-fit mb-4">
+                  <Clock size={24} />
+                </div>
+                <div className="relative z-10">
+                  <p className="text-4xl font-black tracking-tighter text-navy-dark">€{stats.pendingRevenue.toLocaleString()}</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">Bekleyen Ödeme</p>
+                </div>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-amber-200 transition-all cursor-default group relative overflow-hidden min-h-[160px]">
-              <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                <Clock size={100} className="text-amber-900" />
-              </div>
-              <div className="p-3 bg-amber-50 text-amber-600 rounded-xl w-fit mb-4">
-                <Clock size={24} />
-              </div>
-              <div className="relative z-10">
-                <p className="text-4xl font-black tracking-tighter text-navy-dark">€{stats.pendingRevenue.toLocaleString()}</p>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">Bekleyen Ödeme</p>
-              </div>
-            </div>
-          </div>
-
-          {/* T-Table Layout for Advisor (Only Income/Hak Ediş) */}
-          <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 flex flex-col md:flex-row overflow-hidden min-h-[500px]">
-            <div className="flex-1 flex flex-col">
-              <div className="bg-slate-50/50 p-6 border-b border-slate-100 text-center sticky top-0 z-10 flex justify-between items-center">
-                <h3 className="font-black text-navy-dark text-lg uppercase tracking-[0.2em]">HAK EDİŞ GEÇMİŞİ</h3>
-                <Badge className="bg-blue-50 text-blue-600 border border-blue-100 px-4 py-1.5 rounded-full font-bold">
-                  {financialTransactions.length} Kayıt
-                </Badge>
-              </div>
-              <div className="flex-1 overflow-auto custom-scrollbar">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-slate-100/50">
-                      <TableHead className="font-bold text-slate-400">Tarih</TableHead>
-                      <TableHead className="font-bold text-slate-400">Açıklama</TableHead>
-                      <TableHead className="text-right font-bold text-slate-400">Tutar</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {financialTransactions.map((t, idx) => (
-                      <TableRow key={idx} className="border-slate-50 group hover:bg-emerald-50/20">
-                        <TableCell className="text-xs font-medium text-slate-500">{new Date(t.date).toLocaleDateString('tr-TR')}</TableCell>
-                        <TableCell>
-                          <div className="font-black text-navy-dark text-sm">{t.category}</div>
-                          <div className="text-xs font-bold text-slate-400 group-hover:text-emerald-700 transition-colors">{t.customerName}</div>
-                        </TableCell>
-                        <TableCell className="text-right font-black text-emerald-600 text-base">+€{t.amount.toLocaleString()}</TableCell>
+            {/* T-Table Layout for Advisor (Only Income/Hak Ediş) */}
+            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 flex flex-col md:flex-row overflow-hidden min-h-[500px]">
+              <div className="flex-1 flex flex-col">
+                <div className="bg-slate-50/50 p-6 border-b border-slate-100 text-center sticky top-0 z-10 flex justify-between items-center">
+                  <h3 className="font-black text-navy-dark text-lg uppercase tracking-[0.2em]">HAK EDİŞ GEÇMİŞİ</h3>
+                  <Badge className="bg-blue-50 text-blue-600 border border-blue-100 px-4 py-1.5 rounded-full font-bold">
+                    {financialTransactions.length} Kayıt
+                  </Badge>
+                </div>
+                <div className="flex-1 overflow-auto custom-scrollbar">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-slate-100/50">
+                        <TableHead className="font-bold text-slate-400">Tarih</TableHead>
+                        <TableHead className="font-bold text-slate-400">Açıklama</TableHead>
+                        <TableHead className="text-right font-bold text-slate-400">Tutar</TableHead>
                       </TableRow>
-                    ))}
-                    {financialTransactions.length === 0 && (
-                      <TableRow><TableCell colSpan={3} className="text-center py-10 text-slate-400 font-medium h-32">Herhangi bir kayıt bulunamadı.</TableCell></TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {financialTransactions.map((t, idx) => (
+                        <TableRow key={idx} className="border-slate-50 group hover:bg-emerald-50/20">
+                          <TableCell className="text-xs font-medium text-slate-500">{new Date(t.date).toLocaleDateString('tr-TR')}</TableCell>
+                          <TableCell>
+                            <div className="font-black text-navy-dark text-sm">{t.category}</div>
+                            <div className="text-xs font-bold text-slate-400 group-hover:text-emerald-700 transition-colors">{t.customerName}</div>
+                          </TableCell>
+                          <TableCell className="text-right font-black text-emerald-600 text-base">+€{t.amount.toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                      {financialTransactions.length === 0 && (
+                        <TableRow><TableCell colSpan={3} className="text-center py-10 text-slate-400 font-medium h-32">Herhangi bir kayıt bulunamadı.</TableCell></TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {
-        directBookOpen && directBookCustomerId && user && (
+        directBookOpen && directBookCustomerId && advisorId && (
           <BookingCalendar
-            advisorId={user.id}
-            customerId={directBookCustomerId}
+            advisorId={advisorId}
+            userId={directBookCustomerId} // Auth ID
+            profileId={applications.find(a => a.user_id === directBookCustomerId)?.profile_id || ""} // Correct Profile ID
             isOpen={directBookOpen}
             onClose={() => {
               setDirectBookOpen(false);

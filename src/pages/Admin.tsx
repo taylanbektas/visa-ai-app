@@ -1216,6 +1216,9 @@ export default function Admin() {
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden animate-in fade-in">
           <div className="p-4 border-b bg-muted/30 flex justify-between items-center">
             <h3 className="font-semibold">Tüm Danışmanlar</h3>
+            <Button size="sm" className="bg-navy-dark hover:bg-navy-light text-white">
+              <Plus size={16} className="mr-1" /> Yeni Danışman
+            </Button>
           </div>
           <Table>
             <TableHeader>
@@ -1432,6 +1435,36 @@ export default function Admin() {
         <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
           <div className="p-4 border-b bg-muted/30 flex justify-between items-center">
             <h3 className="font-semibold">Tüm Kullanıcılar</h3>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={async () => {
+                // This is a helper to fix the user's initial complaint: 
+                // "advisor ve müşteri eşleştirmesini kaldırıp tekrar eşleştirdim ama advisor panele müşteri hala yansımıyor."
+                // This will ensure advisor_assignments table is in sync with profiles.assigned_advisor_id
+                const { data: users } = await supabase.from('profiles').select('id, assigned_advisor_id');
+                if (users) {
+                  for (const u of users) {
+                    if (u.assigned_advisor_id) {
+                      const { data: apps } = await supabase.from('applications').select('id').eq('user_id', u.id);
+                      if (apps) {
+                        for (const app of apps) {
+                          // Try to insert, ignore if already exists
+                          await supabase.from('advisor_assignments').upsert({
+                            application_id: app.id,
+                            advisor_id: u.assigned_advisor_id
+                          }, { onConflict: 'application_id, advisor_id' });
+                        }
+                      }
+                    }
+                  }
+                  toast({ title: "Başarılı", description: "Tüm eşleşmeler senkronize edildi." });
+                }
+              }}>
+                Eşleşmeleri Senkronize Et
+              </Button>
+              <Button size="sm" className="bg-navy-dark hover:bg-navy-light text-white">
+                <Plus size={16} className="mr-1" /> Yeni Kullanıcı
+              </Button>
+            </div>
           </div>
           <Table>
             <TableHeader>
@@ -1475,6 +1508,8 @@ export default function Admin() {
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2 items-center">
                       <Button size="sm" variant="default" className="h-8 shadow-sm bg-navy-dark hover:bg-navy-light text-white" onClick={(e) => { e.stopPropagation(); setSelectedUserDetails(usr); }}>İncele</Button>
+                      <Button size="sm" variant="outline" className="h-8 border-slate-200">Düzenle</Button>
+                      <Button size="sm" variant="ghost" className="h-8 text-red-500 hover:bg-red-50">Sil</Button>
 
                       {!usr.is_suspended && (
                         <Sheet open={assignmentOpen} onOpenChange={setAssignmentOpen}>

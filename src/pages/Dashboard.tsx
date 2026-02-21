@@ -546,6 +546,24 @@ export default function Dashboard() {
                           <h3 className="text-xl font-black text-navy-dark tracking-tight">
                             {destinations.find(d => d.key === app.destination.toLowerCase())?.flag || "🏳️"} {translations.tr[`country.${app.destination.toLowerCase()}`] || app.destination} — {translations.tr[`visa_type.${app.visa_type.toLowerCase()}`] || app.visa_type}
                           </h3>
+                          <div className="flex flex-wrap gap-4 mt-2">
+                            {app.travel_date && (
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg">
+                                <CalendarIcon size={12} className="text-blue-500" />
+                                {new Date(app.travel_date).toLocaleDateString('tr-TR')}
+                              </div>
+                            )}
+                            {app.advisorName && (
+                              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg">
+                                <User size={12} className="text-emerald-500" />
+                                {app.advisorName}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded-lg border border-transparent hover:border-slate-200 transition-all">
+                              <Paperclip size={12} className="text-violet-500" />
+                              {appDocuments[app.id]?.length || 0} Belge
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -750,7 +768,8 @@ export default function Dashboard() {
         isOpen={isBookingOpen}
         onClose={() => setIsBookingOpen(false)}
         advisorId={applications[0]?.advisorRecordId || assignedAdvisor?.id || ""}
-        customerId={user!.id}
+        userId={user!.id}
+        profileId={profile!.id}
       />
     </DashboardLayout>
   );
