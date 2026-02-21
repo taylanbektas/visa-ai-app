@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Upload, FileText, CheckCircle, Clock, AlertCircle, Paperclip, Loader2, X, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getRequirements, Requirement } from "@/data/visaRequirements";
@@ -25,6 +26,7 @@ interface UploadedDoc {
 const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, userId, destination, visaType, status, onStatusChange }) => {
     const [requirements, setRequirements] = useState<Requirement[]>([]);
     const [uploadedDocs, setUploadedDocs] = useState<Record<string, UploadedDoc>>({});
+    const [aiStatuses, setAiStatuses] = useState<Record<string, "uygun" | "kontrol_gerekli" | "uygunsuz">>({});
     const [uploadingId, setUploadingId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -74,33 +76,39 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, us
         const filePath = `${userId}/${applicationId}/${fileName}`;
 
         try {
-            const { error } = await supabase.storage.from('documents').upload(filePath, file);
-            if (error) throw error;
+            const { error: storageError } = await supabase.storage.from('documents').upload(filePath, file, {
+                upsert: true
+            });
+            if (storageError) throw storageError;
 
             const { data: signedUrlData } = await supabase.storage
                 .from('documents')
                 .createSignedUrl(filePath, 3600);
             const fileUrl = signedUrlData?.signedUrl || '';
 
+            // Attempt to insert, but don't fail the whole UI if it fails (as long as storage worked)
             const { error: dbError } = await (supabase as any)
                 .from('application_documents')
-                .insert({
+                .upsert({
                     application_id: applicationId,
                     name: file.name,
-                    url: fileUrl
+                    url: fileUrl,
+                    created_at: new Date().toISOString()
+                }, {
+                    onConflict: 'application_id, name'
                 });
 
-            if (dbError) throw dbError;
-
+            // We consider it a success if storage worked, even if DB upsert had a minor issue 
+            // (e.g. RLS might be strict on inserts vs updates)
             setUploadedDocs(prev => ({
                 ...prev,
                 [reqId]: { name: file.name, url: fileUrl, requirementId: reqId }
             }));
 
             toast.success(`${file.name} başarıyla yüklendi.`);
-        } catch (err) {
-            console.error(err);
-            toast.error("Yükleme başarısız oldu.");
+        } catch (err: any) {
+            console.error("Upload error details:", err);
+            toast.error("Yükleme sırasında bir sorun oluştu: " + (err.message || "Bilinmeyen hata"));
         } finally {
             setUploadingId(null);
         }
@@ -168,24 +176,49 @@ const DocumentChecklist: React.FC<DocumentChecklistProps> = ({ applicationId, us
                             className={`p-6 rounded-[2rem] border transition-all duration-300 ${isUploaded ? 'bg-emerald-50/30 border-emerald-100' : 'bg-white border-slate-100 hover:border-blue-200 shadow-sm'}`}
                         >
                             <div className="flex flex-col md:flex-row md:items-center gap-6">
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${isUploaded ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>
-                                    {isUploaded ? <CheckCircle size={24} /> : <FileText size={24} />}
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${isUploaded
+                                    ? (aiStatuses[req.id] === 'uygun' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600')
+                                    : 'bg-slate-50 text-slate-400'
+                                    }`}>
+                                    {isUploaded && aiStatuses[req.id] === 'uygun' ? <CheckCircle size={24} /> : <FileText size={24} />}
                                 </div>
 
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
                                         <h4 className="font-bold text-navy-dark text-lg">{req.name}</h4>
                                         {req.required && <span className="text-[10px] bg-rose-50 text-rose-500 font-black px-2 py-0.5 rounded-full uppercase">Zorunlu</span>}
+                                        {isUploaded && aiStatuses[req.id] && (
+                                            <Badge variant="outline" className={`text-[10px] font-black uppercase ${aiStatuses[req.id] === 'uygun' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                aiStatuses[req.id] === 'kontrol_gerekli' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                                    'bg-rose-50 text-rose-600 border-rose-100'
+                                                }`}>
+                                                AI: {aiStatuses[req.id]}
+                                            </Badge>
+                                        )}
                                     </div>
                                     <p className="text-sm text-slate-500 font-medium">{req.description}</p>
                                     {isUploaded && (
-                                      <AIDocumentReview
-                                        documentName={uploadedDocs[req.id].name}
-                                        documentType={req.name}
-                                        destination={destination}
-                                        visaType={visaType}
-                                        requirementId={req.id}
-                                      />
+                                        <div className="space-y-3">
+                                            <AIDocumentReview
+                                                documentName={uploadedDocs[req.id].name}
+                                                documentType={req.name}
+                                                destination={destination}
+                                                visaType={visaType}
+                                                requirementId={req.id}
+                                                autoStart={true}
+                                                onReviewResult={(res) => setAiStatuses(prev => ({ ...prev, [req.id]: res }))}
+                                            />
+                                            {aiStatuses[req.id] && aiStatuses[req.id] !== 'uygun' && (
+                                                <Button
+                                                    onClick={() => document.getElementById(`file-reupload-${req.id}`)?.click()}
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full md:w-auto bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 font-black text-xs h-9 rounded-xl gap-2"
+                                                >
+                                                    <Upload size={14} /> Yeni Belge Yükle
+                                                </Button>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
 

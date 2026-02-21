@@ -30,7 +30,7 @@ const defaultResponse = "Teşekkürler! Sorunuzu aldık. Daha detaylı bilgi iç
 export function AIChatBot() {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
-        { role: "bot", text: "Merhaba! 👋 Ben VisaPath AI asistanınızım. Size vize sürecinizde yardımcı olabilirim. Aşağıdaki konulardan birini seçin veya sorunuzu yazın!" }
+        { role: "bot", text: "Merhaba! 👋 Ben VisaPath AI Asistanınızım. Vize sürecinizde size rehberlik etmek için buradayım. Başlamak için bir konu seçebilir veya sorunuzu yazabilirsiniz." }
     ]);
     const [input, setInput] = useState("");
     const [isTyping, setIsTyping] = useState(false);
@@ -66,8 +66,8 @@ export function AIChatBot() {
         ? "calc(env(safe-area-inset-bottom, 0px) + 5.2rem)"
         : "calc(env(safe-area-inset-bottom, 0px) + 1rem)";
     const chatWindowClass = isMobile
-        ? "fixed inset-x-3 z-50 flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-2xl"
-        : "fixed bottom-24 right-5 z-50 w-[380px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-border bg-white shadow-2xl";
+        ? "fixed inset-x-3 z-50 flex flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-2xl"
+        : "fixed bottom-24 right-5 z-50 w-[400px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[2rem] border border-slate-100 bg-white shadow-2xl";
     const chatWindowStyle = isMobile
         ? {
             top: "calc(env(safe-area-inset-top, 0px) + 4.25rem)",
@@ -88,32 +88,32 @@ export function AIChatBot() {
                         style={chatWindowStyle}
                     >
                         {/* Header */}
-                        <div className="btn-gradient px-5 py-4 flex items-center justify-between">
+                        <div className="bg-gradient-to-r from-navy-dark to-navy-light px-6 py-5 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                                    <Bot size={22} className="text-white" />
+                                <div className="w-11 h-11 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10">
+                                    <Bot size={24} className="text-emerald-400" />
                                 </div>
                                 <div>
-                                    <p className="text-white font-bold text-base">VisaPath AI</p>
+                                    <p className="text-white font-black text-lg tracking-tight">VisaPath AI Asistanı</p>
                                     <div className="flex items-center gap-1.5">
-                                        <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                                        <span className="text-white/80 text-xs font-medium">Çevrimiçi</span>
+                                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-sm shadow-emerald-400/50" />
+                                        <span className="text-white/60 text-[10px] font-black uppercase tracking-widest">Çevrimiçi</span>
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white transition-colors p-1">
+                            <button onClick={() => setIsOpen(false)} className="bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all p-2">
                                 <X size={20} />
                             </button>
                         </div>
 
                         {/* Messages */}
-                        <div className={`${isMobile ? "flex-1 min-h-0" : "h-80"} overflow-y-auto p-4 space-y-3 bg-secondary/30`}>
+                        <div className={`${isMobile ? "flex-1 min-h-0" : "h-[450px]"} overflow-y-auto p-6 space-y-4 bg-slate-50/50`}>
                             {messages.map((msg, i) => (
                                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                                     <div
-                                        className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${msg.role === "user"
-                                                ? "btn-gradient text-white rounded-br-md"
-                                                : "bg-white border border-border text-foreground rounded-bl-md shadow-sm"
+                                        className={`max-w-[85%] px-5 py-3.5 rounded-2xl text-[13px] font-medium leading-relaxed shadow-sm ${msg.role === "user"
+                                            ? "bg-navy-dark text-white rounded-br-none"
+                                            : "bg-white border border-slate-100 text-slate-700 rounded-bl-none"
                                             }`}
                                     >
                                         {msg.text}
@@ -122,11 +122,11 @@ export function AIChatBot() {
                             ))}
                             {isTyping && (
                                 <div className="flex justify-start">
-                                    <div className="bg-white border border-border rounded-2xl rounded-bl-md px-4 py-3 shadow-sm">
+                                    <div className="bg-white border border-slate-100 rounded-2xl rounded-bl-none px-5 py-3.5 shadow-sm">
                                         <div className="flex gap-1.5">
-                                            <span className="w-2 h-2 bg-[#00D69E] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                                            <span className="w-2 h-2 bg-[#00D69E] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                                            <span className="w-2 h-2 bg-[#00D69E] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                                            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                                            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                                            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                                         </div>
                                     </div>
                                 </div>
@@ -136,13 +136,13 @@ export function AIChatBot() {
 
                         {/* Quick Replies */}
                         {messages.length <= 2 && (
-                            <div className="border-t border-border bg-white px-4 py-3">
+                            <div className="border-t border-slate-100 bg-white px-6 py-4">
                                 <div className="flex flex-wrap gap-2">
                                     {quickReplies.map((q) => (
                                         <button
                                             key={q}
                                             onClick={() => sendMessage(q)}
-                                            className="text-xs font-semibold px-3 py-2 rounded-full border border-[#00D69E]/30 text-[#00B386] hover:bg-[#00D69E]/5 transition-colors"
+                                            className="text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl border border-slate-100 text-navy-dark hover:border-emerald-200 hover:bg-emerald-50 transition-all duration-300 shadow-sm"
                                         >
                                             {q}
                                         </button>
@@ -152,7 +152,7 @@ export function AIChatBot() {
                         )}
 
                         {/* Input */}
-                        <div className="border-t border-border bg-white p-3">
+                        <div className="border-t border-slate-100 bg-white p-4">
                             <form
                                 onSubmit={(e) => {
                                     e.preventDefault();
@@ -163,11 +163,11 @@ export function AIChatBot() {
                                 <Input
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
-                                    placeholder="Sorunuzu yazın..."
-                                    className="h-11 text-sm bg-secondary/50 border-0"
+                                    placeholder="Sorunuzu buraya yazın..."
+                                    className="h-12 text-sm bg-slate-50 border-none focus:ring-1 focus:ring-emerald-500/20 rounded-xl px-4"
                                 />
-                                <Button type="submit" className="btn-gradient text-white h-11 w-11 p-0 rounded-xl shrink-0" disabled={!input.trim()}>
-                                    <Send size={16} />
+                                <Button type="submit" className="bg-emerald-500 hover:bg-emerald-600 text-white h-12 w-12 p-0 rounded-xl shrink-0 shadow-lg shadow-emerald-500/20 transition-all active:scale-95" disabled={!input.trim()}>
+                                    <Send size={18} />
                                 </Button>
                             </form>
                         </div>

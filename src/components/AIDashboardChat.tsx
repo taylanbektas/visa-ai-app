@@ -105,35 +105,35 @@ export default function AIDashboardChat({ context }: AIDashboardChatProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-emerald-50 to-teal-50 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center">
-          <Sparkles size={20} />
+      <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-emerald-500/5 to-teal-500/5 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <Sparkles size={24} />
         </div>
         <div>
-          <h3 className="font-black text-navy-dark text-lg">AI Vize Asistanı</h3>
-          <p className="text-xs text-slate-500 font-medium">Vize süreçleriniz hakkında sorular sorun</p>
+          <h3 className="font-black text-navy-dark text-xl tracking-tight">VisaPath AI Asistanı</h3>
+          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">7/24 Akıllı Destek</p>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0 bg-slate-50/30">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center p-6">
-            <div className="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mb-4">
-              <Bot size={32} className="text-emerald-500" />
+          <div className="flex flex-col items-center justify-center h-full text-center p-8">
+            <div className="w-20 h-20 rounded-3xl bg-white border border-slate-100 shadow-sm flex items-center justify-center mb-6">
+              <Bot size={40} className="text-emerald-500" />
             </div>
-            <h4 className="font-black text-navy-dark text-lg mb-2">Merhaba! 👋</h4>
-            <p className="text-sm text-slate-500 font-medium max-w-sm">
-              Vize süreçleri, belge gereksinimleri ve başvuru durumunuz hakkında sorularınızı yanıtlayabilirim.
+            <h4 className="font-black text-navy-dark text-2xl mb-3 tracking-tight">Merhaba! 👋</h4>
+            <p className="text-base text-slate-500 font-medium max-w-sm leading-relaxed">
+              Vize süreçleri, belge gereksinimleri ve başvuru durumunuz hakkında sorularınızı anında yanıtlayabilirim.
             </p>
-            <div className="flex flex-wrap gap-2 mt-4 justify-center">
+            <div className="flex flex-wrap gap-2 mt-8 justify-center">
               {["Hangi belgeler gerekli?", "Başvurum ne durumda?", "Vize süreci nasıl işliyor?"].map((q) => (
                 <button
                   key={q}
                   onClick={() => { setInput(q); }}
-                  className="text-xs bg-slate-50 text-slate-600 px-3 py-1.5 rounded-lg border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50 transition-all font-bold"
+                  className="text-xs bg-white text-navy-dark px-4 py-2.5 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50 transition-all font-black uppercase tracking-wider shadow-sm"
                 >
                   {q}
                 </button>
@@ -144,17 +144,16 @@ export default function AIDashboardChat({ context }: AIDashboardChatProps) {
 
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-              msg.role === "user"
-                ? "bg-emerald-500 text-white rounded-tr-sm"
-                : "bg-slate-50 text-navy-dark border border-slate-100 rounded-tl-sm"
-            }`}>
+            <div className={`max-w-[85%] rounded-[1.5rem] px-5 py-4 shadow-sm ${msg.role === "user"
+                ? "bg-navy-dark text-white rounded-tr-none"
+                : "bg-white text-navy-dark border border-slate-100 rounded-tl-none"
+              }`}>
               {msg.role === "assistant" ? (
-                <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-headings:my-2 text-sm">
+                <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-headings:my-2 text-[14px] font-medium leading-relaxed">
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               ) : (
-                <p className="text-sm font-medium">{msg.content}</p>
+                <p className="text-[14px] font-bold">{msg.content}</p>
               )}
             </div>
           </div>

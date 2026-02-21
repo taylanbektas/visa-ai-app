@@ -21,6 +21,7 @@ import { translations } from "@/i18n/translations";
 import AIDashboardChat from "@/components/AIDashboardChat";
 import AIApplicationSummary from "@/components/AIApplicationSummary";
 import MyConsultations from "@/components/MyConsultations";
+import { getRequirements } from "@/data/visaRequirements";
 
 const statusIcons: Record<string, LucideIcon> = {
   "İnceleniyor": Clock,
@@ -266,35 +267,62 @@ export default function Dashboard() {
             </div>
           </header>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column: Stats & Recent Apps */}
-            <div className="lg:col-span-2 space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <FileText size={28} />
+          {/* Dashboard Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column: Stats & Recent Apps & AI Summary */}
+            <div className="lg:col-span-2 space-y-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6 hover:shadow-md transition-all">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner">
+                    <FileText size={32} />
                   </div>
                   <div>
-                    <p className="text-3xl font-black text-navy-dark tracking-tight">{applications.length}</p>
-                    <p className="text-sm font-bold text-slate-400">Toplam Başvuru</p>
+                    <p className="text-4xl font-black text-navy-dark tracking-tighter">{applications.length}</p>
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">Toplam Başvuru</p>
                   </div>
                 </div>
-                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
-                    <AlertCircle size={28} />
+                <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6 hover:shadow-md transition-all">
+                  <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shadow-inner">
+                    <AlertCircle size={32} />
                   </div>
                   <div>
-                    <p className="text-3xl font-black text-navy-dark tracking-tight">{applications.filter(a => a.status === 'İşlem Gerekli').length}</p>
-                    <p className="text-sm font-bold text-slate-400">İşlem Bekleyen</p>
+                    <p className="text-4xl font-black text-navy-dark tracking-tighter">
+                      {applications.filter(a =>
+                        a.status === 'İşlem Gerekli' ||
+                        a.status === 'Belge Bekliyor' ||
+                        Object.keys(appDocuments[a.id] || {}).length === 0
+                      ).length}
+                    </p>
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">İşlem Bekleyen</p>
                   </div>
                 </div>
               </div>
 
+              {/* AI Summary Card - Better Integrated */}
               {applications.length > 0 && (
-                <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-black text-navy-dark">Son Başvurular</h3>
-                    <Button variant="ghost" className="text-emerald-600 font-bold hover:bg-emerald-50 rounded-xl" onClick={() => setActiveTab('applications')}>
+                <AIApplicationSummary
+                  applications={applications.map(a => {
+                    const countryKey = a.destination.toLowerCase();
+                    const reqs = getRequirements(a.destination, a.visa_type);
+                    const uploaded = appDocuments[a.id]?.length || 0;
+                    return {
+                      destination: a.destination,
+                      visaType: a.visa_type,
+                      status: a.status,
+                      plan: a.plan,
+                      travelDate: a.travel_date,
+                      uploadedDocs: uploaded,
+                      totalDocs: reqs.length,
+                    };
+                  })}
+                />
+              )}
+
+              {applications.length > 0 && (
+                <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm">
+                  <div className="flex justify-between items-center mb-8">
+                    <h3 className="text-2xl font-black text-navy-dark tracking-tight">Son Başvurular</h3>
+                    <Button variant="ghost" className="text-emerald-600 font-black hover:bg-emerald-50 rounded-xl px-4 py-2" onClick={() => setActiveTab('applications')}>
                       Tümünü Gör <ArrowRight className="ml-2 w-4 h-4" />
                     </Button>
                   </div>
@@ -307,17 +335,22 @@ export default function Dashboard() {
                       const turkishVisaType = translations.tr[`visa_type.${app.visa_type.toLowerCase()}`] || app.visa_type;
 
                       return (
-                        <div key={app.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-emerald-200 hover:shadow-sm transition-all cursor-pointer group" onClick={() => { setActiveTab('applications'); setSelectedApp(app); }}>
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                              <span className="text-2xl">{countryFlag}</span>
+                        <div key={app.id} className="flex items-center justify-between p-6 rounded-2xl border border-slate-50 hover:border-emerald-100 hover:bg-emerald-50/20 hover:shadow-sm transition-all cursor-pointer group" onClick={() => { setActiveTab('applications'); setSelectedApp(app); }}>
+                          <div className="flex items-center gap-5">
+                            <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-slate-100">
+                              <span className="text-3xl">{countryFlag}</span>
                             </div>
                             <div>
-                              <p className="font-bold text-navy-dark text-lg group-hover:text-emerald-600 transition-colors">{turkishCountryName} - {turkishVisaType}</p>
-                              <p className="text-xs text-slate-400 font-medium">{new Date(app.created_at).toLocaleDateString("tr-TR")}</p>
+                              <p className="font-black text-navy-dark text-xl group-hover:text-emerald-600 transition-colors tracking-tight">{turkishCountryName}</p>
+                              <p className="text-sm text-slate-400 font-bold uppercase tracking-wider">{turkishVisaType}</p>
                             </div>
                           </div>
-                          <Badge className={`${statusColors[app.status] || "bg-slate-50 text-slate-600"} border border-slate-100 font-bold py-1.5 px-3 flex items-center gap-1.5`}><StatusIcon size={14} />{app.status}</Badge>
+                          <div className="flex items-center gap-4">
+                            <Badge className={`${statusColors[app.status] || "bg-slate-50 text-slate-600"} border-none font-black py-2 px-4 rounded-xl flex items-center gap-2 text-xs shadow-sm`}><StatusIcon size={14} />{app.status}</Badge>
+                            <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                              <ArrowRight size={18} />
+                            </div>
+                          </div>
                         </div>
                       )
                     })}
@@ -329,22 +362,7 @@ export default function Dashboard() {
             {/* Upcoming Consultations */}
             <MyConsultations userId={user.id} />
 
-            {/* AI Summary Card */}
-            {applications.length > 0 && (
-              <div className="lg:col-span-2">
-                <AIApplicationSummary
-                  applications={applications.map(a => ({
-                    destination: a.destination,
-                    visaType: a.visa_type,
-                    status: a.status,
-                    plan: a.plan,
-                    travelDate: a.travel_date,
-                    uploadedDocs: 0,
-                    totalDocs: 0,
-                  }))}
-                />
-              </div>
-            )}
+
 
             {/* Right Column: Active Package & Danışman */}
             <div className="space-y-6">
