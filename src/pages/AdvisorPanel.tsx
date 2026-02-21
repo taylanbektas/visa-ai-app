@@ -167,33 +167,6 @@ export default function AdvisorPanel() {
   useEffect(() => {
     if (!applications.length) return;
 
-    const transactions: any[] = [];
-    const PACKAGE_PRICES: Record<string, number> = { starter: 49, pro: 149, elite: 349 };
-
-    applications.forEach(app => {
-      if (app.plan && app.created_at) {
-        const price = PACKAGE_PRICES[app.plan.toLowerCase()] || 0;
-        const commission = price * 0.30; // 30% hak ediş
-
-        transactions.push({
-          id: app.id,
-          date: app.created_at,
-          customerName: app.applicant_name,
-          category: `Hak Ediş - ${app.plan.toUpperCase()} Paketi`,
-          amount: commission,
-        });
-      }
-    });
-
-    // Sort by date descending
-    transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    setFinancialTransactions(transactions);
-
-  }, [applications]);
-
-  useEffect(() => {
-    if (!applications.length) return;
-
     const PACKAGE_PRICES: Record<string, number> = { starter: 49, pro: 149, elite: 349 };
     const months = timeFilter === "year" ? 12 : timeFilter === "3months" ? 3 : timeFilter === "all" ? 24 : 6;
     const now = new Date();
@@ -401,6 +374,7 @@ export default function AdvisorPanel() {
       }
 
       setApplications(mappedApps);
+      if (mappedApps.length === 0) setFinancialTransactions([]);
 
       if (mappedApps.length > 0) {
         // Optimized: Fetch count of unique senders who sent unread messages to this advisor
@@ -420,15 +394,21 @@ export default function AdvisorPanel() {
           'pro': 149,
           'elite': 349
         };
+        const packageByUser = new Map<string, string>();
+        profileCustomers?.forEach((p: any) => {
+          if (p.user_id && (p.active_package || p.plan)) packageByUser.set(p.user_id, (p.active_package || p.plan || '').toString().toLowerCase());
+        });
 
         const withdrawableStatuses = ['Onaylandı', 'Tamamlandı'];
 
         let expectedRevenue = 0;
         let withdrawableBalance = 0;
         let pendingRevenue = 0;
+        const transactions: any[] = [];
 
         appsData.forEach((app: any) => {
-          const price = planPrices[app.plan?.toLowerCase()] || 0;
+          const planKey = ((app.plan || packageByUser.get(app.user_id) || '') + '').toLowerCase().trim();
+          const price = planPrices[planKey] || 0;
           const commission = price * 0.30; // Advisor commission
           expectedRevenue += commission;
 
@@ -437,7 +417,20 @@ export default function AdvisorPanel() {
           } else {
             pendingRevenue += commission;
           }
+
+          if (planKey && app.created_at && commission > 0) {
+            transactions.push({
+              id: app.id,
+              date: app.created_at,
+              customerName: app.applicant_name,
+              category: `Hak Ediş - ${(planKey === 'starter' ? 'Starter' : planKey === 'pro' ? 'Pro' : planKey === 'elite' ? 'Elite' : planKey).toUpperCase()} Paketi`,
+              amount: commission,
+            });
+          }
         });
+
+        transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setFinancialTransactions(transactions);
 
         setStats({
           assigned: profileCustomers?.length || appsData.length,
@@ -1166,7 +1159,7 @@ export default function AdvisorPanel() {
             </div>
 
             {/* Active Chat Area */}
-            <div className="flex-1 bg-[#E5DDD5] h-full relative flex flex-col">
+            <div className="flex-1 bg-slate-50 h-full relative flex flex-col border-l border-slate-100">
               {selectedChatUser ? (
                 <MessageCenter
                   currentUserId={user!.id}
@@ -1174,11 +1167,12 @@ export default function AdvisorPanel() {
                   targetUserName={selectedChatUser.name}
                 />
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-slate-50/50">
-                  <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm border border-slate-100">
+                <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-50 to-slate-100/80">
+                  <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-slate-100">
                     <MessageSquare size={40} className="text-slate-300" />
                   </div>
                   <p className="text-xl font-bold text-slate-500">Mesajlaşmak için bir konuşma seçin</p>
+                  <p className="text-sm text-slate-400 mt-1">Sol listeden müşteri seçin</p>
                 </div>
               )}
             </div>
@@ -1357,8 +1351,8 @@ export default function AdvisorPanel() {
                   <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mt-1">Bekleyen</p>
                 </div>
                 <div className="bg-emerald-50 px-6 py-3 rounded-2xl border border-emerald-100 text-center">
-                  <p className="text-2xl font-black text-emerald-600 leading-none">{consultations.filter(c => c.status === 'confirmed').length}</p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mt-1">Onaylı</p>
+                  <p className="text-2xl font-black text-emerald-600 leading-none">{consultations.filter(c => c.status === 'confirmed' && new Date(c.end_time) >= new Date()).length}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mt-1">Yaklaşan</p>
                 </div>
               </div>
             </div>
@@ -1410,14 +1404,14 @@ export default function AdvisorPanel() {
                   </div>
                 </div>
 
-                {/* Approved Meetings (upcoming only) */}
+                {/* Yaklaşan (upcoming) */}
                 <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col min-h-[400px]">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-2xl font-black text-navy-dark tracking-tight flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500">
                         <CheckCircle2 size={20} />
                       </div>
-                      Onaylanmış Görüşmeler
+                      Yaklaşan
                     </h3>
                   </div>
                   <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
@@ -1441,58 +1435,56 @@ export default function AdvisorPanel() {
                             </div>
                           </div>
                         </div>
-                        <Button onClick={() => handleUpdateConsultationStatus(c.id, 'cancelled')} variant="outline" className="text-rose-600 border-rose-100 hover:bg-rose-50 rounded-xl font-bold h-12 px-6 shrink-0">Görüşme İptal Et</Button>
+                        <Button onClick={() => handleUpdateConsultationStatus(c.id, 'cancelled')} variant="outline" className="text-rose-600 border-rose-100 hover:bg-rose-50 rounded-xl font-bold h-12 px-6 shrink-0">İptal Et</Button>
                       </div>
                     ))}
                     {consultations.filter(c => c.status === 'confirmed' && new Date(c.end_time) >= new Date()).length === 0 && (
                       <div className="flex flex-col items-center justify-center flex-1 py-10 opacity-30">
                         <CheckCircle2 size={48} className="mb-4" />
-                        <p className="font-bold">Yaklaşan onaylı görüşme bulunmuyor.</p>
+                        <p className="font-bold">Yaklaşan görüşme bulunmuyor.</p>
                       </div>
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Geçmiş Görüşmeler */}
-              {consultations.filter(c => c.status === 'confirmed' && new Date(c.end_time) < new Date()).length > 0 && (
-                <div className="mt-8">
-                  <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                {/* Geçmiş Görüşmeler - aynı grid içinde tam genişlik */}
+                {consultations.filter(c => c.status === 'confirmed' && new Date(c.end_time) < new Date()).length > 0 && (
+                  <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
                     <h3 className="text-2xl font-black text-navy-dark tracking-tight flex items-center gap-3 mb-6">
                       <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
                         <Calendar size={20} />
                       </div>
                       Geçmiş Görüşmeler
                     </h3>
-                    <div className="space-y-4">
+                    <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
                       {consultations
                         .filter(c => c.status === 'confirmed' && new Date(c.end_time) < new Date())
                         .sort((a, b) => new Date(b.end_time).getTime() - new Date(a.end_time).getTime())
                         .map(c => (
-                          <div key={c.id} className="p-6 bg-slate-50 rounded-[2rem] flex flex-col sm:flex-row items-start sm:items-center justify-between border border-slate-100 gap-4 opacity-90">
+                          <div key={c.id} className="p-5 bg-slate-50 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between border border-slate-100 gap-3">
                             <div className="flex items-center gap-4">
-                              <div className="w-14 h-14 rounded-2xl bg-slate-200 text-slate-500 flex items-center justify-center font-black text-lg">
-                                <Check size={28} />
+                              <div className="w-12 h-12 rounded-xl bg-slate-200 text-slate-500 flex items-center justify-center font-black text-sm shrink-0">
+                                <Check size={22} />
                               </div>
-                              <div>
-                                <p className="font-black text-navy-dark text-lg leading-tight">{c.customer_name}</p>
-                                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-                                  <span className="text-slate-500 font-bold text-sm flex items-center gap-1">
-                                    <Calendar size={14} /> {format(new Date(c.start_time), 'd MMMM yyyy, EEEE', { locale: tr })}
+                              <div className="min-w-0">
+                                <p className="font-black text-navy-dark leading-tight">{c.customer_name}</p>
+                                <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-sm">
+                                  <span className="text-slate-500 font-bold flex items-center gap-1">
+                                    <Calendar size={12} /> {format(new Date(c.start_time), 'd MMM yyyy', { locale: tr })}
                                   </span>
-                                  <span className="text-slate-500 font-bold text-sm">
+                                  <span className="text-slate-500 font-bold">
                                     {format(new Date(c.start_time), 'HH:mm')} - {format(new Date(c.end_time), 'HH:mm')}
                                   </span>
                                 </div>
                               </div>
                             </div>
-                            <Badge variant="outline" className="bg-slate-100 text-slate-500 border-slate-200 font-bold shrink-0">Geçmiş</Badge>
+                            <Badge variant="outline" className="bg-slate-100 text-slate-500 border-slate-200 font-bold shrink-0 text-xs">Geçmiş</Badge>
                           </div>
                         ))}
                     </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Date-Specific Availability */}
               <div className="xl:col-span-12">

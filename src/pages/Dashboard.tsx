@@ -156,12 +156,21 @@ export default function Dashboard() {
 
   const fetchApplications = async () => {
     if (!user) return;
+    setDataLoading(true);
 
-    const { data: apps } = await (supabase as any)
+    const { data: apps, error: appsError } = await (supabase as any)
       .from("applications")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
+
+    if (appsError) {
+      console.error("Başvurular yüklenirken hata:", appsError);
+      toast.error("Başvurular yüklenemedi: " + (appsError.message || "Bilinmeyen hata"));
+      setApplications([]);
+      setDataLoading(false);
+      return;
+    }
 
     if (!apps || apps.length === 0) {
       setApplications([]);
@@ -169,91 +178,97 @@ export default function Dashboard() {
       return;
     }
 
-    // Get assignments for these applications
-    const appIds = apps.map((a) => a.id);
-    const { data: assignments } = await supabase
-      .from("advisor_assignments")
-      .select("application_id, advisor_id")
-      .in("application_id", appIds);
+    try {
+      // Get assignments for these applications
+      const appIds = apps.map((a) => a.id);
+      const { data: assignments } = await supabase
+        .from("advisor_assignments")
+        .select("application_id, advisor_id")
+        .in("application_id", appIds);
 
-    // Get advisor profiles
-    const advisorMap = new Map<string, string>(); // advisor.id -> advisor name
-    const advisorUserMap = new Map<string, string>(); // advisor.id -> advisor.user_id (for messaging)
-    const advisorPhotoMap = new Map<string, string>(); // advisor.id -> photo_url
+      // Get advisor profiles
+      const advisorMap = new Map<string, string>(); // advisor.id -> advisor name
+      const advisorUserMap = new Map<string, string>(); // advisor.id -> advisor.user_id (for messaging)
+      const advisorPhotoMap = new Map<string, string>(); // advisor.id -> photo_url
 
-    if (assignments && assignments.length > 0) {
-      const advisorIds = [...new Set(assignments.map((a) => a.advisor_id))];
-      const { data: advisors } = await (supabase as any)
-        .from("advisors")
-        .select("id, user_id, photo_url")
-        .in("id", advisorIds);
+      if (assignments && assignments.length > 0) {
+        const advisorIds = [...new Set(assignments.map((a) => a.advisor_id))];
+        const { data: advisors } = await (supabase as any)
+          .from("advisors")
+          .select("id, user_id, photo_url")
+          .in("id", advisorIds);
 
-      if (advisors) {
-        const userIds = advisors.map((a) => a.user_id);
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, full_name")
-          .in("user_id", userIds);
+        if (advisors) {
+          const userIds = advisors.map((a) => a.user_id);
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("user_id, full_name")
+            .in("user_id", userIds);
 
-        const profileMap = new Map(profiles?.map((p) => [p.user_id, p.full_name]) ?? []);
-        advisors.forEach((adv) => {
-          advisorMap.set(adv.id, profileMap.get(adv.user_id) || "Danışman");
-          advisorUserMap.set(adv.id, adv.user_id);
-          if (adv.photo_url) advisorPhotoMap.set(adv.id, adv.photo_url);
-        });
-      }
-    }
-
-    const assignmentMap = new Map(assignments?.map((a) => [a.application_id, a.advisor_id]) ?? []);
-
-    setApplications(
-      apps.map((app) => {
-        const advisorId = assignmentMap.get(app.id);
-        return {
-          id: app.id,
-          reference_id: app.reference_id,
-          destination: app.destination,
-          visa_type: app.visa_type,
-          plan: app.plan,
-          status: app.status || "Alındı",
-          travel_date: app.travel_date,
-          created_at: app.created_at,
-          advisorName: advisorId ? advisorMap.get(advisorId) || null : null,
-          advisorId: advisorId ? advisorUserMap.get(advisorId) || null : null,
-          advisorRecordId: advisorId || null,
-          advisorPhoto: advisorId ? advisorPhotoMap.get(advisorId) || null : null,
-          payment_status: app.payment_status || "pending",
+          const profileMap = new Map(profiles?.map((p) => [p.user_id, p.full_name]) ?? []);
+          advisors.forEach((adv) => {
+            advisorMap.set(adv.id, profileMap.get(adv.user_id) || "Danışman");
+            advisorUserMap.set(adv.id, adv.user_id);
+            if (adv.photo_url) advisorPhotoMap.set(adv.id, adv.photo_url);
+          });
         }
-      }).map(app => {
-        // Normalize status labels and map technical statuses to Turkish
-        let normalizedStatus = app.status;
-        if (normalizedStatus === "Alındı" || !normalizedStatus) normalizedStatus = "Başvuru Alındı";
-        if (normalizedStatus.toLowerCase() === "rejected") normalizedStatus = "Reddedildi";
-        if (normalizedStatus === "submitted") normalizedStatus = "Gönderildi";
-        if (normalizedStatus === "pending_review") normalizedStatus = "İnceleniyor";
-        if (normalizedStatus === "pending_documents") normalizedStatus = "Belge Bekliyor";
-        if (normalizedStatus === "İşlem Gerekli") normalizedStatus = "İşlem Gerekli"; // Keep as is
+      }
 
-        return { ...app, status: normalizedStatus };
-      })
-    );
+      const assignmentMap = new Map(assignments?.map((a) => [a.application_id, a.advisor_id]) ?? []);
 
-    // Fetch documents for these applications
-    const { data: docsData } = await supabase
-      .from('application_documents' as any)
-      .select('application_id, name, url')
-      .in('application_id', appIds);
+      setApplications(
+        apps.map((app) => {
+          const advisorId = assignmentMap.get(app.id);
+          return {
+            id: app.id,
+            reference_id: app.reference_id,
+            destination: app.destination,
+            visa_type: app.visa_type,
+            plan: app.plan,
+            status: app.status || "Alındı",
+            travel_date: app.travel_date,
+            created_at: app.created_at,
+            advisorName: advisorId ? advisorMap.get(advisorId) || null : null,
+            advisorId: advisorId ? advisorUserMap.get(advisorId) || null : null,
+            advisorRecordId: advisorId || null,
+            advisorPhoto: advisorId ? advisorPhotoMap.get(advisorId) || null : null,
+            payment_status: app.payment_status || "pending",
+          }
+        }).map(app => {
+          // Normalize status labels and map technical statuses to Turkish
+          let normalizedStatus = app.status;
+          if (normalizedStatus === "Alındı" || !normalizedStatus) normalizedStatus = "Başvuru Alındı";
+          if (normalizedStatus.toLowerCase() === "rejected") normalizedStatus = "Reddedildi";
+          if (normalizedStatus === "submitted") normalizedStatus = "Gönderildi";
+          if (normalizedStatus === "pending_review") normalizedStatus = "İnceleniyor";
+          if (normalizedStatus === "pending_documents") normalizedStatus = "Belge Bekliyor";
+          if (normalizedStatus === "İşlem Gerekli") normalizedStatus = "İşlem Gerekli"; // Keep as is
 
-    if (docsData) {
-      const docMap: Record<string, { name: string; url: string }[]> = {};
-      docsData.forEach((d: any) => {
-        if (!docMap[d.application_id]) docMap[d.application_id] = [];
-        docMap[d.application_id].push({ name: d.name, url: d.url });
-      });
-      setAppDocuments(docMap);
+          return { ...app, status: normalizedStatus };
+        })
+      );
+
+      // Fetch documents for these applications
+      const { data: docsData } = await supabase
+        .from('application_documents' as any)
+        .select('application_id, name, url')
+        .in('application_id', appIds);
+
+      if (docsData) {
+        const docMap: Record<string, { name: string; url: string }[]> = {};
+        docsData.forEach((d: any) => {
+          if (!docMap[d.application_id]) docMap[d.application_id] = [];
+          docMap[d.application_id].push({ name: d.name, url: d.url });
+        });
+        setAppDocuments(docMap);
+      }
+    } catch (err: any) {
+      console.error("Başvurular işlenirken hata:", err);
+      toast.error("Başvurular yüklenirken hata oluştu: " + (err?.message || "Bilinmeyen hata"));
+      setApplications([]);
+    } finally {
+      setDataLoading(false);
     }
-
-    setDataLoading(false);
   };
 
   if (loading || !user) return null;
@@ -403,7 +418,8 @@ export default function Dashboard() {
                       <MessageSquare size={16} className="mr-2" /> Mesaj Gönder
                     </Button>
                     <Button
-                      onClick={() => setIsBookingOpen(true)}
+                      onClick={() => profile && setIsBookingOpen(true)}
+                      disabled={!profile}
                       className="w-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold h-12 rounded-xl transition-all shadow-none border border-emerald-100/50"
                     >
                       <CalendarIcon size={16} className="mr-2" /> Danışman Randevusu Al
@@ -414,8 +430,13 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* Upcoming Consultations */}
-              <MyConsultations userId={profile!.id} />
+              {/* Upcoming Consultations — only when profile is loaded (avoids crash when profile is still null after auth) */}
+              {profile ? <MyConsultations userId={profile.id} /> : (
+                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm text-center">
+                  <Loader2 className="animate-spin text-slate-400 mx-auto mb-2" size={24} />
+                  <p className="text-sm text-slate-500 font-medium">Randevular yükleniyor...</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -527,7 +548,6 @@ export default function Dashboard() {
           ) : applications.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-[2.5rem] border border-dashed border-slate-200">
               <p className="text-slate-400 font-bold text-lg">Henüz bir başvurunuz bulunmuyor.</p>
-              <Link to="/apply" className="mt-4 inline-block text-emerald-500 font-bold hover:underline">İlk başvurunuzu oluşturun →</Link>
             </div>
           ) : (
             <div className="space-y-6">
@@ -612,7 +632,7 @@ export default function Dashboard() {
       )}
 
       {activeTab === 'messages' && (
-        <div className="flex h-full w-full bg-[#E5DDD5] overflow-hidden animate-in fade-in duration-500 relative">
+        <div className="flex h-full w-full bg-slate-50 overflow-hidden animate-in fade-in duration-500 relative">
           {applications.length > 0 && applications[0].advisorId ? (
             <MessageCenter
               currentUserId={user!.id}
@@ -640,7 +660,7 @@ export default function Dashboard() {
       )}
 
       {activeTab === 'ai-assistant' && (
-        <div className="animate-in fade-in duration-500 h-[calc(100vh-12rem)]">
+        <div className="animate-in fade-in duration-500 h-[calc(100svh-2rem)] max-h-[calc(100vh-2rem)] min-h-0 flex flex-col">
           <AIDashboardChat
             context={applications[0] ? {
               destination: applications[0].destination,
@@ -771,7 +791,7 @@ export default function Dashboard() {
         onClose={() => setIsBookingOpen(false)}
         advisorId={applications[0]?.advisorRecordId || assignedAdvisor?.id || ""}
         userId={user!.id}
-        profileId={profile!.id}
+        profileId={profile?.id ?? ""}
       />
     </DashboardLayout>
   );

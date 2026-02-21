@@ -102,10 +102,14 @@ export function MessageCenter({
         };
     }, [currentUserId, targetUserId]);
 
+    // En alttaki mesaj görünsün; konuşma açıldığında direkt dibe git (kaydırma efekti yok)
     useEffect(() => {
-        // Use auto for initial load (when loading is false) and smooth for new messages if already loaded
-        const behavior = loading ? 'auto' : 'smooth';
-        messagesEndRef.current?.scrollIntoView({ behavior });
+        if (!messages.length) return;
+        const el = messagesEndRef.current;
+        if (!el) return;
+        requestAnimationFrame(() => {
+            el.scrollIntoView({ behavior: 'auto', block: 'end' });
+        });
     }, [messages, loading]);
 
     const handleSendMessage = async () => {
@@ -212,8 +216,8 @@ export function MessageCenter({
                                 const parsed = JSON.parse(actualContent.replace('FILE::', ''));
                                 inlineAttachments = parsed;
                                 actualContent = parsed[0]?.type?.startsWith('image/') ? 'Görsel' : parsed[0]?.name;
-                            } catch (e) {
-                                // Ignore
+                            } catch {
+                                // Ignore malformed FILE:: content
                             }
                         }
 

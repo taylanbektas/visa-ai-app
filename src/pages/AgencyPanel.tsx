@@ -849,7 +849,7 @@ export default function AgencyPanel() {
               {customers.length === 0 && <p className="text-center py-20 text-slate-400 font-bold">Müşteri bulunmuyor.</p>}
             </div>
           </div>
-          <div className="flex-1 bg-[#E5DDD5] flex flex-col">
+          <div className="flex-1 bg-slate-50 flex flex-col border-l border-slate-100">
             {selectedChatUser ? (
               <MessageCenter
                 currentUserId={user!.id}
@@ -857,9 +857,12 @@ export default function AgencyPanel() {
                 targetUserName={selectedChatUser.name}
               />
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-slate-400">
-                <MessageSquare size={48} className="mb-4 text-slate-300" />
-                <p className="font-bold text-slate-500">Mesajlaşmak için bir müşteri seçin</p>
+              <div className="h-full flex flex-col items-center justify-center text-slate-400 bg-gradient-to-br from-slate-50 to-slate-100/80">
+                <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center mb-6 shadow-sm border border-slate-100">
+                  <MessageSquare size={48} className="text-slate-300" />
+                </div>
+                <p className="text-xl font-bold text-slate-500">Mesajlaşmak için bir müşteri seçin</p>
+                <p className="text-sm text-slate-400 mt-1">Sol listeden müşteri seçin</p>
               </div>
             )}
           </div>

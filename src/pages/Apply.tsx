@@ -436,10 +436,14 @@ export default function Apply() {
     }
 
     if (currentAdvisorId) {
-      await supabase.from('advisor_assignments').insert({
+      const { error: assignError } = await supabase.from('advisor_assignments').insert({
         application_id: newApp.id,
         advisor_id: currentAdvisorId
       });
+      if (assignError) {
+        console.error("Danışman ataması yapılamadı:", assignError);
+        toast({ title: "Uyarı", description: "Başvuru oluşturuldu ancak danışman ataması kaydedilemedi. Destek ile iletişime geçin.", variant: "destructive" });
+      }
     }
 
     setReferenceId(refId);
