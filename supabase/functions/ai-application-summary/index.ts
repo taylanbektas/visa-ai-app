@@ -5,6 +5,32 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/** Üçüncü şahıs (müşteri/müşterinin) → ikinci şahıs (siz/sizin) dönüşümü. */
+function toSecondPerson(text: string): string {
+  if (!text || typeof text !== "string") return text;
+  let s = text;
+  // Sayılı başvuru: "Müşterinin 6 başvurusu var" → "Sizin 6 başvurunuz var"
+  s = s.replace(/\bMüşterinin\s+(\d+)\s+başvurusu\s+var\b/gi, "Sizin $1 başvurunuz var");
+  s = s.replace(/\bmüşterinin\s+(\d+)\s+başvurusu\b/g, "sizin $1 başvurunuz");
+  s = s.replace(/\bMüşterinin\s+(\d+)\s+başvurusu\b/g, "Sizin $1 başvurunuz");
+  // "müşterinin başvuruları" → "başvurularınız"
+  s = s.replace(/\bMüşterinin\s+başvuruları\b/g, "Başvurularınız");
+  s = s.replace(/\bmüşterinin\s+başvuruları\b/g, "başvurularınız");
+  // "müşterinin X başvurusu" (genel) → "sizin X başvurunuz" / "Sizin X başvurunuz"
+  s = s.replace(/\bMüşterinin\s+(.+?)\s+başvurusu\b/g, "Sizin $1 başvurunuz");
+  s = s.replace(/\bmüşterinin\s+(.+?)\s+başvurusu\b/g, "sizin $1 başvurunuz");
+  // müşteriye / Müşteriye → size / Size
+  s = s.replace(/\bMüşteriye\b/g, "Size");
+  s = s.replace(/\bmüşteriye\b/g, "size");
+  // Kalan "müşterinin" → "sizin"
+  s = s.replace(/\bMüşterinin\b/g, "Sizin");
+  s = s.replace(/\bmüşterinin\b/g, "sizin");
+  // "kullanıcının başvuruları" → "başvurularınız"
+  s = s.replace(/\bkullanıcının\s+başvuruları\b/gi, "başvurularınız");
+  s = s.replace(/\bKullanıcının\s+başvuruları\b/g, "Başvurularınız");
+  return s;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -28,28 +54,28 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "Sen bir vize danışmanlık asistanısın. Müşterinin başvurularını analiz edip kısa, aksiyon odaklı öneriler sun. Türkçe yanıt ver."
+            content: `Sen bir vize danışmanlık asistanısın. Özeti ekrandaki kişi için yazıyorsun—yani kendisi okuyacak. Asla "müşteri", "müşterinin", "müşteriye" yazma. Doğal Türkçe ile yaz (örn. "6 başvurunuz var", "Almanya başvurunuzda belge eksik"). Türkçe yanıt ver.`
           },
           {
             role: "user",
-            content: `Müşterinin aktif başvuruları:\n${appsInfo}\n\nBu başvuruları analiz et ve kısa bir özet ile sonraki adım önerileri sun.`
+            content: `Başvurular:\n${appsInfo}\n\nBu listeye göre kısa bir özet ve sonraki adım önerileri yaz. Müşteri veya müşterinin deme.`
           }
         ],
         tools: [{
           type: "function",
           function: {
             name: "application_summary",
-            description: "Başvuru özeti ve öneriler",
+            description: "Başvuru özeti ve sonraki adım önerileri; müşteri/müşterinin kullanma",
             parameters: {
               type: "object",
               properties: {
-                summary: { type: "string", description: "Genel durum özeti (2-3 cümle)" },
+                summary: { type: "string", description: "Kısa özet (2-3 cümle)" },
                 nextSteps: {
                   type: "array",
                   items: {
                     type: "object",
                     properties: {
-                      action: { type: "string", description: "Yapılması gereken aksiyon" },
+                      action: { type: "string", description: "Sonraki adım cümlesi" },
                       priority: { type: "string", enum: ["yüksek", "orta", "düşük"] },
                       icon: { type: "string", enum: ["alert", "document", "calendar", "check"] }
                     },
@@ -85,7 +111,22 @@ serve(async (req) => {
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
 
     if (toolCall?.function?.arguments) {
-      return new Response(toolCall.function.arguments, {
+      let payload: { summary?: string; nextSteps?: Array<{ action?: string; priority?: string; icon?: string }> };
+      try {
+        payload = JSON.parse(toolCall.function.arguments) as typeof payload;
+      } catch {
+        return new Response(toolCall.function.arguments, {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (payload.summary) payload.summary = toSecondPerson(payload.summary);
+      if (Array.isArray(payload.nextSteps)) {
+        payload.nextSteps = payload.nextSteps.map((step) => ({
+          ...step,
+          action: step.action ? toSecondPerson(step.action) : step.action,
+        }));
+      }
+      return new Response(JSON.stringify(payload), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

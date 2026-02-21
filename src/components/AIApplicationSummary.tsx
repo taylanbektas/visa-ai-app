@@ -19,9 +19,39 @@ interface NextStep {
   icon: "alert" | "document" | "calendar" | "check";
 }
 
-interface SummaryResult {
+export interface SummaryResult {
   summary: string;
   nextSteps: NextStep[];
+}
+
+/** Üçüncü şahıs (müşteri/müşterinin) → ikinci şahıs (siz/sizin); edge ile uyumlu yedek normalizasyon. */
+function toSecondPerson(text: string): string {
+  if (!text || typeof text !== "string") return text;
+  let s = text;
+  s = s.replace(/\bMüşterinin\s+(\d+)\s+başvurusu\s+var\b/gi, "Sizin $1 başvurunuz var");
+  s = s.replace(/\bmüşterinin\s+(\d+)\s+başvurusu\b/g, "sizin $1 başvurunuz");
+  s = s.replace(/\bMüşterinin\s+(\d+)\s+başvurusu\b/g, "Sizin $1 başvurunuz");
+  s = s.replace(/\bMüşterinin\s+başvuruları\b/g, "Başvurularınız");
+  s = s.replace(/\bmüşterinin\s+başvuruları\b/g, "başvurularınız");
+  s = s.replace(/\bMüşterinin\s+(.+?)\s+başvurusu\b/g, "Sizin $1 başvurunuz");
+  s = s.replace(/\bmüşterinin\s+(.+?)\s+başvurusu\b/g, "sizin $1 başvurunuz");
+  s = s.replace(/\bMüşteriye\b/g, "Size");
+  s = s.replace(/\bmüşteriye\b/g, "size");
+  s = s.replace(/\bMüşterinin\b/g, "Sizin");
+  s = s.replace(/\bmüşterinin\b/g, "sizin");
+  s = s.replace(/\bkullanıcının\s+başvuruları\b/gi, "başvurularınız");
+  s = s.replace(/\bKullanıcının\s+başvuruları\b/g, "Başvurularınız");
+  return s;
+}
+
+function normalizeSummaryResult(raw: SummaryResult): SummaryResult {
+  return {
+    summary: toSecondPerson(raw.summary),
+    nextSteps: (raw.nextSteps || []).map((step) => ({
+      ...step,
+      action: toSecondPerson(step.action),
+    })),
+  };
 }
 
 const iconMap = {
@@ -37,7 +67,13 @@ const priorityColors = {
   düşük: "bg-blue-50 text-blue-600 border-blue-100",
 };
 
-export default function AIApplicationSummary({ applications }: { applications: AppInfo[] }) {
+interface AIApplicationSummaryProps {
+  applications: AppInfo[];
+  /** Müşteriye hitap eden özet hazır olduğunda çağrılır; sohbet AI bağlamı için kullanılabilir */
+  onSummaryReady?: (result: SummaryResult) => void;
+}
+
+export default function AIApplicationSummary({ applications, onSummaryReady }: AIApplicationSummaryProps) {
   const [result, setResult] = useState<SummaryResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -49,7 +85,8 @@ export default function AIApplicationSummary({ applications }: { applications: A
         body: { applications },
       });
       if (error) throw error;
-      setResult(data as SummaryResult);
+      const summaryResult = normalizeSummaryResult(data as SummaryResult);
+      setResult(summaryResult);
     } catch (e) {
       console.error("AI summary error:", e);
     } finally {
@@ -60,6 +97,10 @@ export default function AIApplicationSummary({ applications }: { applications: A
   useEffect(() => {
     if (applications.length > 0) fetchSummary();
   }, []);
+
+  useEffect(() => {
+    if (result) onSummaryReady?.(result);
+  }, [result]);
 
   if (applications.length === 0) return null;
 

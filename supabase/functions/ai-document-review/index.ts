@@ -23,7 +23,7 @@ Yüklenen Belge:
 - Belge Adı: ${documentName}
 - Beklenen Belge Türü: ${documentType}
 
-Lütfen bu belgeyi değerlendir ve aşağıdaki formatta yanıt ver. Belgenin adına ve türüne bakarak genel bir uyumluluk değerlendirmesi yap.`;
+Lütfen bu belgeyi hassas ve spesifik biçimde değerlendir: yüklenen belge adı ile beklenen belge türünü tek tek karşılaştır, uyumlu/eksik/yanlış olan noktaları net yaz, somut iyileştirme önerileri ver.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -36,7 +36,7 @@ Lütfen bu belgeyi değerlendir ve aşağıdaki formatta yanıt ver. Belgenin ad
         messages: [
           {
             role: "system",
-            content: `Sen bir vize belgesi uyumluluk kontrol uzmanısın. Türkçe yanıt ver. Belgeleri değerlendirip kısa ve net bir rapor sun.`
+            content: `Sen bir vize belgesi uyumluluk kontrol uzmanısın. Türkçe yanıt ver. Değerlendirmede hassas ve spesifik ol: belge adı ile beklenen türü açıkça karşılaştır, uyum/eksiklik/uygunsuzluk nedenlerini somut belirt, önerileri net yaz.`
           },
           { role: "user", content: prompt }
         ],
@@ -44,7 +44,7 @@ Lütfen bu belgeyi değerlendir ve aşağıdaki formatta yanıt ver. Belgenin ad
           type: "function",
           function: {
             name: "document_review",
-            description: "Belge uyumluluk analiz sonucu",
+            description: "Belge uyumluluk analiz sonucu; belge adı/türü karşılaştırması ve spesifik öneriler",
             parameters: {
               type: "object",
               properties: {
@@ -55,12 +55,12 @@ Lütfen bu belgeyi değerlendir ve aşağıdaki formatta yanıt ver. Belgenin ad
                 },
                 summary: {
                   type: "string",
-                  description: "Kısa değerlendirme özeti (1-2 cümle)"
+                  description: "Hassas ve spesifik özet: yüklenen belge ile beklenen türün uyumu/eksikliği net ifade edilsin (1-2 cümle)"
                 },
                 suggestions: {
                   type: "array",
                   items: { type: "string" },
-                  description: "İyileştirme önerileri listesi"
+                  description: "Somut, uygulanabilir iyileştirme önerileri (belge adı, format, eksik bilgi vb.)"
                 }
               },
               required: ["status", "summary", "suggestions"],

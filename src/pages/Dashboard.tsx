@@ -19,7 +19,7 @@ import { LayoutDashboard } from "lucide-react";
 import { destinations } from "@/data/countries";
 import { translations } from "@/i18n/translations";
 import AIDashboardChat from "@/components/AIDashboardChat";
-import AIApplicationSummary from "@/components/AIApplicationSummary";
+import AIApplicationSummary, { type SummaryResult } from "@/components/AIApplicationSummary";
 import MyConsultations from "@/components/MyConsultations";
 import { getRequirements } from "@/data/visaRequirements";
 
@@ -85,6 +85,7 @@ export default function Dashboard() {
   };
   const [selectedApp, setSelectedApp] = useState<AppWithAdvisor | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [applicationSummary, setApplicationSummary] = useState<SummaryResult | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -337,7 +338,6 @@ export default function Dashboard() {
               {applications.length > 0 && (
                 <AIApplicationSummary
                   applications={applications.map(a => {
-                    const countryKey = a.destination.toLowerCase();
                     const reqs = getRequirements(a.destination, a.visa_type);
                     const uploaded = appDocuments[a.id]?.length || 0;
                     return {
@@ -350,6 +350,7 @@ export default function Dashboard() {
                       totalDocs: reqs.length,
                     };
                   })}
+                  onSummaryReady={setApplicationSummary}
                 />
               )}
 
@@ -659,18 +660,34 @@ export default function Dashboard() {
         </div>
       )}
 
-      {activeTab === 'ai-assistant' && (
-        <div className="animate-in fade-in duration-500 h-[calc(100svh-2rem)] max-h-[calc(100vh-2rem)] min-h-0 flex flex-col">
-          <AIDashboardChat
-            context={applications[0] ? {
-              destination: applications[0].destination,
-              visaType: applications[0].visa_type,
-              status: applications[0].status,
-              travelDate: applications[0].travel_date || undefined,
-            } : undefined}
-          />
-        </div>
-      )}
+      {/* AI Asistan: Her zaman mount kalır (sadece gizlenir), böylece mesaj atıp başka sekmeye geçince gelen cevap kaybolmaz */}
+      <div
+        className={activeTab === 'ai-assistant' ? "animate-in fade-in duration-500 flex flex-col min-h-0" : "hidden"}
+        style={activeTab === 'ai-assistant' ? { height: 'calc(100svh - 2rem)', maxHeight: 'calc(100vh - 2rem)' } : undefined}
+      >
+        <AIDashboardChat
+          isVisible={activeTab === "ai-assistant"}
+          persistKey={user?.id}
+          context={() => ({
+            userName: displayName,
+            ...(applications.length > 0 || applicationSummary ? {
+              applications: applications.map((a) => ({
+                referenceId: a.reference_id,
+                destination: translations.tr[`country.${a.destination.toLowerCase()}`] || a.destination,
+                visaType: translations.tr[`visa_type.${a.visa_type.toLowerCase()}`] || a.visa_type,
+                status: a.status,
+                travelDate: a.travel_date || undefined,
+              })),
+              destination: applications[0] ? (translations.tr[`country.${applications[0].destination.toLowerCase()}`] || applications[0].destination) : undefined,
+              visaType: applications[0]?.visa_type ? (translations.tr[`visa_type.${applications[0].visa_type.toLowerCase()}`] || applications[0].visa_type) : undefined,
+              status: applications[0]?.status,
+              travelDate: applications[0]?.travel_date || undefined,
+              summary: applicationSummary?.summary,
+              nextSteps: applicationSummary?.nextSteps,
+            } : {}),
+          })}
+        />
+      </div>
 
       {activeTab === 'profile' && (
         <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-500 pb-20">

@@ -877,9 +877,17 @@ export default function AgencyPanel() {
           </div>
           <div className="flex-1 min-h-0 rounded-2xl border border-slate-100 bg-white overflow-hidden">
             <AIDashboardChat
+              persistKey={user?.id ? `agency-ai-chat-${user.id}` : undefined}
               context={
                 applications.length > 0
                   ? {
+                      applications: applications.map((a) => ({
+                        referenceId: a.reference_id,
+                        destination: a.destination_country,
+                        visaType: a.visa_type,
+                        status: a.status,
+                        travelDate: a.travel_date ?? undefined,
+                      })),
                       destination: applications[0].destination_country,
                       visaType: applications[0].visa_type,
                       status: applications[0].status,

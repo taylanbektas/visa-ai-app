@@ -130,6 +130,32 @@ type AdvisorApplication = {
 // Mock data for initial detailed view (restoring the previous mock data structure if real data isn't fully wired up yet)
 // But wait, the previous code was fetching from Supabase. I will try to fetch real data where possible.
 
+function SyncAdvisorAssignmentsButton({ onSuccess, toast }: { onSuccess: () => void; toast: (p: { title: string; description?: string; variant?: "default" | "destructive" }) => void }) {
+  const [syncing, setSyncing] = useState(false);
+  const runSync = async () => {
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.rpc("sync_advisor_assignments");
+      if (error) throw error;
+      const row = Array.isArray(data) && data[0] ? data[0] : data;
+      const updated = row?.applications_updated ?? 0;
+      const inserted = row?.assignments_inserted ?? 0;
+      toast({ title: "Senkronizasyon tamamlandı", description: `${updated} profil güncellendi, ${inserted} danışman ataması eklendi.` });
+      onSuccess();
+    } catch (e: any) {
+      toast({ title: "Senkronizasyon hatası", description: e?.message || "RPC çağrılamadı.", variant: "destructive" });
+    } finally {
+      setSyncing(false);
+    }
+  };
+  return (
+    <Button variant="outline" size="sm" onClick={runSync} disabled={syncing} className="shrink-0">
+      {syncing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+      Danışman atamalarını senkronize et
+    </Button>
+  );
+}
+
 export default function Admin() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
@@ -765,11 +791,12 @@ export default function Admin() {
       {/* DASHBOARD TAB */}
       {activeTab === 'dashboard' && (
         <div className="h-[calc(100vh-100px)] flex flex-col space-y-6 animate-in fade-in duration-500 max-w-[1600px] mx-auto overflow-hidden">
-          <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center shrink-0">
+          <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex justify-between items-center shrink-0 flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-black tracking-tight text-navy-dark">Genel Bakış</h1>
               <p className="text-sm text-slate-500 font-medium mt-1">Sistem durumunu ve performans metriklerini buradan takip edebilirsiniz.</p>
             </div>
+            <SyncAdvisorAssignmentsButton onSuccess={fetchData} toast={toast} />
           </div>
 
           {/* Stats Cards */}
