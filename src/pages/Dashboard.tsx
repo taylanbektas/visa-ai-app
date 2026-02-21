@@ -20,6 +20,7 @@ import { destinations } from "@/data/countries";
 import { translations } from "@/i18n/translations";
 import AIDashboardChat from "@/components/AIDashboardChat";
 import AIApplicationSummary from "@/components/AIApplicationSummary";
+import MyConsultations from "@/components/MyConsultations";
 
 const statusIcons: Record<string, LucideIcon> = {
   "İnceleniyor": Clock,
@@ -324,6 +325,9 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+
+            {/* Upcoming Consultations */}
+            <MyConsultations userId={user.id} />
 
             {/* AI Summary Card */}
             {applications.length > 0 && (
