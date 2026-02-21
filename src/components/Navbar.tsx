@@ -17,6 +17,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import type { Locale } from "@/i18n/translations";
+import { contact } from "@/lib/contact";
 
 const navLinks = [
   { labelKey: "nav.home", to: "/" },
@@ -27,7 +28,7 @@ const navLinks = [
 const helpLinks = [
   { labelKey: "nav.faq", to: "/#sss", icon: HelpCircle },
   { labelKey: "nav.contact", to: "/contact", icon: MessageCircle },
-  { labelKey: "nav.whatsapp", href: "https://wa.me/905XXXXXXXXX", icon: MessageCircle },
+  { labelKey: "nav.whatsapp", href: contact.whatsappUrl, icon: MessageCircle },
 ];
 
 const languages = [

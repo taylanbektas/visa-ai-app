@@ -69,6 +69,11 @@ export default function Track() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" onClick={() => setTracked(false)} className="rounded-xl">
+                Yeni arama
+              </Button>
+            </div>
             <div className="bg-card border rounded-xl p-5 md:p-6">
               <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>

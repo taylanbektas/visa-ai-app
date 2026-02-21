@@ -321,7 +321,7 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen safe-bottom-pad" id="main-content">
+    <div className="min-h-screen safe-bottom-pad">
 
       {/* ━━━ HERO ━━━ */}
       <section className="relative pt-24 pb-14 md:pt-40 md:pb-24 section-gradient-light" aria-label="Ana başlık ve vize kontrol aracı">

@@ -16,7 +16,7 @@ import Index from "./pages/Index";
 import Apply from "./pages/Apply";
 import Track from "./pages/Track";
 import Learn from "./pages/Learn";
-// import ArticlePage from "./pages/ArticlePage";
+import ArticlePage from "./pages/ArticlePage";
 import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
@@ -48,9 +48,9 @@ function ScrollToTop() {
 const PublicLayout = ({ children }: { children: React.ReactNode }) => (
   <>
     <Navbar />
-    {children}
+    <main id="main-content">{children}</main>
     <Footer />
-    {/* <AIChatBot /> */}
+    <AIChatBot />
   </>
 );
 
@@ -100,6 +100,14 @@ const App = () => (
                 element={
                   <PublicLayout>
                     <Learn />
+                  </PublicLayout>
+                }
+              />
+              <Route
+                path="/learn/:id"
+                element={
+                  <PublicLayout>
+                    <ArticlePage />
                   </PublicLayout>
                 }
               />

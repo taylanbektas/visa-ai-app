@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Mail, MessageCircle, Phone } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { contact } from "@/lib/contact";
 
 export function Footer() {
   const { t } = useLanguage();
@@ -10,7 +11,7 @@ export function Footer() {
       title: t("footer.support"),
       links: [
         { label: t("nav.contact"), to: "/contact" },
-        { label: t("nav.whatsapp"), to: "https://wa.me/905XXXXXXXXX", external: true },
+        { label: t("nav.whatsapp"), to: contact.whatsappUrl, external: true },
         { label: t("footer.videoGuides"), to: "/video-guides" },
       ],
     },
@@ -50,7 +51,7 @@ export function Footer() {
 
             <div className="flex flex-col gap-3 mb-6">
               <a
-                href="https://wa.me/905XXXXXXXXX"
+                href={contact.whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm font-medium text-foreground/80 hover:text-green-600 transition-colors"
@@ -61,28 +62,28 @@ export function Footer() {
                 WhatsApp Destek
               </a>
               <a
-                href="tel:+905555555555"
+                href={contact.telUrl}
                 className="inline-flex items-center gap-2 text-sm font-medium text-foreground/80 hover:text-blue-600 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
                   <Phone size={16} />
                 </div>
-                +90 (555) 555 55 55
+                {contact.phoneNumber}
               </a>
               <a
-                href="mailto:info@visapath.com.tr"
+                href={contact.mailtoUrl}
                 className="inline-flex items-center gap-2 text-sm font-medium text-foreground/80 hover:text-purple-600 transition-colors"
               >
                 <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
                   <Mail size={16} />
                 </div>
-                info@visapath.com.tr
+                {contact.contactEmail}
               </a>
             </div>
 
             <div className="flex gap-3">
               <a
-                href="https://instagram.com/visapath"
+                href={contact.instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:text-[#E1306C] hover:bg-pink-50 transition-all duration-300"
