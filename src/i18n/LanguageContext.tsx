@@ -9,8 +9,25 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+const LOCALE_STORAGE_KEY = "visapath_locale";
+
+function getStoredLocale(): Locale {
+    try {
+        const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
+        if (stored === "tr" || stored === "en") return stored;
+    } catch {}
+    return "tr";
+}
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
-    const [locale, setLocale] = useState<Locale>("tr");
+    const [locale, setLocaleState] = useState<Locale>(getStoredLocale);
+
+    const setLocale = useCallback((newLocale: Locale) => {
+        setLocaleState(newLocale);
+        try {
+            localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
+        } catch {}
+    }, []);
 
     const t = useCallback(
         (key: string): string => {

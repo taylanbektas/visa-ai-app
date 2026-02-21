@@ -62,7 +62,7 @@ export default function ArticlePage() {
           {article.related && article.related.length > 0 && (
             <div className="mt-12 pt-8 border-t border-border">
               <h2 className="text-lg font-bold text-navy-dark mb-4">
-                {locale === "en" ? "Related articles" : "İlgili yazılar"}
+                {t("article.relatedArticles")}
               </h2>
               <ul className="space-y-2">
                 {article.related.map((relatedId) => {

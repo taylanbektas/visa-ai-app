@@ -16,10 +16,10 @@ export function Footer() {
       ],
     },
     {
-      title: "Kurumsal",
+      title: t("footer.corporate"),
       links: [
-        { label: "Danışman Girişi", to: "/staff-login" },
-        { label: "Danışman Ol", to: "/join-advisor" },
+        { label: t("footer.staffLogin"), to: "/staff-login" },
+        { label: t("footer.joinAdvisorLabel"), to: "/join-advisor" },
       ],
     },
     {
@@ -59,7 +59,7 @@ export function Footer() {
                 <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600">
                   <MessageCircle size={16} />
                 </div>
-                WhatsApp Destek
+                {t("footer.whatsappSupport")}
               </a>
               <a
                 href={contact.telUrl}

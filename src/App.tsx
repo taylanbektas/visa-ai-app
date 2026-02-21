@@ -8,7 +8,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AIChatBot } from "@/components/AIChatBot";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
-import { LanguageProvider } from "@/i18n/LanguageContext";
+import { LanguageProvider, useLanguage } from "@/i18n/LanguageContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { RoleRoute } from "./components/RoleRoute"; // Fixed import
 import Index from "./pages/Index";
@@ -45,6 +45,18 @@ function ScrollToTop() {
   return null;
 }
 
+function SkipToContentLink() {
+  const { t } = useLanguage();
+  return (
+    <a
+      href="#main-content"
+      className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-navy-dark focus:text-white focus:rounded-lg focus:font-bold focus:shadow-lg"
+    >
+      {t("a11y.skipToContent")}
+    </a>
+  );
+}
+
 const PublicLayout = ({ children }: { children: React.ReactNode }) => (
   <>
     <Navbar />
@@ -63,12 +75,7 @@ const App = () => (
         <AuthProvider>
           <LanguageProvider>
             <ScrollToTop />
-            <a
-              href="#main-content"
-              className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-navy-dark focus:text-white focus:rounded-lg focus:font-bold focus:shadow-lg"
-            >
-              Ana içeriğe geç
-            </a>
+            <SkipToContentLink />
             <Routes>
               {/* Public Routes with Navbar & Footer */}
               <Route

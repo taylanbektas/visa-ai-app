@@ -5,33 +5,19 @@ import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface Message {
     role: "user" | "bot";
     text: string;
 }
 
-const quickReplies = [
-    "Hangi belgeler gerekli?",
-    "Vize ücretleri ne kadar?",
-    "Başvuru ne kadar sürer?",
-    "Para iade garantiniz var mı?",
-];
-
-const botResponses: Record<string, string> = {
-    "Hangi belgeler gerekli?": "Genel olarak pasaport, banka hesap özeti, seyahat sigortası, otel rezervasyonu ve uçak bileti gereklidir. Ülkeye göre ek belgeler istenebilir. Detaylı bilgi için ana sayfadaki vize kontrol aracımızı kullanabilirsiniz!",
-    "Vize ücretleri ne kadar?": "Danışmanlık paketlerimiz €49 (Starter), €149 (Pro) ve €349 (Elite) olarak fiyatlandırılmıştır. Bunlara ek olarak konsolosluk harçları ayrıca ödenir (Schengen için €90). Detaylar için Fiyatlar sayfamıza bakabilirsiniz!",
-    "Başvuru ne kadar sürer?": "Belgelerinizi 24-48 saat içinde inceleriz. Konsolosluk işlem süreleri ülkeye göre değişir: Schengen 10-15 iş günü, ABD mülakata bağlı, İngiltere 15-20 iş günü. Pro ve Elite planlarında sizin için takip yaparız!",
-    "Para iade garantiniz var mı?": "Evet! Elite planımızda vize başvurunuz reddedilirse danışmanlık ücretinin %100'ünü iade ediyoruz. Konsolosluk harçları hariçtir. Bu garanti sayesinde risk almadan başvurabilirsiniz!",
-};
-
-const defaultResponse = "Teşekkürler! Sorunuzu aldık. Daha detaylı bilgi için 7/24 destek ekibimize ulaşabilirsiniz. Ana sayfadaki vize kontrol aracımızı veya Fiyatlar sayfamızı da incelemenizi öneririz! 😊";
+const QUICK_REPLY_KEYS = ["chat.quick.documents", "chat.quick.fees", "chat.quick.duration", "chat.quick.refund"];
 
 export function AIChatBot() {
+    const { t } = useLanguage();
     const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState<Message[]>([
-        { role: "bot", text: "Merhaba! 👋 Ben VisaPath AI Asistanınızım. Vize sürecinizde size rehberlik etmek için buradayım. Başlamak için bir konu seçebilir veya sorunuzu yazabilirsiniz." }
-    ]);
+    const [messages, setMessages] = useState<Message[]>([{ role: "bot", text: "" }]);
     const [input, setInput] = useState("");
     const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -39,19 +25,29 @@ export function AIChatBot() {
     const isMobile = useIsMobile();
 
     useEffect(() => {
+        setMessages((prev) =>
+            prev.length === 1 && prev[0].role === "bot"
+                ? [{ role: "bot", text: t("chat.greeting") }]
+                : prev
+        );
+    }, [t]);
+
+    useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    const sendMessage = (text: string) => {
-        if (!text.trim()) return;
+    const sendMessage = (textOrKey: string) => {
+        if (!textOrKey.trim()) return;
 
-        setMessages((prev) => [...prev, { role: "user", text }]);
+        setMessages((prev) => [...prev, { role: "user", text: textOrKey }]);
         setInput("");
         setIsTyping(true);
 
-        // Simulate typing delay
         setTimeout(() => {
-            const response = botResponses[text] || defaultResponse;
+            const responseKey = textOrKey.startsWith("chat.quick.")
+                ? textOrKey.replace("chat.quick.", "chat.response.")
+                : null;
+            const response = responseKey ? t(responseKey) : t("chat.response.default");
             setMessages((prev) => [...prev, { role: "bot", text: response }]);
             setIsTyping(false);
         }, 800 + Math.random() * 600);
@@ -100,7 +96,7 @@ export function AIChatBot() {
                                         <div className="relative">
                                             <span className="block w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
                                         </div>
-                                        <span className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">Aktif Asistan</span>
+                                        <span className="text-white/50 text-[10px] font-black uppercase tracking-[0.2em]">{t("chat.online")}</span>
                                     </div>
                                 </div>
                             </div>
@@ -122,7 +118,7 @@ export function AIChatBot() {
                                             : "bg-white border border-slate-100 text-navy-dark rounded-bl-none shadow-slate-200/50"
                                             }`}
                                     >
-                                        {msg.text}
+                                        {msg.role === "user" && msg.text.startsWith("chat.quick.") ? t(msg.text) : msg.text}
                                     </div>
                                 </div>
                             ))}
@@ -145,13 +141,13 @@ export function AIChatBot() {
                             <div className="bg-white px-8 py-5 border-t border-slate-100">
                                 <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 mb-4 ml-1">Önerilen Başlıklar</p>
                                 <div className="flex flex-wrap gap-2.5">
-                                    {quickReplies.map((q) => (
+                                    {QUICK_REPLY_KEYS.map((key) => (
                                         <button
-                                            key={q}
-                                            onClick={() => sendMessage(q)}
+                                            key={key}
+                                            onClick={() => sendMessage(key)}
                                             className="text-xs font-bold px-5 py-3 rounded-2xl border border-slate-100 text-navy-dark hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-300 shadow-sm bg-white"
                                         >
-                                            {q}
+                                            {t(key)}
                                         </button>
                                     ))}
                                 </div>
@@ -171,7 +167,7 @@ export function AIChatBot() {
                                     <Input
                                         value={input}
                                         onChange={(e) => setInput(e.target.value)}
-                                        placeholder="Sorunuzu detaylıca sorabilirsiniz..."
+                                        placeholder={t("chat.placeholder")}
                                         className="h-14 text-sm font-bold bg-slate-50 border-2 border-transparent focus:bg-white focus:border-emerald-500/20 focus:ring-4 focus:ring-emerald-500/5 rounded-2xl px-5 transition-all outline-none md:text-base"
                                     />
                                 </div>
@@ -225,7 +221,7 @@ export function AIChatBot() {
                     >
                         <div className="flex items-center gap-2">
                             <Bot size={16} className="text-[#00D69E]" />
-                            Yardıma ihtiyacınız mı var?
+                            {t("chat.needHelp")}
                         </div>
                         <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-r border-b border-border rotate-[-45deg]" />
                     </motion.div>
