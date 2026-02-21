@@ -368,11 +368,11 @@ export default function Apply() {
         }
       });
 
-      // 4. Update profile
+      // 4. Update profile (profiles match by user_id, not id)
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ assigned_advisor_id: selectedAdvisorId } as any)
-        .eq('id', userId);
+        .eq('user_id', userId);
 
       if (updateError) {
         console.error("Error updating profile with assigned advisor:", updateError);

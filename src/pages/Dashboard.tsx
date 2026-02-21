@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,7 +68,7 @@ interface AssignedAdvisor {
 }
 
 export default function Dashboard() {
-  const { user, profile, loading, signOut } = useAuth();
+  const { user, profile, loading, signOut, refetchProfile } = useAuth();
   const navigate = useNavigate();
   const [applications, setApplications] = useState<AppWithAdvisor[]>([]);
   const [assignedAdvisor, setAssignedAdvisor] = useState<AssignedAdvisor | null>(null);
@@ -78,6 +78,7 @@ export default function Dashboard() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "overview";
+  const hasTriedAutoAssign = useRef(false);
 
   const setActiveTab = (tab: string) => {
     setSearchParams({ tab });
@@ -101,6 +102,25 @@ export default function Dashboard() {
     if (!user) return;
     fetchApplications();
   }, [user]);
+
+  // Auto-assign advisor when customer has no advisor (e.g. no package bought yet)
+  useEffect(() => {
+    if (!user || !profile || profile.assigned_advisor_id || hasTriedAutoAssign.current) return;
+    hasTriedAutoAssign.current = true;
+    (async () => {
+      try {
+        const { data: advisorId, error: rpcError } = await supabase.rpc("get_least_busy_advisor");
+        if (rpcError || !advisorId) return;
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ assigned_advisor_id: advisorId } as any)
+          .eq("user_id", user.id);
+        if (!updateError) await refetchProfile();
+      } catch {
+        // ignore
+      }
+    })();
+  }, [user, profile, refetchProfile]);
 
   useEffect(() => {
     const fetchAdvisor = async () => {
@@ -396,22 +416,6 @@ export default function Dashboard() {
 
               {/* Upcoming Consultations */}
               <MyConsultations userId={profile!.id} />
-
-              {profile?.active_package && applications.length === 0 && (
-                <div className="bg-white p-8 rounded-[2rem] border border-emerald-100 shadow-sm relative overflow-hidden group">
-                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-50 rounded-full blur-2xl group-hover:bg-emerald-100 transition-colors"></div>
-                  <div className="relative z-10">
-                    <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-100 mb-4 font-bold py-1.5 px-3 uppercase text-[10px] tracking-wider">Aktif Paket: {profile.active_package}</Badge>
-                    <h3 className="text-2xl font-black text-navy-dark mb-2 tracking-tight">Başvurunuzu Başlatın</h3>
-                    <p className="text-slate-500 text-sm mb-6 font-medium leading-relaxed">Paketiniz hazır, formu doldurarak süreci vakit kaybetmeden başlatabilirsiniz.</p>
-                    <Link to="/apply" state={{ plan: profile.active_package }}>
-                      <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-14 rounded-xl shadow-lg shadow-emerald-200">
-                        Hemen Başla <ArrowRight size={18} className="ml-2" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -636,14 +640,16 @@ export default function Dashboard() {
       )}
 
       {activeTab === 'ai-assistant' && (
-        <AIDashboardChat
-          context={applications[0] ? {
-            destination: applications[0].destination,
-            visaType: applications[0].visa_type,
-            status: applications[0].status,
-            travelDate: applications[0].travel_date || undefined,
-          } : undefined}
-        />
+        <div className="animate-in fade-in duration-500 h-[calc(100vh-12rem)]">
+          <AIDashboardChat
+            context={applications[0] ? {
+              destination: applications[0].destination,
+              visaType: applications[0].visa_type,
+              status: applications[0].status,
+              travelDate: applications[0].travel_date || undefined,
+            } : undefined}
+          />
+        </div>
       )}
 
       {activeTab === 'profile' && (

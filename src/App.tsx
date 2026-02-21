@@ -31,6 +31,7 @@ import Contact from "./pages/Contact";
 import StaffLogin from "./pages/StaffLogin";
 import AgencyLogin from "./pages/AgencyLogin";
 import AgencyPanel from "./pages/AgencyPanel";
+import AgencyApplicationDetail from "./pages/AgencyApplicationDetail";
 
 import Success from "./pages/Success";
 import Privacy from "./pages/Privacy";
@@ -73,7 +74,7 @@ const PublicLayout = ({ children }: { children: React.ReactNode }) => (
 
 const AppContents = () => {
   const location = useLocation();
-  const hideMobileNavPaths = ['/admin', '/advisor'];
+  const hideMobileNavPaths = ['/admin', '/advisor', '/agency'];
   const shouldHideMobileNav = hideMobileNavPaths.some(path => location.pathname.startsWith(path));
 
   return (
@@ -215,8 +216,8 @@ const AppContents = () => {
           }
         />
 
-        {/* Protected Dashboard Route */}
-        <Route element={<RoleRoute allowedRoles={["user"]} />}>
+        {/* Protected Dashboard Route - block agency from customer area */}
+        <Route element={<RoleRoute allowedRoles={["user"]} blockedRoles={["agency"]} showInvalidCredentials />}>
           <Route
             path="/dashboard"
             element={<Dashboard />}
@@ -224,7 +225,7 @@ const AppContents = () => {
         </Route>
 
         {/* Agency Routes - Strict Access */}
-        <Route element={<RoleRoute allowedRoles={["agency"]} redirectTo="/agency-login" />}>
+        <Route element={<RoleRoute allowedRoles={["agency"]} redirectTo="/agency-login" showInvalidCredentials />}>
           <Route
             path="/agency"
             element={
@@ -233,17 +234,25 @@ const AppContents = () => {
               </PublicLayout>
             }
           />
+          <Route
+            path="/agency/application/:appId"
+            element={
+              <PublicLayout>
+                <AgencyApplicationDetail />
+              </PublicLayout>
+            }
+          />
         </Route>
 
         {/* Admin Routes - Strict Access */}
-        <Route element={<RoleRoute allowedRoles={["admin"]} redirectTo="/dashboard" />}>
+        <Route element={<RoleRoute allowedRoles={["admin"]} redirectTo="/dashboard" showInvalidCredentials />}>
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/customer/:id" element={<AdminCustomerDetail />} />
           <Route path="/admin/advisor/:id" element={<AdminAdvisorDetail />} />
         </Route>
 
         {/* Advisor Routes - Strict Access */}
-        <Route element={<RoleRoute allowedRoles={["moderator", "admin"]} redirectTo="/dashboard" />}>
+        <Route element={<RoleRoute allowedRoles={["moderator", "admin"]} redirectTo="/dashboard" showInvalidCredentials />}>
           <Route path="/advisor" element={<AdvisorPanel />} />
           <Route path="/advisor/customer/:id" element={<ApplicationDetail />} />
           <Route

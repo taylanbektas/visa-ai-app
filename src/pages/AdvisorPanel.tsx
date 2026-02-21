@@ -1410,7 +1410,7 @@ export default function AdvisorPanel() {
                   </div>
                 </div>
 
-                {/* Approved Meetings */}
+                {/* Approved Meetings (upcoming only) */}
                 <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col min-h-[400px]">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-2xl font-black text-navy-dark tracking-tight flex items-center gap-3">
@@ -1421,7 +1421,9 @@ export default function AdvisorPanel() {
                     </h3>
                   </div>
                   <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                    {consultations.filter(c => c.status === 'confirmed').map(c => (
+                    {consultations
+                      .filter(c => c.status === 'confirmed' && new Date(c.end_time) >= new Date())
+                      .map(c => (
                       <div key={c.id} className="p-6 bg-white rounded-[2rem] flex flex-col sm:flex-row items-start sm:items-center justify-between border border-slate-100 hover:shadow-md transition-all gap-4">
                         <div className="flex items-center gap-4">
                           <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-lg border border-emerald-100">
@@ -1439,10 +1441,10 @@ export default function AdvisorPanel() {
                             </div>
                           </div>
                         </div>
-                        <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 px-6 py-2 rounded-2xl font-black text-xs uppercase tracking-widest">Görüşme Var</Badge>
+                        <Button onClick={() => handleUpdateConsultationStatus(c.id, 'cancelled')} variant="outline" className="text-rose-600 border-rose-100 hover:bg-rose-50 rounded-xl font-bold h-12 px-6 shrink-0">Görüşme İptal Et</Button>
                       </div>
                     ))}
-                    {consultations.filter(c => c.status === 'confirmed').length === 0 && (
+                    {consultations.filter(c => c.status === 'confirmed' && new Date(c.end_time) >= new Date()).length === 0 && (
                       <div className="flex flex-col items-center justify-center flex-1 py-10 opacity-30">
                         <CheckCircle2 size={48} className="mb-4" />
                         <p className="font-bold">Yaklaşan onaylı görüşme bulunmuyor.</p>
@@ -1451,6 +1453,46 @@ export default function AdvisorPanel() {
                   </div>
                 </div>
               </div>
+
+              {/* Geçmiş Görüşmeler */}
+              {consultations.filter(c => c.status === 'confirmed' && new Date(c.end_time) < new Date()).length > 0 && (
+                <div className="mt-8">
+                  <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                    <h3 className="text-2xl font-black text-navy-dark tracking-tight flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500">
+                        <Calendar size={20} />
+                      </div>
+                      Geçmiş Görüşmeler
+                    </h3>
+                    <div className="space-y-4">
+                      {consultations
+                        .filter(c => c.status === 'confirmed' && new Date(c.end_time) < new Date())
+                        .sort((a, b) => new Date(b.end_time).getTime() - new Date(a.end_time).getTime())
+                        .map(c => (
+                          <div key={c.id} className="p-6 bg-slate-50 rounded-[2rem] flex flex-col sm:flex-row items-start sm:items-center justify-between border border-slate-100 gap-4 opacity-90">
+                            <div className="flex items-center gap-4">
+                              <div className="w-14 h-14 rounded-2xl bg-slate-200 text-slate-500 flex items-center justify-center font-black text-lg">
+                                <Check size={28} />
+                              </div>
+                              <div>
+                                <p className="font-black text-navy-dark text-lg leading-tight">{c.customer_name}</p>
+                                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                                  <span className="text-slate-500 font-bold text-sm flex items-center gap-1">
+                                    <Calendar size={14} /> {format(new Date(c.start_time), 'd MMMM yyyy, EEEE', { locale: tr })}
+                                  </span>
+                                  <span className="text-slate-500 font-bold text-sm">
+                                    {format(new Date(c.start_time), 'HH:mm')} - {format(new Date(c.end_time), 'HH:mm')}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <Badge variant="outline" className="bg-slate-100 text-slate-500 border-slate-200 font-bold shrink-0">Geçmiş</Badge>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Date-Specific Availability */}
               <div className="xl:col-span-12">
