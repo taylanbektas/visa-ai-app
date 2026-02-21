@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Sparkles, Send, Loader2, X, Bot, User, MessageSquare, Zap, ArrowRight, Paperclip } from "lucide-react";
+import { Sparkles, Send, Loader2, X, Bot, User, MessageSquare, Zap, ArrowRight, Paperclip, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "framer-motion";
@@ -207,7 +207,7 @@ export default function AIDashboardChat({ context }: AIDashboardChatProps) {
       </div>
 
       {/* Input */}
-      <div className="p-6 bg-white border-t border-slate-100 relative z-10 box-shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
+      <div className="p-4 bg-white border-t border-slate-100 relative z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.02)]">
         <form
           onSubmit={(e) => { e.preventDefault(); send(); }}
           className="flex items-center gap-4"
@@ -228,19 +228,16 @@ export default function AIDashboardChat({ context }: AIDashboardChatProps) {
           </div>
           <Button
             onClick={send}
-            className={`h-14 px-8 rounded-2xl font-black transition-all active:scale-95 shadow-lg ${!input.trim() || isLoading
+            className={`h-14 w-14 rounded-full p-0 font-black transition-all active:scale-95 shadow-lg flex items-center justify-center ${!input.trim() || isLoading
               ? "bg-slate-100 text-slate-400"
               : "bg-navy-dark text-white hover:bg-navy-light shadow-navy-dark/20"
               }`}
             disabled={!input.trim() || isLoading}
           >
             {isLoading ? (
-              <Loader2 size={20} className="animate-spin" />
+              <Loader2 size={24} className="animate-spin" />
             ) : (
-              <div className="flex items-center gap-2">
-                <span>GÖNDER</span>
-                <ArrowRight size={18} />
-              </div>
+              <Send size={24} className={!input.trim() ? "text-slate-400" : "text-white"} />
             )}
           </Button>
         </form>

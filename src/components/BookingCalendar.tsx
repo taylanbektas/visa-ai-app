@@ -124,7 +124,11 @@ export function BookingCalendar({ advisorId, userId, profileId, isOpen, onClose,
             const [h, m] = slot.split(':').map(Number);
             const slotDate = new Date(date);
             slotDate.setHours(h, m, 0, 0);
-            if (isBefore(slotDate, new Date())) return false;
+
+            // If the selected date is today, check if the slot is in the past
+            if (isSameDay(date, new Date()) && isBefore(slotDate, new Date())) return false;
+            // If the selected date is in the past, return false
+            if (!isSameDay(date, new Date()) && isBefore(slotDate, new Date())) return false;
 
             // Check specific availability
             if (specificAvailability && specificAvailability.length > 0) {

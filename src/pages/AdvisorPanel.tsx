@@ -36,7 +36,16 @@ import {
   Check,
   CalendarIcon,
   Search,
-  ArrowRight
+  ArrowRight,
+  ChevronDown,
+  Mail,
+  Phone,
+  Package,
+  History,
+  MapPin,
+  ChevronLeft,
+  Loader2,
+  Upload
 } from "lucide-react";
 import {
   Table,
@@ -50,21 +59,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload, X } from "lucide-react";
+import { X } from "lucide-react";
 import { MessageCenter } from "@/components/MessageCenter";
 import { Calendar as CalendarUI } from "@/components/ui/calendar";
 import { BookingCalendar } from "@/components/BookingCalendar";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import AIApplicationSummary from "@/components/AIApplicationSummary";
-import AIDocumentReview from "@/components/AIDocumentReview";
-import AIDashboardChat from "@/components/AIDashboardChat";
-import { Sparkles, Bot } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 // Types
 type Application = {
@@ -80,6 +79,7 @@ type Application = {
   profile_id: string; // Needed for consultations FK
   phone?: string | null;
   plan?: string;
+  applications?: Application[];
 };
 
 type Consultation = {
@@ -141,6 +141,8 @@ export default function AdvisorPanel() {
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [selectedAppForUpload, setSelectedAppForUpload] = useState<string | null>(null);
   const [newDocName, setNewDocName] = useState("");
+  const [expandedAppId, setExpandedAppId] = useState<string | null>(null);
+  const [expandedCustomerIds, setExpandedCustomerIds] = useState<string[]>([]);
 
   // Date Specific Availability State
   const [selectedAvailDate, setSelectedAvailDate] = useState<Date | undefined>(new Date());
@@ -153,7 +155,6 @@ export default function AdvisorPanel() {
   const [directBookCustomerId, setDirectBookCustomerId] = useState<string | null>(null);
 
   // Customer Details View State
-  const [selectedCustomerDetails, setSelectedCustomerDetails] = useState<Application | null>(null);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   // List Filters & Chart Data
@@ -230,6 +231,26 @@ export default function AdvisorPanel() {
     return matchesSearch && matchesStatus;
   });
 
+  const customers = Array.from(new Map(applications.map(app => [app.user_id, app])).values()).map(customer => {
+    // Filter actual applications for this user
+    const customerApps = applications.filter(app => app.user_id === customer.user_id && !app.id.startsWith('no-app-'));
+    return {
+      ...customer,
+      applications: customerApps
+    };
+  }).filter(c => {
+    const matchesSearch = c.applicant_name.toLowerCase().includes(appSearchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  const toggleCustomerExpand = (customerId: string) => {
+    setExpandedCustomerIds(prev =>
+      prev.includes(customerId)
+        ? prev.filter(id => id !== customerId)
+        : [...prev, customerId]
+    );
+  };
+
   const handleExportAppsCSV = () => {
     const headers = ["Başvuru No", "İsim", "Ülke", "Vize Türü", "Durum", "Tarih"];
     const rows = filteredApplications.map(app => [
@@ -270,6 +291,27 @@ export default function AdvisorPanel() {
     }
 
     fetchData();
+
+    // Subscribe to message changes (new unread messages or read status updates)
+    const channel = supabase
+      .channel('advisor-unread-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `recipient_id=eq.${user.id}`,
+        },
+        () => {
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, authLoading, roleLoading, isModerator, isAdmin, navigate]);
 
   const fetchData = async () => {
@@ -300,37 +342,40 @@ export default function AdvisorPanel() {
         .select('*')
         .eq('assigned_advisor_id', advisorData.id);
 
-      // 3. Fetch applications assigned to this advisor
+      const customerUserIds = profileCustomers?.map(p => p.user_id) || [];
+
+      // 3. Fetch applications assigned to this advisor OR belonging to assigned customers
       const { data: assignments } = await supabase
         .from('advisor_assignments')
         .select('application_id')
         .eq('advisor_id', advisorData.id);
 
+      const explicitAppIds = assignments?.map(a => a.application_id) || [];
+
       let mappedApps: Application[] = [];
       let appIds: string[] = [];
 
-      if (assignments && assignments.length > 0) {
-        appIds = assignments.map(a => a.application_id);
-        const { data: appsData } = await supabase
-          .from('applications')
-          .select('*, profiles(full_name, phone)')
-          .in('id', appIds);
+      // Combine conditions to get all relevant applications
+      const { data: appsData, error: appsError } = await supabase
+        .from('applications')
+        .select('*, profiles(full_name, phone)')
+        .or(`id.in.(${explicitAppIds.length ? explicitAppIds.join(',') : '"00000000-0000-0000-0000-000000000000"'}),user_id.in.(${customerUserIds.length ? customerUserIds.join(',') : '"00000000-0000-0000-0000-000000000000"'})`);
 
-        if (appsData) {
-          mappedApps = appsData.map((app: any) => ({
-            id: app.id,
-            applicant_name: app.profiles?.full_name || 'İsimsiz',
-            passport_type: '-',
-            destination_country: app.destination,
-            visa_type: app.visa_type,
-            status: app.status || 'Alındı',
-            created_at: app.created_at,
-            user_id: app.user_id,
-            profile_id: app.profiles?.id || "",
-            phone: app.profiles?.phone,
-            plan: app.plan
-          }));
-        }
+      if (appsData) {
+        appIds = appsData.map(a => a.id);
+        mappedApps = appsData.map((app: any) => ({
+          id: app.id,
+          applicant_name: app.profiles?.full_name || 'İsimsiz',
+          passport_type: '-',
+          destination_country: app.destination,
+          visa_type: app.visa_type,
+          status: app.status || 'Alındı',
+          created_at: app.created_at,
+          user_id: app.user_id,
+          profile_id: app.profiles?.id || "",
+          phone: app.profiles?.phone,
+          plan: app.plan
+        }));
       }
 
       // 4. Add customers who are assigned but have no applications shown in the list
@@ -358,21 +403,14 @@ export default function AdvisorPanel() {
       setApplications(mappedApps);
 
       if (mappedApps.length > 0) {
-        // Fetch pending messages count
-        let pendingCount = 0;
-        for (const app of mappedApps) {
-          const { data: latestMsg } = await supabase
-            .from('messages')
-            .select('sender_id')
-            .or(`and(sender_id.eq.${user?.id},recipient_id.eq.${app.user_id}),and(sender_id.eq.${app.user_id},recipient_id.eq.${user?.id})`)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
+        // Optimized: Fetch count of unique senders who sent unread messages to this advisor
+        const { data: unreadData } = await supabase
+          .from('messages')
+          .select('sender_id')
+          .eq('recipient_id', user?.id)
+          .eq('read', false);
 
-          if (latestMsg && latestMsg.sender_id !== user?.id) {
-            pendingCount++;
-          }
-        }
+        const pendingCount = new Set(unreadData?.map(m => m.sender_id)).size;
 
         const appsData = mappedApps.filter(a => !a.id.startsWith('no-app-'));
         const completedApps = appsData.filter(a => a.status === 'Onaylandı' || a.status === 'Tamamlandı');
@@ -716,10 +754,22 @@ export default function AdvisorPanel() {
       noPadding={activeTab === 'messages'}
     >
       {activeTab === 'dashboard' && (
-        <div className="space-y-12 animate-in fade-in duration-500">
-          <div className="bg-white p-12 rounded-[2.5rem] shadow-sm border border-slate-100">
-            <h1 className="text-5xl font-black text-navy-dark mb-3 tracking-tight">Merhaba, {user?.user_metadata?.full_name || 'Danışman'} 👋</h1>
-            <p className="text-xl text-slate-500 font-medium">Şu anda sistemde <strong className="text-navy-dark font-black">{stats.assigned}</strong> aktif müşteriden sorumlusunuz.</p>
+        <div className="space-y-6 animate-in fade-in duration-500">
+          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div>
+              <h1 className="text-4xl font-black text-navy-dark mb-1 tracking-tight px-2">Merhaba, {user?.user_metadata?.full_name || 'Danışman'} 👋</h1>
+              <p className="text-lg text-slate-500 font-medium px-2">Şu anda sistemde <strong className="text-navy-dark font-black">{stats.assigned}</strong> aktif müşteriden sorumlusunuz.</p>
+            </div>
+            <div className="hidden lg:flex gap-4">
+              <div className="bg-blue-50 px-6 py-3 rounded-2xl border border-blue-100 text-center">
+                <p className="text-2xl font-black text-blue-600 leading-none">{stats.activeApps}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mt-1">Süreçte</p>
+              </div>
+              <div className="bg-emerald-50 px-6 py-3 rounded-2xl border border-emerald-100 text-center">
+                <p className="text-2xl font-black text-emerald-600 leading-none">{stats.completed}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mt-1">Tamamlanan</p>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -754,8 +804,8 @@ export default function AdvisorPanel() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <div className="xl:col-span-2 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col min-h-[400px]">
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            <div className="xl:col-span-8 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col min-h-[400px]">
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="text-2xl font-black text-navy-dark tracking-tight">Gelir Analizi</h3>
@@ -784,6 +834,7 @@ export default function AdvisorPanel() {
                         <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                       </linearGradient>
                     </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} dy={10} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} tickFormatter={(val) => `€${val}`} />
                     <Tooltip
@@ -796,7 +847,7 @@ export default function AdvisorPanel() {
               </div>
             </div>
 
-            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between min-h-[400px]">
+            <div className="xl:col-span-4 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col justify-between min-h-[400px]">
               <div>
                 <h3 className="text-xl font-black text-navy-dark mb-6 tracking-tight">Performans Metrikleri</h3>
                 <div className="grid grid-cols-1 gap-4">
@@ -834,7 +885,10 @@ export default function AdvisorPanel() {
                   </div>
                 </div>
               </div>
-              <Button className="w-full mt-6 h-12 rounded-xl bg-navy-dark text-white font-bold text-sm hover:shadow-lg hover:shadow-navy-dark/20 transition-all active:scale-[0.98]">
+              <Button
+                variant="outline"
+                className="w-full mt-6 h-12 rounded-xl border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all active:scale-[0.98]"
+              >
                 Performans Detayları
               </Button>
             </div>
@@ -880,76 +934,140 @@ export default function AdvisorPanel() {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
-            <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow className="hover:bg-transparent border-none">
-                  <TableHead className="py-6 px-8 text-slate-400 font-bold uppercase tracking-widest text-xs">Başvuru No</TableHead>
-                  <TableHead className="py-6 text-slate-400 font-bold uppercase tracking-widest text-xs">Müşteri</TableHead>
-                  <TableHead className="py-6 text-slate-400 font-bold uppercase tracking-widest text-xs">Detaylar</TableHead>
-                  <TableHead className="py-6 text-slate-400 font-bold uppercase tracking-widest text-xs">Durum</TableHead>
-                  <TableHead className="py-6 px-8 text-right text-slate-400 font-bold uppercase tracking-widest text-xs">İşlem</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredApplications.map((app) => (
-                  <TableRow key={app.id} className="group hover:bg-slate-50/50 transition-colors border-slate-100">
-                    <TableCell className="font-mono text-xs py-6 px-8 text-slate-400">{app.id.substring(0, 8)}</TableCell>
-                    <TableCell className="font-black text-navy-dark py-6 text-lg">{app.applicant_name}</TableCell>
-                    <TableCell className="py-6">
-                      <div className="text-base font-bold text-slate-600">{app.destination_country}</div>
-                      <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{app.visa_type}</div>
-                    </TableCell>
-                    <TableCell className="py-6">
-                      <select
-                        className="bg-blue-50 text-blue-700 border-blue-200 px-4 py-2 rounded-full font-bold text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={app.status}
-                        onChange={(e) => handleUpdateApplicationStatus(app.id, e.target.value)}
-                      >
-                        <option value="Alındı">Alındı</option>
-                        <option value="İnceleniyor">İnceleniyor</option>
-                        <option value="İşlem Gerekli">İşlem Gerekli</option>
-                        <option value="Gönderildi">Gönderildi</option>
-                        <option value="Onaylandı">Onaylandı</option>
-                        <option value="Reddedildi">Reddedildi</option>
-                      </select>
-                    </TableCell>
-                    <TableCell className="text-right py-6 px-8">
-                      <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button size="lg" variant="outline" className="rounded-xl border-slate-200 text-slate-600 hover:bg-slate-50 font-bold h-12 px-6" onClick={() => {
-                          setSelectedCustomerDetails(app);
-                        }}>
-                          İncele
-                        </Button>
-                        <Button size="lg" className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold h-12 px-6" onClick={() => {
-                          setSelectedAppForUpload(app.id);
-                          setIsUploadDialogOpen(true);
-                        }}>
-                          Belge Yükle
-                        </Button>
-                        <Button size="lg" variant="outline" className="rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 font-bold h-12 px-6" onClick={() => {
-                          setDirectBookCustomerId(app.user_id);
-                          setDirectBookOpen(true);
-                        }}>
-                          Randevu Ver
-                        </Button>
-                        <Button size="lg" className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-12 px-6" onClick={() => {
-                          setActiveTab('messages');
-                          setSelectedChatUser({ id: app.user_id, name: app.applicant_name });
-                        }}>
-                          Mesaj At
-                        </Button>
-                        {app.phone && (
-                          <Button size="lg" variant="ghost" className="rounded-xl h-12 w-12 p-0 text-slate-400 hover:text-navy-dark hover:bg-white border border-transparent hover:border-slate-200" onClick={() => window.open(`tel:${app.phone}`)}>
-                            <Zap size={20} />
-                          </Button>
+          <div className="space-y-4">
+            {customers.map((customer) => {
+              const isExpanded = expandedCustomerIds.includes(customer.user_id);
+              const hasApplications = customer.applications.length > 0;
+
+              return (
+                <div key={customer.user_id} className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden transition-all duration-300 hover:shadow-md">
+                  <div
+                    className={`p-6 cursor-pointer flex items-center justify-between transition-colors ${isExpanded ? 'bg-slate-50/50' : 'hover:bg-slate-50/30'}`}
+                    onClick={() => toggleCustomerExpand(customer.user_id)}
+                  >
+                    <div className="flex items-center gap-5">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-navy-dark font-black text-xl">
+                        {customer.applicant_name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-black text-navy-dark tracking-tight">{customer.applicant_name}</h3>
+                        <div className="flex items-center gap-4 mt-1">
+                          <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+                            <Phone size={12} /> {customer.phone || '-'}
+                          </span>
+                          <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
+                            <Package size={12} /> {customer.plan || 'Plan Yok'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                      <div className="hidden sm:flex items-center gap-2">
+                        {hasApplications ? (
+                          <div className="flex items-center gap-3">
+                            <Badge className="bg-blue-50 text-blue-600 border-none font-black text-[10px] px-3 py-1">
+                              {customer.applications[0].destination_country}
+                            </Badge>
+                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none">
+                              {customer.applications.length > 1 ? `+${customer.applications.length - 1} Başvuru` : customer.applications[0].status}
+                            </span>
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="bg-slate-50 text-slate-400 border-slate-200 text-[10px] font-black uppercase">Başvuru Yok</Badge>
                         )}
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      <div className={`p-2 rounded-xl transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-navy-dark text-white' : 'bg-slate-100 text-slate-400 shadow-sm'}`}>
+                        <ChevronDown size={20} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="px-6 pb-6 pt-2 bg-slate-50/50 space-y-4 animate-in slide-in-from-top-2 duration-300">
+                      <div className="grid grid-cols-1 gap-3">
+                        {hasApplications ? (
+                          customer.applications.map((app) => (
+                            <div key={app.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between group hover:border-blue-200 hover:shadow-md transition-all">
+                              <div className="flex flex-col md:flex-row md:items-center gap-6 flex-1">
+                                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shrink-0">
+                                  <MapPin size={24} />
+                                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 flex-1">
+                                  <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">HEDEF ÜLKE</p>
+                                    <h4 className="text-md font-black text-navy-dark">{app.destination_country}</h4>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">VİZE TÜRÜ</p>
+                                    <p className="text-xs font-bold text-slate-600">{app.visa_type}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">REFERANS</p>
+                                    <p className="text-xs font-black text-navy-dark">#{app.id.substring(0, 8).toUpperCase()}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">BAŞVURU DURUMU</p>
+                                    <Badge className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${app.status === 'Onaylandı' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                                      {app.status}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-slate-50 flex gap-2">
+                                <Button
+                                  size="sm"
+                                  className="h-10 px-6 bg-navy-dark hover:bg-navy-light text-white font-black rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-navy-dark/10"
+                                  onClick={() => navigate(`/advisor/customer/${customer.profile_id}?appId=${app.id}`)}
+                                >
+                                  Yönet
+                                </Button>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="col-span-full py-8 text-center bg-white rounded-2xl border border-dashed border-slate-200">
+                            <p className="text-sm font-bold text-slate-400 italic">Henüz aktif bir başvurusu bulunmuyor.</p>
+                            <Button
+                              variant="link"
+                              className="text-blue-500 font-black text-xs uppercase mt-2"
+                              onClick={() => {
+                                setDirectBookCustomerId(customer.user_id);
+                                setDirectBookOpen(true);
+                              }}
+                            >
+                              Randevu Planla
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex border-t border-slate-100 pt-4 gap-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-xl border-slate-200 text-slate-600 font-bold h-10 px-4 text-xs hover:bg-white"
+                          onClick={() => navigate(`/advisor/customer/${customer.profile_id}`)}
+                        >
+                          Müşteri Profili
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="rounded-xl text-slate-400 font-bold h-10 px-4 text-xs hover:text-navy-dark"
+                          onClick={() => {
+                            setDirectBookCustomerId(customer.user_id);
+                            setDirectBookOpen(true);
+                          }}
+                        >
+                          Görüşme Planla
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
 
@@ -1012,210 +1130,6 @@ export default function AdvisorPanel() {
             </div>
           )}
 
-          {/* Customer Details Sheet */}
-          <Sheet open={!!selectedCustomerDetails} onOpenChange={(open) => !open && setSelectedCustomerDetails(null)}>
-            <SheetContent className="w-full sm:max-w-xl md:max-w-2xl bg-slate-50 p-0 border-l-0 overflow-y-auto custom-scrollbar">
-              {selectedCustomerDetails && (
-                <div className="flex flex-col min-h-full">
-                  <div className="bg-navy-dark p-10 pb-16 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-                    <SheetHeader>
-                      <SheetTitle className="text-3xl font-black text-white tracking-tight flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-[1.5rem] bg-white/10 flex items-center justify-center font-black text-2xl text-white backdrop-blur-sm border border-white/10">
-                          {selectedCustomerDetails.applicant_name.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div className="flex flex-col items-start gap-1">
-                          {selectedCustomerDetails.applicant_name}
-                          <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 px-3 py-1 text-xs">{selectedCustomerDetails.status}</Badge>
-                        </div>
-                      </SheetTitle>
-                      <SheetDescription className="hidden">Müşteri Detayları</SheetDescription>
-                    </SheetHeader>
-                  </div>
-
-                  <div className="flex-1 p-8 -mt-8 space-y-6">
-                    {/* AI Application Summary for Advisor */}
-                    <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white">
-                          <Bot size={18} />
-                        </div>
-                        <h4 className="text-sm font-black text-navy-dark uppercase tracking-widest">AI Başvuru Özeti</h4>
-                      </div>
-                      <AIApplicationSummary
-                        applications={[{
-                          destination: selectedCustomerDetails.destination_country,
-                          visaType: selectedCustomerDetails.visa_type,
-                          status: selectedCustomerDetails.status,
-                          plan: selectedCustomerDetails.plan || 'Starter',
-                          travelDate: null,
-                          uploadedDocs: appDocs[selectedCustomerDetails.id]?.length || 0,
-                          totalDocs: 10 // Placeholder for total docs
-                        }]}
-                      />
-                    </div>
-
-                    {/* AI Advisor Actions Panel */}
-                    <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/20">
-                      <div className="flex items-center justify-between mb-6">
-                        <h4 className="text-sm font-black text-navy-dark uppercase tracking-widest flex items-center gap-2">
-                          <Sparkles size={16} className="text-emerald-500" /> Akıllı Danışman Araçları
-                        </h4>
-                        <Badge className="bg-emerald-500 text-white border-none text-[10px] font-black tracking-widest uppercase">Beta</Badge>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {[
-                          { label: "Durum Analizi", icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-50" },
-                          { label: "Eksik Kontrolü", icon: AlertCircle, color: "text-amber-600", bg: "bg-amber-50" },
-                          { label: "Mesaj Taslağı", icon: MessageSquare, color: "text-emerald-600", bg: "bg-emerald-50" }
-                        ].map((action) => (
-                          <Button
-                            key={action.label}
-                            variant="outline"
-                            className={`h-auto py-4 rounded-2xl border-slate-100 flex flex-col gap-2 hover:border-emerald-200 hover:shadow-md transition-all ${action.bg}`}
-                          >
-                            <action.icon size={20} className={action.color} />
-                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">{action.label}</span>
-                          </Button>
-                        ))}
-                      </div>
-
-                      <div className="mt-6 pt-6 border-t border-slate-100">
-                        <div className="h-40 overflow-hidden relative rounded-2xl border border-slate-100 bg-slate-50/50">
-                          <AIDashboardChat
-                            context={{
-                              destination: selectedCustomerDetails.destination_country,
-                              visaType: selectedCustomerDetails.visa_type,
-                              status: selectedCustomerDetails.status
-                            }}
-                          />
-                        </div>
-                        <p className="text-[10px] text-center text-slate-400 font-bold mt-2 italic px-4">
-                          * AI ile bu başvuru özelinde konuşarak detaylı analiz isteyebilirsiniz.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Travel Info */}
-                    <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 relative overflow-hidden group hover:border-blue-200 transition-colors">
-                      <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <TrendingUp size={100} />
-                      </div>
-                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <Calendar size={16} /> Seyahat Planı
-                      </h4>
-                      <div className="flex items-center gap-6">
-                        <div className="flex-1">
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Nereden</p>
-                          <p className="text-xl font-black text-navy-dark">Türkiye</p>
-                        </div>
-                        <div className="flex-shrink-0 text-slate-300">
-                          <div className="w-12 h-[2px] bg-slate-200 relative">
-                            <ArrowRight size={16} className="absolute -top-1.5 -right-2 text-slate-400" />
-                          </div>
-                        </div>
-                        <div className="flex-1 text-right">
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Nereye</p>
-                          <p className="text-xl font-black text-navy-dark">{selectedCustomerDetails.destination_country}</p>
-                        </div>
-                      </div>
-                      <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between items-center">
-                        <div>
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Vize Tipi</p>
-                          <p className="font-bold text-slate-700">{selectedCustomerDetails.visa_type}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Seçili Paket</p>
-                          <p className="font-black text-blue-600 uppercase tracking-wider">{selectedCustomerDetails.plan || 'Bilinmiyor'}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Contact Info */}
-                    <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
-                        <User size={16} /> İletişim Bilgileri
-                      </h4>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                          <span className="text-sm font-bold text-slate-500">Telefon</span>
-                          <span className="font-black text-navy-dark">{selectedCustomerDetails.phone || 'Girilmemiş'}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
-                          <span className="text-sm font-bold text-slate-500">Başvuru Tarihi</span>
-                          <span className="font-black text-navy-dark">
-                            {format(new Date(selectedCustomerDetails.created_at), 'd MMMM yyyy', { locale: tr })}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="mt-6 flex gap-3">
-                        <Button className="flex-1 h-12 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold" onClick={() => {
-                          setSelectedCustomerDetails(null);
-                          setActiveTab('messages');
-                          setSelectedChatUser({ id: selectedCustomerDetails.user_id, name: selectedCustomerDetails.applicant_name });
-                        }}>
-                          <MessageSquare className="mr-2" size={18} /> Mesaj Gönder
-                        </Button>
-                        {selectedCustomerDetails.phone && (
-                          <Button variant="outline" className="flex-1 h-12 rounded-xl border-slate-200 text-slate-600 font-bold hover:bg-slate-50" onClick={() => window.open(`tel:${selectedCustomerDetails.phone}`)}>
-                            <Zap className="mr-2" size={18} /> Ara
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Documents */}
-                    <div className="bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100">
-                      <div className="flex justify-between items-center mb-6">
-                        <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                          <FileText size={16} /> Müşteri Belgeleri
-                        </h4>
-                        <Badge className="bg-blue-50 text-blue-600 font-bold">{appDocs[selectedCustomerDetails.id]?.length || 0} Adet</Badge>
-                      </div>
-
-                      {appDocs[selectedCustomerDetails.id] && appDocs[selectedCustomerDetails.id].length > 0 ? (
-                        <div className="space-y-3">
-                          {appDocs[selectedCustomerDetails.id].map((doc, idx) => (
-                            <div key={idx} className="flex flex-col bg-slate-50 rounded-2xl border border-slate-100 hover:border-blue-200 transition-colors group overflow-hidden">
-                              <div className="flex items-center justify-between p-4 bg-white/50">
-                                <div className="flex items-center gap-3">
-                                  <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-                                    <FileText size={16} />
-                                  </div>
-                                  <span className="font-bold text-navy-dark text-sm">{doc.name}</span>
-                                </div>
-                                <a href={doc.url} target="_blank" rel="noopener noreferrer">
-                                  <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-black text-xs uppercase tracking-widest">
-                                    Görüntüle
-                                  </Button>
-                                </a>
-                              </div>
-                              {/* AI Document Review for Advisor */}
-                              <div className="px-5 pb-5 pt-2">
-                                <AIDocumentReview
-                                  documentName={doc.name}
-                                  documentType={doc.name.includes("Pasaport") ? "Pasaport" : "Belge"}
-                                  destination={selectedCustomerDetails.destination_country}
-                                  visaType={selectedCustomerDetails.visa_type}
-                                  requirementId={(doc as any).id || idx.toString()}
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 px-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                          <FileText size={40} className="mx-auto text-slate-300 mb-3" />
-                          <p className="text-slate-500 font-bold">Henüz belge yüklenmemiş.</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </SheetContent>
-          </Sheet>
         </div>
       )}
 

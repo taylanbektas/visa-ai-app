@@ -453,8 +453,27 @@ export const translations: Record<Locale, Record<string, string>> = {
         "nav.signOut": "Çıkış Yap",
         "footer.corporate": "Kurumsal",
         "footer.staffLogin": "Danışman Girişi",
+        "footer.agencyLogin": "Acenta Girişi",
         "footer.joinAdvisorLabel": "Danışman Ol",
         "footer.whatsappSupport": "WhatsApp Destek",
+
+        // Agency Dashboard
+        "agency.dashboard": "Acenta Dashboard",
+        "agency.totalApplications": "Toplam Başvuru",
+        "agency.pendingReview": "İnceleme Bekleyen",
+        "agency.completedVisas": "Tamamlanan Vizeler",
+        "agency.totalCommission": "Kazanılmış Komisyon",
+        "agency.recentApps": "Son Başvurular",
+        "agency.allApps": "Tüm Başvurular",
+        "agency.analytics": "Performans Analizi",
+        "agency.settings": "Acenta Ayarları",
+        "agency.status.active": "Aktif",
+        "agency.status.pending": "Beklemede",
+        "agency.searchPlaceholder": "Başvuru veya isim ara...",
+        "role.agency": "Acenta",
+        "role.admin": "Yönetici",
+        "role.moderator": "Danışman",
+        "role.user": "Üye",
 
         // Contact
         "contact.form.successShort": "En kısa sürede size geri dönüş yapacağız.",
@@ -1007,9 +1026,28 @@ export const translations: Record<Locale, Record<string, string>> = {
         // Nav & Footer
         "nav.signOut": "Sign Out",
         "footer.corporate": "Corporate",
-        "footer.staffLogin": "Staff Login",
+        "footer.staffLogin": "Advisor Login",
+        "footer.agencyLogin": "Agency Login",
         "footer.joinAdvisorLabel": "Become an Advisor",
         "footer.whatsappSupport": "WhatsApp Support",
+
+        // Agency Dashboard
+        "agency.dashboard": "Agency Dashboard",
+        "agency.totalApplications": "Total Applications",
+        "agency.pendingReview": "Pending Review",
+        "agency.completedVisas": "Completed Visas",
+        "agency.totalCommission": "Earned Commission",
+        "agency.recentApps": "Recent Applications",
+        "agency.allApps": "All Applications",
+        "agency.analytics": "Performance Analytics",
+        "agency.settings": "Agency Settings",
+        "agency.status.active": "Active",
+        "agency.status.pending": "Pending",
+        "agency.searchPlaceholder": "Search application or name...",
+        "role.agency": "Agency",
+        "role.admin": "Admin",
+        "role.moderator": "Advisor",
+        "role.user": "User",
 
         // Contact
         "contact.form.successShort": "We will get back to you as soon as possible.",

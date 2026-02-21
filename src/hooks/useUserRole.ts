@@ -39,13 +39,15 @@ export function useUserRole() {
 
   const isAdmin = roles.includes("admin");
   const isModerator = roles.includes("moderator");
-  const isUser = !isAdmin && !isModerator;
+  const isAgency = roles.includes("agency");
+  const isUser = !isAdmin && !isModerator && !isAgency;
 
   const getPanelPath = () => {
     if (isAdmin) return "/admin";
     if (isModerator) return "/advisor";
+    if (isAgency) return "/agency";
     return "/dashboard";
   };
 
-  return { roles, isAdmin, isModerator, isUser, loading: loading || authLoading, getPanelPath };
+  return { roles, isAdmin, isModerator, isAgency, isUser, loading: loading || authLoading, getPanelPath };
 }

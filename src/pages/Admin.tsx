@@ -39,7 +39,8 @@ import {
   Download,
   Eye,
   TrendingUp,
-  Plus
+  Plus,
+  ShieldCheck
 } from "lucide-react";
 import {
   Sheet,
@@ -105,7 +106,7 @@ type UserData = {
   email: string;
   phone: string;
   created_at: string;
-  roles: ("admin" | "moderator" | "user")[];
+  roles: ("admin" | "moderator" | "user" | "agency")[];
   assigned_advisor_id?: string | null;
   is_suspended?: boolean;
   active_package?: "starter" | "pro" | "elite" | null;
@@ -152,7 +153,7 @@ export default function Admin() {
     totalAdvisors: 0,
   });
 
-  const [timeFilter, setTimeFilter] = useState("6months");
+  const [timeFilter, setTimeFilter] = useState("1month");
   const [chartData, setChartData] = useState<any[]>([]);
   const [financials, setFinancials] = useState({ revenue: 0, expenses: 0, net: 0 });
 
@@ -224,31 +225,61 @@ export default function Admin() {
     if (!usersList.length) return;
 
     const PACKAGE_PRICES = { starter: 49, pro: 149, elite: 349 };
-    const months = timeFilter === "year" ? 12 : timeFilter === "3months" ? 3 : timeFilter === "all" ? 24 : 6;
     const now = new Date();
     const dataObj: Record<string, { name: string, revenue: number, cumulative: number }> = {};
 
-    for (let i = months - 1; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthName = d.toLocaleString('tr-TR', { month: 'short' });
-      const key = `${d.getFullYear()}-${d.getMonth()}`;
-      dataObj[key] = { name: monthName, revenue: 0, cumulative: 0 };
+    let daysToGenerate = 0;
+    let viewType: 'day' | 'month' = 'month';
+
+    if (timeFilter === "1week") {
+      daysToGenerate = 7;
+      viewType = 'day';
+    } else if (timeFilter === "1month") {
+      daysToGenerate = 30;
+      viewType = 'day';
+    }
+
+    const months = timeFilter === "year" ? 12 : timeFilter === "3months" ? 3 : timeFilter === "all" ? 24 : 6;
+
+    if (viewType === 'day') {
+      for (let i = daysToGenerate - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+        const dayLabel = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+        const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        dataObj[key] = { name: dayLabel, revenue: 0, cumulative: 0 };
+      }
+    } else {
+      for (let i = months - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthName = d.toLocaleString('tr-TR', { month: 'short' });
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        dataObj[key] = { name: monthName, revenue: 0, cumulative: 0 };
+      }
     }
 
     const usersWithPackages = usersList.filter(u => u.active_package && u.package_assigned_at)
       .sort((a, b) => new Date(a.package_assigned_at!).getTime() - new Date(b.package_assigned_at!).getTime());
 
     let totalBefore = 0;
-    const firstMonthDate = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
+    let compareDate: Date;
+    if (viewType === 'day') {
+      compareDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToGenerate + 1);
+      compareDate.setHours(0, 0, 0, 0);
+    } else {
+      compareDate = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
+    }
 
     usersWithPackages.forEach(u => {
       const d = new Date(u.package_assigned_at!);
       const price = PACKAGE_PRICES[u.active_package as keyof typeof PACKAGE_PRICES] || 0;
 
-      if (d < firstMonthDate) {
+      if (d < compareDate) {
         totalBefore += price;
       } else {
-        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        const key = viewType === 'day'
+          ? `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+          : `${d.getFullYear()}-${d.getMonth()}`;
+
         if (dataObj[key]) {
           dataObj[key].revenue += price;
         }
@@ -574,12 +605,40 @@ export default function Admin() {
       }
 
       fetchData();
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        toast({ title: "Hata", description: e.message, variant: "destructive" });
+    } catch (e: any) {
+      toast({ title: "Hata", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleToggleAgencyRole = async (userId: string, currentRoles: string[]) => {
+    try {
+      const isAgency = currentRoles.includes('agency');
+
+      if (isAgency) {
+        // Remove agency role
+        const { error } = await supabase
+          .from('user_roles')
+          .delete()
+          .match({ user_id: userId, role: 'agency' });
+
+        if (error) throw error;
+        toast({ title: "Başarılı", description: "Acenta rolü kaldırıldı." });
       } else {
-        toast({ title: "Hata", description: "Bilinmeyen bir hata oluştu.", variant: "destructive" });
+        // Add agency role
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role: 'agency'
+          });
+
+        if (error) throw error;
+        toast({ title: "Başarılı", description: "Acenta rolü tanımlandı." });
       }
+
+      fetchData();
+    } catch (e: any) {
+      toast({ title: "Hata", description: "Rol güncellenirken bir hata oluştu: " + e.message, variant: "destructive" });
     }
   };
 
@@ -651,6 +710,7 @@ export default function Admin() {
   const navItems: SidebarItem[] = [
     { id: 'dashboard', label: 'Genel Bakış', icon: LayoutDashboard },
     { id: 'users', label: 'Müşteriler', icon: Users },
+    { id: 'agencies', label: 'Acenteler', icon: ShieldCheck },
     { id: 'advisors', label: 'Danışmanlar', icon: Briefcase },
     { id: 'applications', label: 'Vize Başvuruları', icon: FileText },
     { id: 'advisor-apps', label: 'Talep Onay', icon: Briefcase, badgeCount: advisorApplications.filter(a => a.status === 'pending').length || undefined },
@@ -786,6 +846,8 @@ export default function Admin() {
                     <SelectValue placeholder="Aralık Seç" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="1week">Son 1 Hafta</SelectItem>
+                    <SelectItem value="1month">Son 1 Ay</SelectItem>
                     <SelectItem value="3months">Son 3 Ay</SelectItem>
                     <SelectItem value="6months">Son 6 Ay</SelectItem>
                     <SelectItem value="year">Son 1 Yıl</SelectItem>
@@ -828,7 +890,7 @@ export default function Admin() {
                           boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
                           padding: '12px'
                         }}
-                        formatter={(value: any, name: any) => [`€${value}`, name === 'cumulative' ? 'Kümülatif Ciro' : 'Aylık Ciro']}
+                        formatter={(value: any, name: any) => [`€${value} `, name === 'cumulative' ? 'Kümülatif Ciro' : 'Aylık Ciro']}
                         cursor={{ stroke: '#E5E7EB', strokeWidth: 1 }}
                       />
                       <Legend verticalAlign="top" height={36} iconType="circle" />
@@ -863,62 +925,68 @@ export default function Admin() {
               <h3 className="text-xl font-bold text-navy-dark mb-1">Durum Dağılımı</h3>
               <p className="text-sm text-muted-foreground mb-6">Başvuruların güncel durumu</p>
               <div className="h-[300px] w-full flex justify-center items-center relative">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'Onaylandı', value: 35, color: '#10B981' },
-                        { name: 'İnceleniyor', value: 25, color: '#F59E0B' },
-                        { name: 'Belge Bekliyor', value: 15, color: '#3B82F6' },
-                        { name: 'Reddedildi', value: 5, color: '#EF4444' },
-                        { name: 'Taslak', value: 20, color: '#9CA3AF' },
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={80}
-                      outerRadius={100}
-                      paddingAngle={3}
-                      dataKey="value"
-                      cornerRadius={6}
-                    >
-                      {[
-                        { name: 'Onaylandı', value: 35, color: '#10B981' },
-                        { name: 'İnceleniyor', value: 25, color: '#F59E0B' },
-                        { name: 'Belge Bekliyor', value: 15, color: '#3B82F6' },
-                        { name: 'Reddedildi', value: 5, color: '#EF4444' },
-                        { name: 'Taslak', value: 20, color: '#9CA3AF' },
-                      ].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={0} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: '8px',
-                        border: 'none',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                      }}
-                    />
-                    {/* Custom Legend moved below */}
-                  </PieChart>
-                </ResponsiveContainer>
+                {applications.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Onaylandı', value: applications.filter(a => a.status === 'completed').length, color: '#10B981' },
+                          { name: 'İnceleniyor', value: applications.filter(a => a.status === 'pending_review').length, color: '#F59E0B' },
+                          { name: 'Belge Bekliyor', value: applications.filter(a => a.status === 'pending_documents').length, color: '#3B82F6' },
+                          { name: 'Reddedildi', value: applications.filter(a => a.status === 'rejected').length, color: '#EF4444' },
+                          { name: 'Konsoloslukta', value: applications.filter(a => a.status === 'submitted').length, color: '#8B5CF6' },
+                          { name: 'Taslak/Diğer', value: applications.filter(a => !['completed', 'pending_review', 'pending_documents', 'rejected', 'submitted'].includes(a.status)).length, color: '#9CA3AF' },
+                        ].filter(item => item.value > 0)}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={80}
+                        outerRadius={100}
+                        paddingAngle={3}
+                        dataKey="value"
+                        cornerRadius={6}
+                      >
+                        {[
+                          { name: 'Onaylandı', color: '#10B981' },
+                          { name: 'İnceleniyor', color: '#F59E0B' },
+                          { name: 'Belge Bekliyor', color: '#3B82F6' },
+                          { name: 'Reddedildi', color: '#EF4444' },
+                          { name: 'Konsoloslukta', color: '#8B5CF6' },
+                          { name: 'Taslak/Diğer', color: '#9CA3AF' },
+                        ].map((entry, index) => (
+                          <Cell key={`cell - ${index} `} fill={entry.color} strokeWidth={0} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: '8px',
+                          border: 'none',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="text-slate-400 text-sm italic">Veri yok</div>
+                )}
                 {/* Centered Text */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <span className="text-3xl font-extrabold text-navy-dark">100+</span>
+                  <span className="text-3xl font-extrabold text-navy-dark">{applications.length}</span>
                   <span className="text-xs text-muted-foreground">Toplam</span>
                 </div>
               </div>
               {/* Custom Legend list */}
               <div className="mt-4 flex flex-wrap justify-center gap-4 text-xs">
                 {[
-                  { name: 'Onaylandı', color: '#10B981' },
-                  { name: 'İnceleniyor', color: '#F59E0B' },
-                  { name: 'Belge', color: '#3B82F6' },
-                  { name: 'Reddedildi', color: '#EF4444' },
-                  { name: 'Diğer', color: '#9CA3AF' },
-                ].map(i => (
+                  { name: 'Onaylandı', color: '#10B981', count: applications.filter(a => a.status === 'completed').length },
+                  { name: 'İnceleniyor', color: '#F59E0B', count: applications.filter(a => a.status === 'pending_review').length },
+                  { name: 'Belge Bekliyor', color: '#3B82F6', count: applications.filter(a => a.status === 'pending_documents').length },
+                  { name: 'Reddedildi', color: '#EF4444', count: applications.filter(a => a.status === 'rejected').length },
+                  { name: 'Konsoloslukta', color: '#8B5CF6', count: applications.filter(a => a.status === 'submitted').length },
+                  { name: 'Diğer', color: '#9CA3AF', count: applications.filter(a => !['completed', 'pending_review', 'pending_documents', 'rejected', 'submitted'].includes(a.status)).length },
+                ].filter(i => i.count > 0).map(i => (
                   <div key={i.name} className="flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: i.color }}></span>
-                    <span className="text-gray-600 font-medium">{i.name}</span>
+                    <span className="text-gray-600 font-medium">{i.name} ({i.count})</span>
                   </div>
                 ))}
               </div>
@@ -1259,9 +1327,9 @@ export default function Admin() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="default" className="h-8 shadow-sm bg-navy-dark hover:bg-navy-light text-white" onClick={(e) => { e.stopPropagation(); setSelectedAdvisorDetails(adv); }}>İncele</Button>
+                        <Button size="sm" variant="default" className="h-8 shadow-sm bg-navy-dark hover:bg-navy-light text-white" onClick={(e) => { e.stopPropagation(); navigate(`/admin/advisor/${adv.id}`); }}>İncele</Button>
                         <Button size="sm" variant="outline" className="h-8 border-slate-200" onClick={(e) => { e.stopPropagation(); setSelectedAdvisorForCustomer(adv); setAssignCustomerOpen(true); }}>Müşteri Ata</Button>
-                        <Button size="sm" variant="outline" className={`h-8 ${!adv.is_active ? 'border-orange-200 text-orange-600 hover:bg-orange-50' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`} onClick={(e) => { e.stopPropagation(); handleUpdateAdvisorStatus(adv.id, !adv.is_active); }}>
+                        <Button size="sm" variant="outline" className={`h - 8 ${!adv.is_active ? 'border-orange-200 text-orange-600 hover:bg-orange-50' : 'border-slate-200 text-slate-500 hover:bg-slate-50'} `} onClick={(e) => { e.stopPropagation(); handleUpdateAdvisorStatus(adv.id, !adv.is_active); }}>
                           {!adv.is_active ? "Erişimi Aç" : "Askıya Al"}
                         </Button>
 
@@ -1507,7 +1575,18 @@ export default function Admin() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2 items-center">
-                      <Button size="sm" variant="default" className="h-8 shadow-sm bg-navy-dark hover:bg-navy-light text-white" onClick={(e) => { e.stopPropagation(); setSelectedUserDetails(usr); }}>İncele</Button>
+                      <Button size="sm" variant="default" className="h-8 shadow-sm bg-navy-dark hover:bg-navy-light text-white" onClick={(e) => { e.stopPropagation(); navigate(`/admin/customer/${usr.id}`); }}>İncele</Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className={`h-8 transition-colors ${usr.roles.includes('agency') ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100' : 'border-slate-200'}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleAgencyRole(usr.user_id, usr.roles);
+                        }}
+                      >
+                        {usr.roles.includes('agency') ? 'Acenta Rolünü Kaldır' : 'Acenta Yap'}
+                      </Button>
                       <Button size="sm" variant="outline" className="h-8 border-slate-200">Düzenle</Button>
                       <Button size="sm" variant="ghost" className="h-8 text-red-500 hover:bg-red-50">Sil</Button>
 
@@ -1798,6 +1877,57 @@ export default function Admin() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* AGENCIES TAB */}
+      {activeTab === 'agencies' && (
+        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+          <div className="p-4 border-b bg-muted/30 flex justify-between items-center">
+            <h3 className="font-semibold">Tüm Acenteler</h3>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Acente</TableHead>
+                <TableHead>İletişim</TableHead>
+                <TableHead>Kayıt Tarihi</TableHead>
+                <TableHead className="text-right">İşlem</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {usersList.filter(u => u.roles.includes('agency')).length === 0 ? (
+                <TableRow><TableCell colSpan={4} className="text-center h-24 text-muted-foreground">Acente bulunamadı.</TableCell></TableRow>
+              ) : (
+                usersList.filter(u => u.roles.includes('agency')).map((usr) => (
+                  <TableRow key={usr.id}>
+                    <TableCell className="font-medium">
+                      {usr.full_name || 'İsimsiz'}
+                      <div className="text-xs text-muted-foreground">ID: {usr.id}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">{usr.email}</div>
+                      <div className="text-xs text-muted-foreground">{usr.phone}</div>
+                    </TableCell>
+                    <TableCell>{new Date(usr.created_at).toLocaleDateString('tr-TR')}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="default" className="h-8 shadow-sm bg-navy-dark hover:bg-navy-light text-white" onClick={() => navigate(`/admin/customer/${usr.id}`)}>İncele</Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 border-emerald-200 text-emerald-600 hover:bg-emerald-50"
+                          onClick={() => handleToggleAgencyRole(usr.user_id, usr.roles)}
+                        >
+                          Acente Rolünü Kaldır
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       )}
 

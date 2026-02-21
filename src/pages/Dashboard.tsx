@@ -253,8 +253,8 @@ export default function Dashboard() {
       items={navItems}
       activeTab={activeTab}
       onTabChange={setActiveTab}
-      maxWidth={activeTab === 'applications' ? "max-w-none" : "max-w-[1200px]"}
-      noPadding={activeTab === 'messages'}
+      maxWidth={(activeTab === 'applications' || activeTab === 'ai-assistant') ? "max-w-none" : "max-w-[1200px]"}
+      noPadding={activeTab === 'messages' || activeTab === 'ai-assistant'}
     >
       {activeTab === 'overview' && (
         <div className="space-y-8 animate-in fade-in duration-500 w-full mb-10">
@@ -359,29 +359,8 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Upcoming Consultations */}
-            <MyConsultations userId={user.id} />
-
-
-
             {/* Right Column: Active Package & Danışman */}
             <div className="space-y-6">
-              {profile?.active_package && applications.length === 0 && (
-                <div className="bg-white p-8 rounded-[2rem] border border-emerald-100 shadow-sm relative overflow-hidden group">
-                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-50 rounded-full blur-2xl group-hover:bg-emerald-100 transition-colors"></div>
-                  <div className="relative z-10">
-                    <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-100 mb-4 font-bold py-1.5 px-3 uppercase text-[10px] tracking-wider">Aktif Paket: {profile.active_package}</Badge>
-                    <h3 className="text-2xl font-black text-navy-dark mb-2 tracking-tight">Başvurunuzu Başlatın</h3>
-                    <p className="text-slate-500 text-sm mb-6 font-medium leading-relaxed">Paketiniz hazır, formu doldurarak süreci vakit kaybetmeden başlatabilirsiniz.</p>
-                    <Link to="/apply" state={{ plan: profile.active_package }}>
-                      <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-14 rounded-xl shadow-lg shadow-emerald-200">
-                        Hemen Başla <ArrowRight size={18} className="ml-2" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              )}
-
               <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm text-center">
                 <div className="w-24 h-24 mx-auto rounded-3xl bg-slate-50 flex items-center justify-center mb-4 text-slate-300 overflow-hidden border-2 border-slate-100 shadow-inner">
                   {(applications[0]?.advisorPhoto || assignedAdvisor?.avatar_url || assignedAdvisor?.photo_url) ? (
@@ -414,6 +393,25 @@ export default function Dashboard() {
                   <p className="text-xs text-slate-400 font-bold p-3 bg-slate-50 rounded-xl">Başvuru sonrası danışman ataması yapılacaktır.</p>
                 )}
               </div>
+
+              {/* Upcoming Consultations */}
+              <MyConsultations userId={profile!.id} />
+
+              {profile?.active_package && applications.length === 0 && (
+                <div className="bg-white p-8 rounded-[2rem] border border-emerald-100 shadow-sm relative overflow-hidden group">
+                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-50 rounded-full blur-2xl group-hover:bg-emerald-100 transition-colors"></div>
+                  <div className="relative z-10">
+                    <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-100 mb-4 font-bold py-1.5 px-3 uppercase text-[10px] tracking-wider">Aktif Paket: {profile.active_package}</Badge>
+                    <h3 className="text-2xl font-black text-navy-dark mb-2 tracking-tight">Başvurunuzu Başlatın</h3>
+                    <p className="text-slate-500 text-sm mb-6 font-medium leading-relaxed">Paketiniz hazır, formu doldurarak süreci vakit kaybetmeden başlatabilirsiniz.</p>
+                    <Link to="/apply" state={{ plan: profile.active_package }}>
+                      <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-14 rounded-xl shadow-lg shadow-emerald-200">
+                        Hemen Başla <ArrowRight size={18} className="ml-2" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -638,16 +636,14 @@ export default function Dashboard() {
       )}
 
       {activeTab === 'ai-assistant' && (
-        <div className="animate-in fade-in duration-500 h-[calc(100vh-12rem)]">
-          <AIDashboardChat
-            context={applications[0] ? {
-              destination: applications[0].destination,
-              visaType: applications[0].visa_type,
-              status: applications[0].status,
-              travelDate: applications[0].travel_date || undefined,
-            } : undefined}
-          />
-        </div>
+        <AIDashboardChat
+          context={applications[0] ? {
+            destination: applications[0].destination,
+            visaType: applications[0].visa_type,
+            status: applications[0].status,
+            travelDate: applications[0].travel_date || undefined,
+          } : undefined}
+        />
       )}
 
       {activeTab === 'profile' && (

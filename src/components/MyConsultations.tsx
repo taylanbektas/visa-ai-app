@@ -73,16 +73,31 @@ export default function MyConsultations({ userId }: { userId: string }) {
 
   if (loading) {
     return (
-      <div className="lg:col-span-3 bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm flex items-center justify-center">
+      <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm flex items-center justify-center">
         <Loader2 className="animate-spin text-slate-300" size={24} />
       </div>
     );
   }
 
-  if (consultations.length === 0) return null;
+  if (consultations.length === 0) {
+    return (
+      <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-blue-50 rounded-xl">
+            <CalendarIcon size={20} className="text-blue-600" />
+          </div>
+          <h3 className="text-xl font-black text-navy-dark">Randevularım</h3>
+        </div>
+        <div className="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100">
+          <CalendarIcon size={40} className="mx-auto text-slate-200 mb-4" />
+          <p className="text-slate-400 font-bold">Henüz planlanmış randevunuz bulunmuyor.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="lg:col-span-3 bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
+    <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
       <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-blue-50 rounded-xl">
           <CalendarIcon size={20} className="text-blue-600" />

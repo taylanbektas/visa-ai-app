@@ -4,7 +4,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 interface RoleRouteProps {
-    allowedRoles: ("admin" | "moderator" | "user")[];
+    allowedRoles: ("admin" | "moderator" | "user" | "agency")[];
     redirectTo?: string;
 }
 

@@ -36,6 +36,16 @@ export function MessageCenter({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(true);
 
+    const markAsRead = async () => {
+        if (!targetUserId || !currentUserId) return;
+        await supabase
+            .from('messages')
+            .update({ read: true } as any)
+            .eq('recipient_id', currentUserId)
+            .eq('sender_id', targetUserId)
+            .eq('read', false);
+    };
+
     useEffect(() => {
         if (!currentUserId || !targetUserId) return;
 
@@ -51,6 +61,7 @@ export function MessageCenter({
                 setMessages(conversation as Message[]);
             }
             setLoading(false);
+            markAsRead(); // Mark existing as read when opening conversation
         };
 
         fetchMessages();
@@ -68,6 +79,7 @@ export function MessageCenter({
                 (payload) => {
                     if (payload.new.sender_id === targetUserId) {
                         setMessages((prev) => [...prev, payload.new as Message]);
+                        markAsRead(); // Mark incoming as read if we are in this chat
                     }
                 }
             )
@@ -89,21 +101,6 @@ export function MessageCenter({
             supabase.removeChannel(channel);
         };
     }, [currentUserId, targetUserId]);
-
-    useEffect(() => {
-        if (!targetUserId) return;
-
-        const markAsRead = async () => {
-            await supabase
-                .from('messages')
-                .update({ read: true } as any)
-                .eq('recipient_id', currentUserId)
-                .eq('sender_id', targetUserId)
-                .eq('read', false);
-        };
-
-        markAsRead();
-    }, [targetUserId, currentUserId]);
 
     useEffect(() => {
         // Use auto for initial load (when loading is false) and smooth for new messages if already loaded
