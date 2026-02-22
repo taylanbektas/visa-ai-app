@@ -19,7 +19,6 @@ export function Footer() {
       title: t("footer.corporate"),
       links: [
         { label: t("footer.staffLogin"), to: "/staff-login" },
-        { label: t("footer.agencyLogin"), to: "/agency-login" },
         { label: t("footer.joinAdvisorLabel"), to: "/join-advisor" },
       ],
     },
