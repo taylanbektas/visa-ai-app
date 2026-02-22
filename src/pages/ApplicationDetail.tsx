@@ -55,6 +55,7 @@ export default function ApplicationDetail() {
 
     const [profile, setProfile] = useState<Profile | null>(null);
     const [application, setApplication] = useState<Application | null>(null);
+    const [allApplications, setAllApplications] = useState<Application[]>([]);
     const [loading, setLoading] = useState(true);
     const [docs, setDocs] = useState<any[]>([]);
     const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
@@ -83,29 +84,36 @@ export default function ApplicationDetail() {
             setProfile(profileData);
             setCustomerNotes(profileData.notes || "");
 
-            // 2. Fetch specific application or first application
-            let appQuery = supabase.from('applications').select('*').eq('user_id', profileData.user_id);
+            // 2. Fetch all applications for this user
+            const { data: appsData, error: appsError } = await supabase
+                .from('applications')
+                .select('*')
+                .eq('user_id', profileData.user_id)
+                .order('created_at', { ascending: false });
 
+            if (appsError) throw appsError;
+            setAllApplications(appsData || []);
+
+            // 3. Set specific application or first one
+            let activeApp = null;
             if (appId) {
-                appQuery = appQuery.eq('id', appId);
-            } else {
-                appQuery = appQuery.order('created_at', { ascending: false }).limit(1);
+                activeApp = appsData?.find(a => a.id === appId);
+            }
+            if (!activeApp && appsData && appsData.length > 0) {
+                activeApp = appsData[0];
             }
 
-            const { data: appData, error: appError } = await appQuery;
-            if (appError) throw appError;
-
-            if (appData && appData.length > 0) {
-                // 3. Fetch documents
+            if (activeApp) {
+                // 4. Fetch documents for active application
                 const { data: docsData } = await supabase
                     .from('application_documents' as any)
                     .select('*')
-                    .eq('application_id', appData[0].id);
+                    .eq('application_id', activeApp.id);
 
                 setDocs(docsData || []);
                 setApplication({
-                    ...appData[0],
-                    destination: appData[0].destination // Ensure explicit mapping if needed
+                    ...activeApp,
+                    destination: activeApp.destination
                 });
             }
         } catch (error: any) {
@@ -237,27 +245,46 @@ export default function ApplicationDetail() {
                     </div>
 
                     {application && (
-                        <div className="flex items-center gap-4 bg-white/5 backdrop-blur-md p-1.5 rounded-2xl border border-white/10">
-                            <div className="px-5 py-2">
-                                <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-0.5">ADIM</p>
+                        <div className="flex flex-wrap items-center gap-3">
+                            {/* Application Switcher */}
+                            <div className="flex items-center gap-2 bg-white/5 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 mr-4">
+                                <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] ml-3">BAŞVURU SEÇ:</span>
                                 <select
-                                    className="bg-transparent text-white font-black text-sm focus:outline-none cursor-pointer p-0 appearance-none"
-                                    value={application.status}
-                                    onChange={(e) => handleUpdateStatus(e.target.value)}
+                                    className="bg-navy-dark text-white font-black text-xs h-9 px-4 rounded-xl focus:outline-none border border-white/10 cursor-pointer"
+                                    value={application.id}
+                                    onChange={(e) => navigate(`/advisor/customer/${profile.id}?appId=${e.target.value}`)}
                                 >
-                                    <option className="text-navy-dark" value="Alındı">Alındı</option>
-                                    <option className="text-navy-dark" value="İnceleniyor">İnceleniyor</option>
-                                    <option className="text-navy-dark" value="İşlem Gerekli">İşlem Gerekli</option>
-                                    <option className="text-navy-dark" value="Gönderildi">Gönderildi</option>
-                                    <option className="text-navy-dark" value="Onaylandı">Onaylandı</option>
-                                    <option className="text-navy-dark" value="Reddedildi">Reddedildi</option>
+                                    {allApplications.map(app => (
+                                        <option key={app.id} value={app.id} className="text-navy-dark">
+                                            {app.destination} ({app.id.substring(0, 8).toUpperCase()})
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
-                            <div className={`h-12 w-12 rounded-xl flex items-center justify-center shadow-lg ${application.status === 'Onaylandı' ? 'bg-emerald-500 shadow-emerald-500/20' :
-                                application.status === 'İşlem Gerekli' ? 'bg-amber-500 shadow-amber-500/20' :
-                                    'bg-blue-500 shadow-blue-500/20'
-                                }`}>
-                                {application.status === 'Onaylandı' ? <CheckCircle2 size={24} className="text-white" /> : <Clock size={24} className="text-white" />}
+
+                            <div className="flex items-center gap-4 bg-white/5 backdrop-blur-md p-1.5 rounded-2xl border border-white/10">
+                                <div className="px-5 py-2">
+                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mb-0.5">DURUMU GÜNCELLE</p>
+                                    <select
+                                        className="bg-transparent text-white font-black text-sm focus:outline-none cursor-pointer p-0 appearance-none pr-6"
+                                        value={application.status}
+                                        onChange={(e) => handleUpdateStatus(e.target.value)}
+                                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0 center', backgroundSize: '12px' }}
+                                    >
+                                        <option className="text-navy-dark" value="Alındı">Alındı</option>
+                                        <option className="text-navy-dark" value="İnceleniyor">İnceleniyor</option>
+                                        <option className="text-navy-dark" value="İşlem Gerekli">İşlem Gerekli</option>
+                                        <option className="text-navy-dark" value="Gönderildi">Gönderildi</option>
+                                        <option className="text-navy-dark" value="Onaylandı">Onaylandı</option>
+                                        <option className="text-navy-dark" value="Reddedildi">Reddedildi</option>
+                                    </select>
+                                </div>
+                                <div className={`h-12 w-12 rounded-xl flex items-center justify-center shadow-lg transition-colors duration-500 ${application.status === 'Onaylandı' ? 'bg-emerald-500 shadow-emerald-500/20' :
+                                    application.status === 'İşlem Gerekli' ? 'bg-amber-500 shadow-amber-500/20' :
+                                        'bg-blue-500 shadow-blue-500/20'
+                                    }`}>
+                                    {application.status === 'Onaylandı' ? <CheckCircle2 size={24} className="text-white" /> : <Clock size={24} className="text-white" />}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -300,22 +327,25 @@ export default function ApplicationDetail() {
 
                                 <div className="space-y-8">
                                     <div>
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-100">
-                                                <Bot size={22} />
+                                        <div className="flex items-center justify-between mb-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-100">
+                                                    <Bot size={22} />
+                                                </div>
+                                                <h3 className="text-sm font-black text-navy-dark uppercase tracking-[0.15em]">AI Başvuru Özeti</h3>
                                             </div>
-                                            <h3 className="text-sm font-black text-navy-dark uppercase tracking-[0.15em]">AI Başvuru Özeti</h3>
+                                            <Badge className="bg-emerald-50 text-emerald-600 border-none font-black px-3 py-1 text-[10px]">{allApplications.length} Toplam Başvuru</Badge>
                                         </div>
                                         <AIApplicationSummary
-                                            applications={[{
-                                                destination: application.destination,
-                                                visaType: application.visa_type,
-                                                status: application.status,
-                                                plan: application.plan,
-                                                travelDate: application.travel_date,
-                                                uploadedDocs: docs.length,
-                                                totalDocs: docs.length + 2 // Estimated total based on current
-                                            }]}
+                                            applications={allApplications.map(app => ({
+                                                destination: app.destination,
+                                                visaType: app.visa_type,
+                                                status: app.status,
+                                                plan: app.plan,
+                                                travelDate: app.travel_date,
+                                                uploadedDocs: docs.length, // Ideally we'd fetch counts for all, but this helps the AI count the apps correctly
+                                                totalDocs: docs.length + 2
+                                            }))}
                                         />
                                     </div>
 

@@ -374,6 +374,38 @@ export default function AdvisorPanel() {
       }
 
       setApplications(mappedApps);
+
+      // Also fetch all applications for these customers to ensure we have the full picture
+      // This fixes the "1 application vs 6 applications" discrepancy
+      if (customerUserIds.length > 0) {
+        const { data: allCustomerApps } = await supabase
+          .from('applications')
+          .select('*, profiles(full_name, phone)')
+          .in('user_id', customerUserIds);
+
+        if (allCustomerApps) {
+          const allMappedApps = allCustomerApps.map((app: any) => ({
+            id: app.id,
+            applicant_name: app.profiles?.full_name || 'İsimsiz',
+            passport_type: '-',
+            destination_country: app.destination,
+            visa_type: app.visa_type,
+            status: app.status || 'Alındı',
+            created_at: app.created_at,
+            user_id: app.user_id,
+            profile_id: app.profiles?.id || "",
+            phone: app.profiles?.phone,
+            plan: app.plan
+          }));
+
+          // Combine and deduplicate
+          setApplications(prev => {
+            const combined = [...prev, ...allMappedApps];
+            const unique = Array.from(new Map(combined.map(a => [a.id, a])).values());
+            return unique;
+          });
+        }
+      }
       if (mappedApps.length === 0) setFinancialTransactions([]);
 
       if (mappedApps.length > 0) {
@@ -899,30 +931,33 @@ export default function AdvisorPanel() {
               </div>
 
               <div className="mt-6 flex flex-wrap gap-4 items-center">
-                <div className="relative w-64">
-                  <Search className="absolute left-3.5 top-3 h-5 w-5 text-slate-400" />
+                <div className="relative w-72">
+                  <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
                   <Input
-                    placeholder="Başvuru ara..."
-                    className="pl-12 bg-slate-50 border-slate-100 h-12 rounded-2xl font-bold shadow-none"
+                    placeholder="Müşteri veya başvuru ara..."
+                    className="pl-12 bg-slate-50 border-slate-100 h-12 rounded-2xl font-bold shadow-none focus:bg-white focus:ring-2 focus:ring-blue-500/10 transition-all border-none"
                     value={appSearchTerm}
                     onChange={(e) => setAppSearchTerm(e.target.value)}
                   />
                 </div>
-                <select
-                  className="bg-slate-50 border border-slate-100 text-slate-600 px-4 py-2 rounded-2xl font-bold text-sm h-12 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-w-[160px]"
-                  value={appStatusFilter}
-                  onChange={(e) => setAppStatusFilter(e.target.value)}
-                >
-                  <option value="all">Tüm Durumlar</option>
-                  <option value="Alındı">Alındı</option>
-                  <option value="İnceleniyor">İnceleniyor</option>
-                  <option value="İşlem Gerekli">İşlem Gerekli</option>
-                  <option value="Gönderildi">Gönderildi</option>
-                  <option value="Onaylandı">Onaylandı</option>
-                  <option value="Reddedildi">Reddedildi</option>
-                </select>
-                <Button variant="outline" className="h-12 rounded-2xl font-bold border-slate-200 text-slate-600 px-6 hover:bg-slate-50" onClick={handleExportAppsCSV}>
-                  Dışa Aktar
+                <div className="relative">
+                  <ChevronDown className="absolute right-4 top-4 h-4 w-4 text-slate-400 pointer-events-none" />
+                  <select
+                    className="bg-slate-50 border-none text-slate-600 px-5 py-2 rounded-2xl font-bold text-sm h-12 focus:outline-none focus:ring-2 focus:ring-blue-500/10 min-w-[180px] appearance-none cursor-pointer hover:bg-slate-100 transition-colors"
+                    value={appStatusFilter}
+                    onChange={(e) => setAppStatusFilter(e.target.value)}
+                  >
+                    <option value="all">Tüm Durumlar</option>
+                    <option value="Alındı">Alındı</option>
+                    <option value="İnceleniyor">İnceleniyor</option>
+                    <option value="İşlem Gerekli">İşlem Gerekli</option>
+                    <option value="Gönderildi">Gönderildi</option>
+                    <option value="Onaylandı">Onaylandı</option>
+                    <option value="Reddedildi">Reddedildi</option>
+                  </select>
+                </div>
+                <Button variant="outline" className="h-12 rounded-2xl font-black border-slate-200 text-slate-600 px-6 hover:bg-slate-50 active:scale-95 transition-all text-xs tracking-widest uppercase" onClick={handleExportAppsCSV}>
+                  CSV DIŞA AKTAR
                 </Button>
               </div>
             </div>
@@ -959,15 +994,24 @@ export default function AdvisorPanel() {
                       <div className="hidden sm:flex items-center gap-2">
                         {hasApplications ? (
                           <div className="flex items-center gap-3">
-                            <Badge className="bg-blue-50 text-blue-600 border-none font-black text-[10px] px-3 py-1">
-                              {customer.applications[0].destination_country}
+                            <div className="flex -space-x-2 overflow-hidden mr-2">
+                              {customer.applications.slice(0, 3).map((app, idx) => (
+                                <div key={app.id} className="inline-block h-8 w-8 rounded-lg bg-blue-50 border-2 border-white flex items-center justify-center text-[8px] font-black text-blue-600 shadow-sm" title={app.destination_country}>
+                                  {app.destination_country.substring(0, 2).toUpperCase()}
+                                </div>
+                              ))}
+                              {customer.applications.length > 3 && (
+                                <div className="inline-block h-8 w-8 rounded-lg bg-slate-100 border-2 border-white flex items-center justify-center text-[8px] font-black text-slate-500 shadow-sm">
+                                  +{customer.applications.length - 3}
+                                </div>
+                              )}
+                            </div>
+                            <Badge className="bg-blue-500 text-white border-none font-black text-[9px] px-3 py-1 rounded-lg shadow-lg shadow-blue-500/10 uppercase tracking-widest">
+                              {customer.applications.length} BAŞVURU
                             </Badge>
-                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-none">
-                              {customer.applications.length > 1 ? `+${customer.applications.length - 1} Başvuru` : customer.applications[0].status}
-                            </span>
                           </div>
                         ) : (
-                          <Badge variant="outline" className="bg-slate-50 text-slate-400 border-slate-200 text-[10px] font-black uppercase">Başvuru Yok</Badge>
+                          <Badge variant="outline" className="bg-slate-50 text-slate-400 border-slate-200 text-[10px] font-black uppercase tracking-widest">Kayıt Yok</Badge>
                         )}
                       </div>
                       <div className={`p-2 rounded-xl transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-navy-dark text-white' : 'bg-slate-100 text-slate-400 shadow-sm'}`}>
@@ -1418,26 +1462,26 @@ export default function AdvisorPanel() {
                     {consultations
                       .filter(c => c.status === 'confirmed' && new Date(c.end_time) >= new Date())
                       .map(c => (
-                      <div key={c.id} className="p-6 bg-white rounded-[2rem] flex flex-col sm:flex-row items-start sm:items-center justify-between border border-slate-100 hover:shadow-md transition-all gap-4">
-                        <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-lg border border-emerald-100">
-                            <Check size={28} />
-                          </div>
-                          <div>
-                            <p className="font-black text-navy-dark text-lg leading-tight">{c.customer_name}</p>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
-                              <span className="text-slate-500 font-bold text-sm flex items-center gap-1">
-                                <Calendar size={14} /> {format(new Date(c.start_time), 'd MMMM yyyy, EEEE', { locale: tr })}
-                              </span>
-                              <span className="text-emerald-600 font-black text-sm uppercase tracking-wider">
-                                {format(new Date(c.start_time), 'HH:mm')} - {format(new Date(c.end_time), 'HH:mm')}
-                              </span>
+                        <div key={c.id} className="p-6 bg-white rounded-[2rem] flex flex-col sm:flex-row items-start sm:items-center justify-between border border-slate-100 hover:shadow-md transition-all gap-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black text-lg border border-emerald-100">
+                              <Check size={28} />
+                            </div>
+                            <div>
+                              <p className="font-black text-navy-dark text-lg leading-tight">{c.customer_name}</p>
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                                <span className="text-slate-500 font-bold text-sm flex items-center gap-1">
+                                  <Calendar size={14} /> {format(new Date(c.start_time), 'd MMMM yyyy, EEEE', { locale: tr })}
+                                </span>
+                                <span className="text-emerald-600 font-black text-sm uppercase tracking-wider">
+                                  {format(new Date(c.start_time), 'HH:mm')} - {format(new Date(c.end_time), 'HH:mm')}
+                                </span>
+                              </div>
                             </div>
                           </div>
+                          <Button onClick={() => handleUpdateConsultationStatus(c.id, 'cancelled')} variant="outline" className="text-rose-600 border-rose-100 hover:bg-rose-50 rounded-xl font-bold h-12 px-6 shrink-0">İptal Et</Button>
                         </div>
-                        <Button onClick={() => handleUpdateConsultationStatus(c.id, 'cancelled')} variant="outline" className="text-rose-600 border-rose-100 hover:bg-rose-50 rounded-xl font-bold h-12 px-6 shrink-0">İptal Et</Button>
-                      </div>
-                    ))}
+                      ))}
                     {consultations.filter(c => c.status === 'confirmed' && new Date(c.end_time) >= new Date()).length === 0 && (
                       <div className="flex flex-col items-center justify-center flex-1 py-10 opacity-30">
                         <CheckCircle2 size={48} className="mb-4" />
