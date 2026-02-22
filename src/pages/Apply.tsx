@@ -368,11 +368,11 @@ export default function Apply() {
         }
       });
 
-      // 4. Update profile
+      // 4. Update profile (profiles match by user_id, not id)
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ assigned_advisor_id: selectedAdvisorId } as any)
-        .eq('id', userId);
+        .eq('user_id', userId);
 
       if (updateError) {
         console.error("Error updating profile with assigned advisor:", updateError);
@@ -427,7 +427,7 @@ export default function Apply() {
       await supabase
         .from('profiles')
         .update({ active_package: null } as any)
-        .eq('id', user.id);
+        .eq('user_id', user.id);
     }
 
     let currentAdvisorId = assignedAdvisorId;
@@ -436,10 +436,14 @@ export default function Apply() {
     }
 
     if (currentAdvisorId) {
-      await supabase.from('advisor_assignments').insert({
+      const { error: assignError } = await supabase.from('advisor_assignments').insert({
         application_id: newApp.id,
         advisor_id: currentAdvisorId
       });
+      if (assignError) {
+        console.error("Danışman ataması yapılamadı:", assignError);
+        toast({ title: "Uyarı", description: "Başvuru oluşturuldu ancak danışman ataması kaydedilemedi. Destek ile iletişime geçin.", variant: "destructive" });
+      }
     }
 
     setReferenceId(refId);

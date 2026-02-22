@@ -1,31 +1,126 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Sparkles, Send, Loader2, X, Bot, User, MessageSquare, Zap, ArrowRight, Paperclip, PenLine } from "lucide-react";
+import { Sparkles, Send, Loader2, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
-import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
+const TYPING_SPEED = 4; // chars per frame (~60fps = smooth typing)
+
+const STORAGE_KEY_PREFIX = "ai-dashboard-chat-";
+
+export interface ApplicationContextItem {
+  referenceId?: string;
+  destination?: string;
+  visaType?: string;
+  status?: string;
+  travelDate?: string;
+}
+
+export type AIDashboardChatContext = {
+  userName?: string;
+  destination?: string;
+  visaType?: string;
+  status?: string;
+  travelDate?: string;
+  applications?: ApplicationContextItem[];
+  summary?: string;
+  nextSteps?: { action: string; priority: string; icon: string }[];
+};
+
 interface AIDashboardChatProps {
-  context?: {
-    destination?: string;
-    visaType?: string;
-    status?: string;
-    travelDate?: string;
-  };
+  /** Sekme görünür mü; true iken son mesaja anında scroll yapılır */
+  isVisible?: boolean;
+  /** Kullanıcıya özel anahtar verilirse sohbet geçmişi localStorage'da saklanır (örn. user.id) */
+  persistKey?: string;
+  /** Her mesaj gönderiminde bu context (veya getter) kullanılır; getter verirsen her istekte anlık güncel veri gider, mesajlar sabit kalsa da AI güncel bağlamı görür. */
+  context?: AIDashboardChatContext | (() => AIDashboardChatContext);
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
 
-export default function AIDashboardChat({ context }: AIDashboardChatProps) {
-  const [messages, setMessages] = useState<Msg[]>([]);
+function loadPersistedMessages(persistKey: string | undefined): Msg[] {
+  if (!persistKey) return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_PREFIX + persistKey);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((m): m is Msg => typeof m === "object" && m !== null && (m as Msg).role !== undefined && typeof (m as Msg).content === "string");
+  } catch {
+    return [];
+  }
+}
+
+export default function AIDashboardChat({ isVisible, persistKey, context }: AIDashboardChatProps) {
+  const [messages, setMessages] = useState<Msg[]>(() => loadPersistedMessages(persistKey));
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [visibleLength, setVisibleLength] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
+  const streamEndedRef = useRef(false);
+  /** Context getter ise her send'de çağrılır (anlık güncel); obje ise ref ile son render değeri kullanılır */
+  const contextRef = useRef(context);
+  contextRef.current = context;
 
+  // Sekme görünür olduğunda son mesaja anında scroll (kaydırma efekti yok)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!isVisible || messages.length === 0) return;
+    const el = scrollContainerRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    } else {
+      messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "auto" });
+    }
+  }, [isVisible, messages.length]);
+
+  // Yeni mesaj/typing sonrası son mesajda kal (animasyonsuz)
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "auto" });
+  }, [messages, visibleLength]);
+
+  // Typing effect: reveal streamed content gradually; only set loading false after catch-up
+  useEffect(() => {
+    const last = messages[messages.length - 1];
+    const targetLen = last?.role === "assistant" ? last.content.length : 0;
+    if (targetLen === 0) {
+      setVisibleLength(0);
+      if (streamEndedRef.current && isLoading) setIsLoading(false);
+      return;
+    }
+    if (!isLoading) {
+      setVisibleLength(targetLen);
+      return;
+    }
+    let cancelled = false;
+    const tick = () => {
+      if (cancelled) return;
+      setVisibleLength((prev) => {
+        const next = Math.min(prev + TYPING_SPEED, targetLen);
+        if (next >= targetLen && streamEndedRef.current) setIsLoading(false);
+        if (next < targetLen) rafRef.current = requestAnimationFrame(tick);
+        return next;
+      });
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      cancelled = true;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [messages, isLoading]);
+
+  // Geçmiş sohbeti sakla (sayfadan çıkınca kaybolmasın)
+  useEffect(() => {
+    if (!persistKey || messages.length === 0) return;
+    try {
+      localStorage.setItem(STORAGE_KEY_PREFIX + persistKey, JSON.stringify(messages));
+    } catch {
+      // quota veya başka hata
+    }
+  }, [persistKey, messages]);
 
   const send = async () => {
     const text = input.trim();
@@ -35,20 +130,32 @@ export default function AIDashboardChat({ context }: AIDashboardChatProps) {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsLoading(true);
+    setVisibleLength(0);
+    streamEndedRef.current = false;
 
     let assistantSoFar = "";
     const allMessages = [...messages, userMsg];
 
+    const { data: { session } } = await supabase.auth.getSession();
+    const authHeader = session?.access_token
+      ? `Bearer ${session.access_token}`
+      : `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`;
+
     try {
+      // Her istekte güncel context: getter ise şimdi çağır (başvurular/özet/userName anlık), obje ise ref'teki son değer. Mesajlar sabit kalsa da AI her seferinde güncel bağlamı görür.
+      const currentContext = typeof contextRef.current === "function" ? contextRef.current() : contextRef.current;
       const resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: authHeader,
         },
-        body: JSON.stringify({ messages: allMessages, context }),
+        body: JSON.stringify({ messages: allMessages, context: currentContext }),
       });
 
+      if (resp.status === 401) {
+        throw new Error("Lütfen giriş yapın.");
+      }
       if (!resp.ok || !resp.body) {
         const errData = await resp.json().catch(() => ({}));
         throw new Error(errData.error || "AI servisi yanıt veremedi");
@@ -100,9 +207,22 @@ export default function AIDashboardChat({ context }: AIDashboardChatProps) {
         ...prev,
         { role: "assistant", content: `⚠️ ${e.message || "Bir hata oluştu. Lütfen tekrar deneyin."}` },
       ]);
-    } finally {
       setIsLoading(false);
+      return;
     }
+    streamEndedRef.current = true;
+    // Split single long assistant message into multiple bubbles by [YENİ_MESAJ]
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role !== "assistant" || !last.content.includes("[YENİ_MESAJ]")) return prev;
+      const parts = last.content
+        .split("[YENİ_MESAJ]")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (parts.length <= 1) return prev;
+      return [...prev.slice(0, -1), ...parts.map((content) => ({ role: "assistant" as const, content }))];
+    });
+    // isLoading is cleared by effect when visibleLength catches up (typing effect)
   };
 
   return (
@@ -125,7 +245,7 @@ export default function AIDashboardChat({ context }: AIDashboardChatProps) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8 space-y-8 min-h-0 bg-slate-50/20 custom-scrollbar relative z-10">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-8 space-y-8 min-h-0 bg-slate-50/20 custom-scrollbar relative z-10">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center p-8 animate-in fade-in zoom-in-95 duration-700">
             <div className="w-24 h-24 rounded-3xl bg-white border border-slate-100 shadow-xl shadow-slate-200/50 flex items-center justify-center mb-8 relative group">
@@ -138,16 +258,15 @@ export default function AIDashboardChat({ context }: AIDashboardChatProps) {
             </p>
             <div className="flex flex-wrap gap-3 mt-4 justify-center">
               {[
-                { text: "Vize türleri nelerdir?", icon: Paperclip },
-                { text: "Nasıl randevu alırım?", icon: Zap },
-                { text: "Başvurumu takip et", icon: MessageSquare }
+                { text: "Vize türleri nelerdir?", icon: Sparkles },
+                { text: "Nasıl randevu alırım?", icon: Sparkles },
+                { text: "Başvurumu takip et", icon: Sparkles }
               ].map((q) => (
                 <button
                   key={q.text}
                   onClick={() => { setInput(q.text); }}
                   className="group flex items-center gap-2.5 text-xs bg-white text-navy-dark px-6 py-4 rounded-2xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50 hover:shadow-lg hover:shadow-emerald-500/5 transition-all font-black uppercase tracking-wider shadow-sm active:scale-95"
                 >
-                  <q.icon size={14} className="text-emerald-500 group-hover:scale-110 transition-transform" />
                   {q.text}
                 </button>
               ))}
@@ -155,41 +274,42 @@ export default function AIDashboardChat({ context }: AIDashboardChatProps) {
           </div>
         )}
 
-        <AnimatePresence initial={false}>
-          {messages.map((msg, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div className={`max-w-[85%] rounded-[2.5rem] px-8 py-6 shadow-sm relative ${msg.role === "user"
+        <div className="space-y-6">
+          {messages.map((msg, i) => {
+            const isLastAssistant = i === messages.length - 1 && msg.role === "assistant";
+            const showContent = isLastAssistant && isLoading
+              ? msg.content.slice(0, visibleLength)
+              : msg.content;
+
+            return (
+              <div
+                key={i}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}
+              >
+                <div className={`max-w-[85%] rounded-[2rem] px-6 py-4 shadow-sm relative ${msg.role === "user"
                   ? "bg-navy-dark text-white rounded-tr-none shadow-navy-dark/10"
                   : "bg-white text-navy-dark border border-slate-100 rounded-tl-none shadow-slate-200/50"
-                }`}>
-                {msg.role === "assistant" && (
-                  <div className="absolute -left-12 bottom-0 w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 hidden md:flex">
-                    <Bot size={14} />
-                  </div>
-                )}
-                {msg.role === "assistant" ? (
-                  <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-2 prose-li:my-1 prose-headings:my-3 prose-headings:text-navy-dark prose-headings:font-black text-[15px] font-medium leading-relaxed">
-                    <ReactMarkdown>{msg.content || (isLoading && i === messages.length - 1 ? "..." : "")}</ReactMarkdown>
-                  </div>
-                ) : (
-                  <p className="text-[15px] font-bold leading-relaxed">{msg.content}</p>
-                )}
+                  }`}>
+                  {msg.role === "assistant" && (
+                    <div className="absolute -left-12 bottom-0 w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 hidden md:flex">
+                      <Bot size={14} />
+                    </div>
+                  )}
+                  {msg.role === "assistant" ? (
+                    <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-2 prose-li:my-1 prose-headings:my-3 prose-headings:text-navy-dark prose-headings:font-black text-[15px] font-medium leading-relaxed">
+                      <ReactMarkdown>{showContent || (isLoading && isLastAssistant ? "..." : "")}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-[15px] font-medium leading-relaxed">{msg.content}</p>
+                  )}
+                </div>
               </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+            );
+          })}
+        </div>
 
         {isLoading && messages[messages.length - 1]?.content === "" && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex justify-start"
-          >
+          <div className="flex justify-start animate-in fade-in scale-95 duration-300">
             <div className="bg-white rounded-2xl rounded-tl-sm px-6 py-4 border border-slate-100 shadow-sm flex items-center gap-3">
               <div className="flex gap-1.5">
                 <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
@@ -198,7 +318,7 @@ export default function AIDashboardChat({ context }: AIDashboardChatProps) {
               </div>
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Yanıt Hazırlanıyor</span>
             </div>
-          </motion.div>
+          </div>
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -218,8 +338,8 @@ export default function AIDashboardChat({ context }: AIDashboardChatProps) {
           <Button
             onClick={send}
             className={`h-12 w-12 rounded-2xl p-0 font-black transition-all active:scale-95 shadow-lg flex items-center justify-center ${!input.trim() || isLoading
-                ? "bg-slate-200 text-slate-400"
-                : "bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-500/20"
+              ? "bg-slate-200 text-slate-400"
+              : "bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-500/20"
               }`}
             disabled={!input.trim() || isLoading}
           >
@@ -230,6 +350,7 @@ export default function AIDashboardChat({ context }: AIDashboardChatProps) {
             )}
           </Button>
         </form>
+
       </div>
     </div>
   );

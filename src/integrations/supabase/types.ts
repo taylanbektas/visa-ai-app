@@ -162,6 +162,33 @@ export type Database = {
           },
         ]
       }
+      agency_invites: {
+        Row: {
+          agency_user_id: string
+          created_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          phone: string | null
+        }
+        Insert: {
+          agency_user_id: string
+          created_at?: string | null
+          email: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+        }
+        Update: {
+          agency_user_id?: string
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
       advisors: {
         Row: {
           about_me: string | null
@@ -252,6 +279,7 @@ export type Database = {
       applications: {
         Row: {
           created_at: string | null
+          created_by_agency_id: string | null
           destination: string
           id: string
           notes: string | null
@@ -267,6 +295,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          created_by_agency_id?: string | null
           destination: string
           id?: string
           notes?: string | null
@@ -282,6 +311,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          created_by_agency_id?: string | null
           destination?: string
           id?: string
           notes?: string | null
@@ -422,8 +452,10 @@ export type Database = {
       profiles: {
         Row: {
           active_package: string | null
+          agency_id: string | null
           assigned_advisor_id: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
           is_suspended: boolean | null
@@ -436,8 +468,10 @@ export type Database = {
         }
         Insert: {
           active_package?: string | null
+          agency_id?: string | null
           assigned_advisor_id?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           is_suspended?: boolean | null
@@ -450,8 +484,10 @@ export type Database = {
         }
         Update: {
           active_package?: string | null
+          agency_id?: string | null
           assigned_advisor_id?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           is_suspended?: boolean | null
@@ -490,6 +526,11 @@ export type Database = {
       admin_assign_advisor: {
         Args: { p_advisor_id: string; p_user_id: string }
         Returns: undefined
+      }
+      agency_link_customer: { Args: { p_profile_id: string }; Returns: undefined }
+      agency_search_customer_by_email: {
+        Args: { p_email: string }
+        Returns: { profile_id: string; full_name: string | null; already_linked: boolean }[]
       }
       delete_user: { Args: { user_id: string }; Returns: undefined }
       has_role: {

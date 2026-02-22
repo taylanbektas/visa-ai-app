@@ -475,6 +475,12 @@ export const translations: Record<Locale, Record<string, string>> = {
         "role.moderator": "Danışman",
         "role.user": "Üye",
 
+        "accessDenied.title": "Erişim reddedildi",
+        "accessDenied.message": "Bu sayfaya erişim yetkiniz yok. Bu alan yalnızca yetkili kullanıcılar içindir.",
+        "accessDenied.goAgency": "Acenta paneline git",
+        "accessDenied.goHome": "Ana sayfaya dön",
+        "accessDenied.goLogin": "Giriş sayfasına dön",
+
         // Contact
         "contact.form.successShort": "En kısa sürede size geri dönüş yapacağız.",
         "contact.form.namePlaceholder": "Adınız Soyadınız",
@@ -1048,6 +1054,12 @@ export const translations: Record<Locale, Record<string, string>> = {
         "role.admin": "Admin",
         "role.moderator": "Advisor",
         "role.user": "User",
+
+        "accessDenied.title": "Access denied",
+        "accessDenied.message": "You do not have permission to access this page. This area is for authorized users only.",
+        "accessDenied.goAgency": "Go to agency panel",
+        "accessDenied.goHome": "Go to home",
+        "accessDenied.goLogin": "Go to login",
 
         // Contact
         "contact.form.successShort": "We will get back to you as soon as possible.",

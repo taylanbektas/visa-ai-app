@@ -70,6 +70,8 @@ export default function Login() {
           if (userRoles.includes('admin') || userRoles.includes('moderator')) {
             await supabase.auth.signOut();
             toast({ title: t("auth.login_failed"), description: t("auth.invalid_credentials"), variant: "destructive" });
+          } else if (userRoles.includes('agency')) {
+            navigate('/agency');
           } else {
             navigate('/dashboard');
           }
