@@ -389,22 +389,30 @@ export default function Admin() {
       let exp = 0;
       const PACKAGE_PRICES = { starter: 49, pro: 149, elite: 349 };
 
-      const usersWithAdvisors = (customerProfiles as unknown as UserData[]).map((p) => {
-        if (p.active_package && PACKAGE_PRICES[p.active_package as keyof typeof PACKAGE_PRICES]) {
-          const price = PACKAGE_PRICES[p.active_package as keyof typeof PACKAGE_PRICES];
+      const usersWithRolesAndAdvisors = customerProfiles.map((p) => {
+        const userRoles = rolesData?.filter(r => r.user_id === p.user_id).map(r => r.role) || [];
+        const userData: UserData = {
+          ...p,
+          roles: userRoles as ("admin" | "moderator" | "user" | "agency")[]
+        } as unknown as UserData;
+
+        if (userData.active_package && PACKAGE_PRICES[userData.active_package as keyof typeof PACKAGE_PRICES]) {
+          const price = PACKAGE_PRICES[userData.active_package as keyof typeof PACKAGE_PRICES];
           rev += price;
-          if (p.assigned_advisor_id) {
+          if (userData.assigned_advisor_id) {
             exp += price * 0.30; // 30% commission
           }
         }
-        if (p.assigned_advisor_id && advisorMap.has(p.assigned_advisor_id)) {
-          return { ...p, advisor: advisorMap.get(p.assigned_advisor_id) };
+
+        if (userData.assigned_advisor_id && advisorMap.has(userData.assigned_advisor_id)) {
+          userData.advisor = advisorMap.get(userData.assigned_advisor_id);
         }
-        return p;
+
+        return userData;
       });
 
       setFinancials({ revenue: rev, expenses: exp, net: rev - exp });
-      setUsersList(usersWithAdvisors);
+      setUsersList(usersWithRolesAndAdvisors);
       setStats(prev => ({ ...prev, totalUsers: customerProfiles.length }));
     }
 
@@ -710,8 +718,8 @@ export default function Admin() {
   const navItems: SidebarItem[] = [
     { id: 'dashboard', label: 'Genel Bakış', icon: LayoutDashboard },
     { id: 'users', label: 'Müşteriler', icon: Users },
-    { id: 'agencies', label: 'Acenteler', icon: ShieldCheck },
     { id: 'advisors', label: 'Danışmanlar', icon: Briefcase },
+    { id: 'agencies', label: 'Acenteler', icon: ShieldCheck },
     { id: 'applications', label: 'Vize Başvuruları', icon: FileText },
     { id: 'advisor-apps', label: 'Talep Onay', icon: Briefcase, badgeCount: advisorApplications.filter(a => a.status === 'pending').length || undefined },
     { id: 'financials', label: 'Finansallar', icon: TrendingUp },
