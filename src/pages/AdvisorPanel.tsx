@@ -309,15 +309,19 @@ export default function AdvisorPanel() {
         specialties: advisorData.specializations || []
       });
 
-      // 2. Fetch assigned customers from profiles
+      // 2. Clear previous data
+      setApplications([]);
+
+      // 3. Fetch all relevant applications
+      // Step A: Applications of customers directly assigned to this advisor
       const { data: profileCustomers } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, user_id, full_name, phone, active_package, created_at')
         .eq('assigned_advisor_id', advisorData.id);
 
       const customerUserIds = profileCustomers?.map(p => p.user_id) || [];
 
-      // 3. Fetch applications assigned to this advisor OR belonging to assigned customers
+      // Step B: Applications explicitly assigned (via advisor_assignments)
       const { data: assignments } = await supabase
         .from('advisor_assignments')
         .select('application_id')
@@ -325,33 +329,49 @@ export default function AdvisorPanel() {
 
       const explicitAppIds = assignments?.map(a => a.application_id) || [];
 
-      let mappedApps: Application[] = [];
-      let appIds: string[] = [];
+      // Merge and Fetch
+      let combinedApps: any[] = [];
 
-      // Combine conditions to get all relevant applications
-      const { data: appsData, error: appsError } = await supabase
-        .from('applications')
-        .select('*, profiles(full_name, phone)')
-        .or(`id.in.(${explicitAppIds.length ? explicitAppIds.join(',') : '"00000000-0000-0000-0000-000000000000"'}),user_id.in.(${customerUserIds.length ? customerUserIds.join(',') : '"00000000-0000-0000-0000-000000000000"'})`);
-
-      if (appsData) {
-        appIds = appsData.map(a => a.id);
-        mappedApps = appsData.map((app: any) => ({
-          id: app.id,
-          applicant_name: app.profiles?.full_name || 'İsimsiz',
-          passport_type: '-',
-          destination_country: app.destination,
-          visa_type: app.visa_type,
-          status: app.status || 'Alındı',
-          created_at: app.created_at,
-          user_id: app.user_id,
-          profile_id: app.profiles?.id || "",
-          phone: app.profiles?.phone,
-          plan: app.plan
-        }));
+      // Fetch by user IDs
+      if (customerUserIds.length > 0) {
+        const { data: appsByUsers } = await supabase
+          .from('applications')
+          .select('*, profiles(id, full_name, phone, active_package)')
+          .in('user_id', customerUserIds);
+        if (appsByUsers) combinedApps = [...appsByUsers];
       }
 
-      // 4. Add customers who are assigned but have no applications shown in the list
+      // Fetch explicit ones if not already included
+      if (explicitAppIds.length > 0) {
+        const existingIds = new Set(combinedApps.map(a => a.id));
+        const missingIds = explicitAppIds.filter(id => !existingIds.has(id));
+
+        if (missingIds.length > 0) {
+          const { data: appsByExplicit } = await supabase
+            .from('applications')
+            .select('*, profiles(id, full_name, phone, active_package)')
+            .in('id', missingIds);
+          if (appsByExplicit) combinedApps = [...combinedApps, ...appsByExplicit];
+        }
+      }
+
+      const mappedApps: Application[] = combinedApps.map((app: any) => ({
+        id: app.id,
+        applicant_name: app.profiles?.full_name || 'İsimsiz',
+        passport_type: '-',
+        destination_country: app.destination,
+        visa_type: app.visa_type,
+        status: app.status || 'Alındı',
+        created_at: app.created_at,
+        user_id: app.user_id,
+        profile_id: app.profiles?.id || "",
+        phone: app.profiles?.phone,
+        plan: app.plan || app.profiles?.active_package || '-'
+      }));
+
+      const appIds = combinedApps.map(a => a.id);
+
+      // 6. Handle customers with NO applications yet (to show them in the CRM list)
       if (profileCustomers) {
         profileCustomers.forEach((profile: any) => {
           const hasApp = mappedApps.some(app => app.user_id === profile.user_id);
@@ -374,38 +394,6 @@ export default function AdvisorPanel() {
       }
 
       setApplications(mappedApps);
-
-      // Also fetch all applications for these customers to ensure we have the full picture
-      // This fixes the "1 application vs 6 applications" discrepancy
-      if (customerUserIds.length > 0) {
-        const { data: allCustomerApps } = await supabase
-          .from('applications')
-          .select('*, profiles(full_name, phone)')
-          .in('user_id', customerUserIds);
-
-        if (allCustomerApps) {
-          const allMappedApps = allCustomerApps.map((app: any) => ({
-            id: app.id,
-            applicant_name: app.profiles?.full_name || 'İsimsiz',
-            passport_type: '-',
-            destination_country: app.destination,
-            visa_type: app.visa_type,
-            status: app.status || 'Alındı',
-            created_at: app.created_at,
-            user_id: app.user_id,
-            profile_id: app.profiles?.id || "",
-            phone: app.profiles?.phone,
-            plan: app.plan
-          }));
-
-          // Combine and deduplicate
-          setApplications(prev => {
-            const combined = [...prev, ...allMappedApps];
-            const unique = Array.from(new Map(combined.map(a => [a.id, a])).values());
-            return unique;
-          });
-        }
-      }
       if (mappedApps.length === 0) setFinancialTransactions([]);
 
       if (mappedApps.length > 0) {
@@ -780,51 +768,43 @@ export default function AdvisorPanel() {
     >
       {activeTab === 'dashboard' && (
         <div className="space-y-6 animate-in fade-in duration-500">
-          <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div>
-              <h1 className="text-4xl font-black text-navy-dark mb-1 tracking-tight px-2">Merhaba, {user?.user_metadata?.full_name || 'Danışman'} 👋</h1>
-              <p className="text-lg text-slate-500 font-medium px-2">Şu anda sistemde <strong className="text-navy-dark font-black">{stats.assigned}</strong> aktif müşteriden sorumlusunuz.</p>
-            </div>
-            <div className="hidden lg:flex gap-4">
-              <div className="bg-blue-50 px-6 py-3 rounded-2xl border border-blue-100 text-center">
-                <p className="text-2xl font-black text-blue-600 leading-none">{stats.activeApps}</p>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mt-1">Süreçte</p>
-              </div>
-              <div className="bg-emerald-50 px-6 py-3 rounded-2xl border border-emerald-100 text-center">
-                <p className="text-2xl font-black text-emerald-600 leading-none">{stats.completed}</p>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mt-1">Tamamlanan</p>
+          <header className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-3xl font-black text-navy-dark tracking-tight mb-2">Merhaba, {user?.user_metadata?.full_name || 'Danışman'} 👋</h1>
+                <p className="text-slate-500 font-medium text-lg">Şu anda sistemde {stats.assigned} aktif müşteriden sorumlusunuz.</p>
               </div>
             </div>
-          </div>
+          </header>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-blue-200 transition-all cursor-default group relative overflow-hidden h-40">
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl w-fit mb-4">
-                <User size={24} />
+            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6 hover:shadow-md transition-all">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner">
+                <User size={32} />
               </div>
               <div>
-                <p className="text-4xl font-black tracking-tighter text-navy-dark">{stats.assigned}</p>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">Toplam Müşteri</p>
+                <p className="text-4xl font-black text-navy-dark tracking-tighter">{stats.assigned}</p>
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">Toplam Müşteri</p>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-emerald-200 transition-all cursor-default group relative overflow-hidden h-40">
-              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl w-fit mb-4">
-                <MessageSquare size={24} />
+            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6 hover:shadow-md transition-all">
+              <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shadow-inner">
+                <MessageSquare size={32} />
               </div>
               <div>
-                <p className="text-4xl font-black tracking-tighter text-navy-dark">{stats.pendingMessages}</p>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">Bekleyen Mesaj</p>
+                <p className="text-4xl font-black text-navy-dark tracking-tighter">{stats.pendingMessages}</p>
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">Bekleyen Mesaj</p>
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between hover:border-violet-200 transition-all cursor-default group relative overflow-hidden h-40">
-              <div className="p-3 bg-violet-50 text-violet-600 rounded-xl w-fit mb-4">
-                <CheckCircle2 size={24} />
+            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6 hover:shadow-md transition-all">
+              <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner">
+                <CheckCircle2 size={32} />
               </div>
               <div>
-                <p className="text-4xl font-black tracking-tighter text-navy-dark">{stats.completed}</p>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">Tamamlanan İşlem</p>
+                <p className="text-4xl font-black text-navy-dark tracking-tighter">{stats.completed}</p>
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">Tamamlanan İşlem</p>
               </div>
             </div>
           </div>
@@ -923,41 +903,55 @@ export default function AdvisorPanel() {
 
       {activeTab === 'applications' && (
         <div className="space-y-10 animate-in fade-in duration-500">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-8 rounded-3xl shadow-sm border border-slate-100 gap-6">
-            <div>
-              <div className="flex items-center gap-4">
-                <h2 className="text-4xl font-black text-navy-dark tracking-tight">Müşterilerim</h2>
-                <Badge className="bg-blue-50 text-blue-600 border-blue-100 px-4 py-1.5 rounded-full font-bold">{filteredApplications.length} Kayıt</Badge>
+          <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl -mr-32 -mt-32"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-5">
+                <div className="w-16 h-16 bg-navy-dark rounded-2xl flex items-center justify-center text-white shadow-sm shadow-navy-dark/20">
+                  <User size={32} />
+                </div>
+                <div>
+                  <h2 className="text-4xl font-black text-navy-dark tracking-tight mb-2">Müşterilerim</h2>
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-emerald-500 text-white border-none px-4 py-1 rounded-full font-black text-[10px] tracking-widest uppercase">{customers.length} TOPLAM MÜŞTERİ</Badge>
+                    <Badge className="bg-blue-50 text-blue-600 border-none px-4 py-1 rounded-full font-black text-[10px] tracking-widest uppercase">{filteredApplications.length} BAŞVURU KAYDI</Badge>
+                  </div>
+                </div>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-4 items-center">
-                <div className="relative w-72">
-                  <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
+              <div className="mt-10 flex flex-wrap gap-4 items-center">
+                <div className="relative w-80 group">
+                  <Search className="absolute left-4 top-4 h-5 w-5 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
                   <Input
-                    placeholder="Müşteri veya başvuru ara..."
-                    className="pl-12 bg-slate-50 border-slate-100 h-12 rounded-2xl font-bold shadow-none focus:bg-white focus:ring-2 focus:ring-blue-500/10 transition-all border-none"
+                    placeholder="Müşteri adı veya referans no..."
+                    className="pl-12 bg-slate-50/50 border-slate-100 h-14 rounded-2xl font-bold shadow-none focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all border outline-none text-lg tracking-tight"
                     value={appSearchTerm}
                     onChange={(e) => setAppSearchTerm(e.target.value)}
                   />
                 </div>
-                <div className="relative">
-                  <ChevronDown className="absolute right-4 top-4 h-4 w-4 text-slate-400 pointer-events-none" />
-                  <select
-                    className="bg-slate-50 border-none text-slate-600 px-5 py-2 rounded-2xl font-bold text-sm h-12 focus:outline-none focus:ring-2 focus:ring-blue-500/10 min-w-[180px] appearance-none cursor-pointer hover:bg-slate-100 transition-colors"
-                    value={appStatusFilter}
-                    onChange={(e) => setAppStatusFilter(e.target.value)}
-                  >
-                    <option value="all">Tüm Durumlar</option>
-                    <option value="Alındı">Alındı</option>
-                    <option value="İnceleniyor">İnceleniyor</option>
-                    <option value="İşlem Gerekli">İşlem Gerekli</option>
-                    <option value="Gönderildi">Gönderildi</option>
-                    <option value="Onaylandı">Onaylandı</option>
-                    <option value="Reddedildi">Reddedildi</option>
-                  </select>
+
+                <div className="flex items-center gap-2 bg-slate-50/50 p-2 rounded-2xl border border-slate-100">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-3 mr-2">FİLTRE:</span>
+                  <div className="relative">
+                    <ChevronDown className="absolute right-4 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <select
+                      className="bg-white border border-slate-100 text-navy-dark px-5 py-2 rounded-xl font-bold text-sm h-11 focus:outline-none focus:ring-2 focus:ring-blue-500/10 min-w-[200px] appearance-none cursor-pointer hover:border-slate-300 transition-all shadow-sm"
+                      value={appStatusFilter}
+                      onChange={(e) => setAppStatusFilter(e.target.value)}
+                    >
+                      <option value="all">Tüm Başvurular</option>
+                      <option value="Alındı">Yeni Başvurular</option>
+                      <option value="İnceleniyor">İncelenenler</option>
+                      <option value="İşlem Gerekli">Eksik Evraklı</option>
+                      <option value="Gönderildi">Konsolosluğa Verildi</option>
+                      <option value="Onaylandı">Vizesi Çıkanlar</option>
+                      <option value="Reddedildi">Red Gelenler</option>
+                    </select>
+                  </div>
                 </div>
-                <Button variant="outline" className="h-12 rounded-2xl font-black border-slate-200 text-slate-600 px-6 hover:bg-slate-50 active:scale-95 transition-all text-xs tracking-widest uppercase" onClick={handleExportAppsCSV}>
-                  CSV DIŞA AKTAR
+
+                <Button variant="outline" className="h-14 rounded-2xl font-black border-slate-200 text-slate-600 px-8 hover:bg-white hover:border-blue-500 hover:text-blue-500 active:scale-95 transition-all text-xs tracking-[0.2em] uppercase shadow-sm" onClick={handleExportAppsCSV}>
+                  RAPOR AL
                 </Button>
               </div>
             </div>
@@ -970,135 +964,148 @@ export default function AdvisorPanel() {
               return (
                 <div key={customer.user_id} className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden transition-all duration-300 hover:shadow-md">
                   <div
-                    className={`p-6 cursor-pointer flex items-center justify-between transition-colors ${isExpanded ? 'bg-slate-50/50' : 'hover:bg-slate-50/30'}`}
+                    className={`p-8 cursor-pointer flex items-center justify-between transition-all duration-300 ${isExpanded ? 'bg-slate-50' : 'hover:bg-slate-50/50'}`}
                     onClick={() => toggleCustomerExpand(customer.user_id)}
                   >
-                    <div className="flex items-center gap-5">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-navy-dark font-black text-xl">
-                        {customer.applicant_name.substring(0, 2).toUpperCase()}
+                    <div className="flex items-center gap-6">
+                      <div className="w-16 h-16 rounded-2xl bg-white border border-slate-100 shadow-sm flex items-center justify-center font-black text-2xl text-navy-dark">
+                        {customer.applicant_name.substring(0, 1).toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="text-xl font-black text-navy-dark tracking-tight">{customer.applicant_name}</h3>
-                        <div className="flex items-center gap-4 mt-1">
-                          <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                            <Phone size={12} /> {customer.phone || '-'}
+                        <h3 className="text-2xl font-black text-navy-dark tracking-tighter mb-1">{customer.applicant_name}</h3>
+                        <div className="flex items-center gap-6">
+                          <span className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                            {customer.phone || 'Telefon Yok'}
                           </span>
-                          <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                            <Package size={12} /> {customer.plan || 'Plan Yok'}
+                          <span className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest border-l border-slate-100 pl-4">
+                            {customer.plan || 'Paket Yok'}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
-                      <div className="hidden sm:flex items-center gap-2">
-                        {hasApplications ? (
-                          <div className="flex items-center gap-3">
-                            <div className="flex -space-x-2 overflow-hidden mr-2">
-                              {customer.applications.slice(0, 3).map((app, idx) => (
-                                <div key={app.id} className="inline-block h-8 w-8 rounded-lg bg-blue-50 border-2 border-white flex items-center justify-center text-[8px] font-black text-blue-600 shadow-sm" title={app.destination_country}>
-                                  {app.destination_country.substring(0, 2).toUpperCase()}
-                                </div>
-                              ))}
-                              {customer.applications.length > 3 && (
-                                <div className="inline-block h-8 w-8 rounded-lg bg-slate-100 border-2 border-white flex items-center justify-center text-[8px] font-black text-slate-500 shadow-sm">
-                                  +{customer.applications.length - 3}
-                                </div>
-                              )}
-                            </div>
-                            <Badge className="bg-blue-500 text-white border-none font-black text-[9px] px-3 py-1 rounded-lg shadow-lg shadow-blue-500/10 uppercase tracking-widest">
-                              {customer.applications.length} BAŞVURU
-                            </Badge>
-                          </div>
-                        ) : (
-                          <Badge variant="outline" className="bg-slate-50 text-slate-400 border-slate-200 text-[10px] font-black uppercase tracking-widest">Kayıt Yok</Badge>
-                        )}
+                    <div className="flex items-center gap-10">
+                      <div className="hidden lg:flex flex-col items-end">
+                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-2">AKTİF DOSYALAR</p>
+                        <div className="flex items-center gap-3">
+                          {hasApplications ? (
+                            <>
+                              <div className="flex -space-x-3 overflow-hidden">
+                                {customer.applications.slice(0, 5).map((app, idx) => (
+                                  <div key={app.id} className="inline-block h-10 w-10 rounded-xl bg-white border-2 border-slate-50 flex items-center justify-center text-[10px] font-black text-navy-dark shadow-sm hover:z-10 hover:-translate-y-1 transition-all" title={app.destination_country}>
+                                    {app.destination_country.substring(0, 2).toUpperCase()}
+                                  </div>
+                                ))}
+                                {customer.applications.length > 5 && (
+                                  <div className="inline-block h-10 w-10 rounded-xl bg-slate-100 border-2 border-slate-50 flex items-center justify-center text-[10px] font-black text-slate-500">
+                                    +{customer.applications.length - 5}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="h-4 w-[1px] bg-slate-200 mx-2"></div>
+                              <span className="text-xl font-black text-navy-dark tracking-tighter">{customer.applications.length}</span>
+                            </>
+                          ) : (
+                            <span className="text-xs font-black text-slate-300 uppercase tracking-widest italic">Henüz Dosya Yok</span>
+                          )}
+                        </div>
                       </div>
-                      <div className={`p-2 rounded-xl transition-transform duration-300 ${isExpanded ? 'rotate-180 bg-navy-dark text-white' : 'bg-slate-100 text-slate-400 shadow-sm'}`}>
-                        <ChevronDown size={20} />
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isExpanded ? 'bg-navy-dark text-white shadow-sm shadow-navy-dark/30 rotate-180' : 'bg-slate-50 text-slate-300 rotate-0 hover:bg-slate-100'}`}>
+                        <ChevronDown size={24} />
                       </div>
                     </div>
                   </div>
 
                   {isExpanded && (
-                    <div className="px-6 pb-6 pt-2 bg-slate-50/50 space-y-4 animate-in slide-in-from-top-2 duration-300">
-                      <div className="grid grid-cols-1 gap-3">
+                    <div className="px-8 pb-8 pt-2 bg-slate-50 space-y-4 animate-in slide-in-from-top-4 duration-500">
+                      <div className="grid grid-cols-1 gap-4">
                         {hasApplications ? (
                           customer.applications.map((app) => (
-                            <div key={app.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between group hover:border-blue-200 hover:shadow-md transition-all">
-                              <div className="flex flex-col md:flex-row md:items-center gap-6 flex-1">
-                                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 shrink-0">
+                            <div key={app.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between group hover:border-slate-200 transition-all">
+                              <div className="flex items-center gap-6">
+                                <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400">
                                   <MapPin size={24} />
                                 </div>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 flex-1">
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 flex-1">
                                   <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">HEDEF ÜLKE</p>
-                                    <h4 className="text-md font-black text-navy-dark">{app.destination_country}</h4>
+                                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Ülke</p>
+                                    <h4 className="font-bold text-navy-dark">{app.destination_country}</h4>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">VİZE TÜRÜ</p>
-                                    <p className="text-xs font-bold text-slate-600">{app.visa_type}</p>
+                                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Tür</p>
+                                    <p className="text-sm text-slate-600">{app.visa_type}</p>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">REFERANS</p>
-                                    <p className="text-xs font-black text-navy-dark">#{app.id.substring(0, 8).toUpperCase()}</p>
+                                    <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Referans</p>
+                                    <p className="text-sm font-mono uppercase">#{app.id.substring(0, 8)}</p>
                                   </div>
                                   <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">BAŞVURU DURUMU</p>
-                                    <Badge className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase ${app.status === 'Onaylandı' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
-                                      {app.status}
-                                    </Badge>
+                                    <Badge className="bg-slate-50 text-slate-600 border-none font-bold px-3 py-1 rounded-lg text-[10px]">{app.status}</Badge>
                                   </div>
                                 </div>
                               </div>
-                              <div className="mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-slate-50 flex gap-2">
-                                <Button
-                                  size="sm"
-                                  className="h-10 px-6 bg-navy-dark hover:bg-navy-light text-white font-black rounded-xl text-[10px] uppercase tracking-widest shadow-lg shadow-navy-dark/10"
-                                  onClick={() => navigate(`/advisor/customer/${customer.profile_id}?appId=${app.id}`)}
-                                >
-                                  Yönet
-                                </Button>
-                              </div>
+                              <Button
+                                variant="outline"
+                                className="mt-4 md:mt-0 h-10 rounded-xl font-bold text-xs px-6 border-slate-200"
+                                onClick={() => navigate(`/advisor/customer/${customer.profile_id}?appId=${app.id}`)}
+                              >
+                                Detaylar
+                              </Button>
                             </div>
                           ))
                         ) : (
-                          <div className="col-span-full py-8 text-center bg-white rounded-2xl border border-dashed border-slate-200">
-                            <p className="text-sm font-bold text-slate-400 italic">Henüz aktif bir başvurusu bulunmuyor.</p>
+                          <div className="col-span-full py-16 text-center bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100">
+                            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                              <AlertCircle size={32} />
+                            </div>
+                            <p className="text-lg font-black text-navy-dark tracking-tight">Aktif Başvuru Bulunamadı</p>
+                            <p className="text-sm font-medium text-slate-400 mt-2 mb-6">Müşterinin henüz oluşturulmuş bir vize başvurusu yok.</p>
                             <Button
-                              variant="link"
-                              className="text-blue-500 font-black text-xs uppercase mt-2"
+                              variant="outline"
+                              className="h-12 rounded-xl font-black text-[10px] uppercase tracking-widest px-8 border-slate-200"
                               onClick={() => {
                                 setDirectBookCustomerId(customer.user_id);
                                 setDirectBookOpen(true);
                               }}
                             >
-                              Randevu Planla
+                              RANDEVU OLUŞTUR
                             </Button>
                           </div>
                         )}
                       </div>
 
-                      <div className="flex border-t border-slate-100 pt-4 gap-3">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-xl border-slate-200 text-slate-600 font-bold h-10 px-4 text-xs hover:bg-white"
-                          onClick={() => navigate(`/advisor/customer/${customer.profile_id}`)}
-                        >
-                          Müşteri Profili
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="rounded-xl text-slate-400 font-bold h-10 px-4 text-xs hover:text-navy-dark"
-                          onClick={() => {
-                            setDirectBookCustomerId(customer.user_id);
-                            setDirectBookOpen(true);
-                          }}
-                        >
-                          Görüşme Planla
-                        </Button>
+                      <div className="flex justify-between items-center border-t border-slate-200/50 pt-8 mt-4">
+                        <div className="flex gap-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-xl text-slate-400 font-black h-12 px-6 text-[10px] uppercase tracking-widest hover:bg-white hover:text-navy-dark transition-all"
+                            onClick={() => navigate(`/advisor/customer/${customer.profile_id}`)}
+                          >
+                            <User size={14} className="mr-2" /> PROFİL DETAYLARI
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-xl text-slate-400 font-black h-12 px-6 text-[10px] uppercase tracking-widest hover:bg-white hover:text-navy-dark transition-all"
+                            onClick={() => {
+                              setDirectBookCustomerId(customer.user_id);
+                              setDirectBookOpen(true);
+                            }}
+                          >
+                            <Calendar size={14} className="mr-2" /> GÖRÜŞME AYARLA
+                          </Button>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="flex flex-col items-end mr-4">
+                            <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">SON ETKİLEŞİM</p>
+                            <p className="text-xs font-bold text-slate-500">Bugün, 14:30</p>
+                          </div>
+                          <Button className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                            <MessageSquare size={20} />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1183,7 +1190,7 @@ export default function AdvisorPanel() {
                   {applications.map(app => (
                     <div
                       key={app.id}
-                      className={`p-6 rounded-3xl cursor-pointer transition-all duration-300 ${selectedChatUser?.id === app.user_id ? 'bg-white shadow-xl shadow-slate-200/50 scale-[1.02] border border-emerald-100' : 'hover:bg-white hover:shadow-lg hover:shadow-slate-200/30'}`}
+                      className={`p-6 rounded-3xl cursor-pointer transition-all duration-300 ${selectedChatUser?.id === app.user_id ? 'bg-white shadow-sm shadow-slate-200/50 scale-[1.02] border border-emerald-100' : 'hover:bg-white hover:shadow-lg hover:shadow-slate-200/30'}`}
                       onClick={() => setSelectedChatUser({ id: app.user_id, name: app.applicant_name })}
                     >
                       <div className="flex items-center gap-4">
@@ -1367,7 +1374,7 @@ export default function AdvisorPanel() {
                         <Button type="button" variant="outline" onClick={() => setIsEditingProfile(false)} className="flex-1 rounded-[2.5rem] font-semibold h-20 border-slate-200 text-slate-600 hover:bg-slate-50 text-xl shadow-none">
                           İptal
                         </Button>
-                        <Button type="submit" className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xl h-20 rounded-[2.5rem] shadow-xl shadow-emerald-200/50 transition-all active:scale-[0.99]">
+                        <Button type="submit" className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xl h-20 rounded-[2.5rem] shadow-sm shadow-emerald-200/50 transition-all active:scale-[0.99]">
                           Değişiklikleri Kaydet
                         </Button>
                       </div>
@@ -1607,7 +1614,7 @@ export default function AdvisorPanel() {
                         <Button
                           onClick={handleSaveAvailability}
                           disabled={savingAvail || !selectedAvailDate}
-                          className="w-full h-16 rounded-2xl bg-navy-dark hover:bg-navy-light text-white font-black text-lg shadow-xl shadow-navy-dark/20 transition-all active:scale-[0.98]"
+                          className="w-full h-16 rounded-2xl bg-navy-dark hover:bg-navy-light text-white font-black text-lg shadow-sm shadow-navy-dark/20 transition-all active:scale-[0.98]"
                         >
                           {savingAvail ? <Loader2 className="animate-spin mr-2" /> : <Check className="mr-2" size={20} />}
                           Müsaitliği Kaydet
