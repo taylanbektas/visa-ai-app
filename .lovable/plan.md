@@ -1,137 +1,79 @@
 
-# Site Entegrasyon Plani
 
-Bu plan, sitenin tum ozelliklerini canli ve calisir hale getirmek icin gereken degisiklikleri kapsar: Google ile giris, e-posta dogrulama, musteri-danisman eslesmesi, booking sistemi ve tum butonlarin backend entegrasyonu.
-
----
-
-## 1. Google ile Giris (Login Sayfasina Ekleme)
-
-Login sayfasina "Google ile Giris Yap" butonu eklenecek. Lovable Cloud'un yonetilen Google OAuth ozelligi kullanilacak.
-
-- `src/integrations/lovable/index` modulunu import edip `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })` cagrisi yapilacak
-- Login.tsx'e e-posta/sifre formunun ustune veya altina bir ayirici ("veya") ve Google butonu eklenecek
-- Giris basariliysa mevcut rol kontrol mantigi aynen uygulanacak (admin/moderator ise cikis yaptir, user ise /dashboard'a yonlendir)
-
-**Teknik Detay:** Lovable Cloud'un Configure Social Login araci cagirilarak `src/integrations/lovable` klasoru otomatik olusturulacak. Ardindan Login.tsx'e buton eklenir.
+# Advisor Panel Müşterilerim, Admin Finansallar ve Genel Düzeltme Planı
 
 ---
 
-## 2. E-posta Dogrulama
+## 1. Advisor Panel — Müşterilerim Sayfası Tasarım Düzeltmesi
 
-Mevcut kayit akisinda e-posta dogrulama zaten uygulanmis durumda (signUp sonrasi `showEmailVerification` ekrani gosteriliyor). Supabase tarafinda auto-confirm KAPALI olmali -- bu kontrol edilip gerekiyorsa onaylanacak.
+**Sorunlar:** Dropdown/expand butonu tıklanınca 180° dönüyor ve animasyon yavaş. Genel tasarım eski ve ağır.
 
-- Kayit sonrasi kullaniciya dogrulama e-postasi gonderiliyor (Supabase varsayilan davranisi)
-- Kullanici e-postadaki linke tiklayinca hesap aktif oluyor
-- Mevcut akis korunacak, ek bir degisiklik gerekmeyecek
+**Düzeltmeler:**
+- `ChevronDown` ikonunun `rotate-180` ve `duration-500` animasyonunu `duration-200` yap
+- Customer kart yapısını sadeleştir: aşırı `tracking-widest`, `font-black` ve `text-[10px]` değerlerini normal boyutlara çek
+- Filtre alanındaki native `<select>` elementini Shadcn `Select` bileşeniyle değiştir (dropdown rendering sorunu çözülür)
+- "SON ETKİLEŞİM — Bugün, 14:30" hardcoded metni kaldır veya gerçek veriye bağla (last_seen'den çek)
 
----
+## 2. Advisor Panel — Müşteri Detay Sayfası (AdvisorProfile / navigate to customer)
 
-## 3. SMS Dogrulama (OTP)
+**Sorunlar:** Ülke adları İngilizce ("Italy" vs "İtalya"), bayrak yok, AI müşteri için çalışıyor danışman için değil, mesajlar gözükmüyor, belge havuzu bağlantısı belirsiz.
 
-SMS OTP destegi icin Supabase Phone Auth yapilandirilacak. Ancak SMS OTP, Lovable Cloud'da harici bir SMS saglayicisi (Twilio vb.) gerektirir.
+**Düzeltmeler:**
+- `destination_country` alanında Türkçe çeviri map'i uygula (aynı `ai-chat`'teki `DEST_TR` gibi bir map): `{ italy: "İtalya", germany: "Almanya", ... }`
+- Ülke adının yanına bayrak emoji ekle (basit bir map: `{ "İtalya": "🇮🇹", "Almanya": "🇩🇪", ... }`)
+- Detay sayfasında (navigate ile gidilen) mesaj bölümü ekle — `MessageCenter` bileşenini inline olarak göster
+- Belge havuzu: `application_documents` tablosundan çekilen belgeler müşteriye de görünür (RLS zaten buna izin veriyor). Advisor upload ettiğinde `application_documents`'a kaydoluyor — müşteri Dashboard'da `appDocs` state'i varsa görebilir. Dashboard'da belge listesinin `application_documents` tablosundan fetch edilip gösterildiğini doğrula.
 
-- Kullaniciya SMS dogrulama icin Twilio entegrasyonu gerektigi bildirilecek
-- Alternatif olarak, telefon numarasi profilde saklanmaya devam edecek (mevcut haliyle)
-- SMS OTP tam entegrasyon icin kullanicidan Twilio API anahtari talep edilecek
+## 3. Mesajlar Sayfası — Başvuru Başına Değil Müşteri Başına
 
-**Not:** Bu adim kullanici onayina bagli olarak opsiyonel kalacak.
+**Sorun:** Mesajlar sekmesinde her `applications` kaydı ayrı bir konuşma satırı olarak listeleniyor (satır 1204: `applications.map`). Aynı müşterinin birden fazla başvurusu varsa birden fazla satır çıkıyor.
 
----
+**Düzeltme:** `applications.map` yerine `customers` listesini kullan (zaten hesaplanmış, satır 207). Her müşteri bir kez görünsün. Duplicate user_id'leri filtrele.
 
-## 4. Musteri-Danisman Eslesmesi (Iki Tarafli Gorunum)
+## 4. Finansal Durum — Bekleyen Ödeme Mantığı
 
-### 4a. Musteri Paneli (Dashboard.tsx)
-Mevcut durum: Dashboard zaten `assigned_advisor_id` uzerinden danisman bilgilerini cekiyor ve "Danisman" kartinda gosteriyor. Ayrica `advisor_assignments` tablosu uzerinden basvuru bazli eslesmeler de gorunuyor.
+**Sorun:** Advisor finansal durumda "Bekleyen Ödeme" tüm onaylanmamış başvuru komisyonlarını gösteriyor. Halbuki çekilebilir bakiye olan parayı çekmek için bir buton olmalı, "çek" butonuna basana kadar bekleyen ödemeye geçmemeli.
 
-Eklenecekler:
-- Overview'daki danisman kartina danisman uzmanliklari (specializations) ve kisa bio eklenecek
-- Her basvurunun detayinda atanan danisman bilgisi daha belirgin gosterilecek
-- Eslesmesi olmayan kullanicilara "Danisman atamaniz bekleniyor" mesaji gosterilecek
+**Düzeltme:**
+- "Bekleyen Ödeme" kartını "İşlemdeki Kazanç" olarak yeniden adlandır — bunlar henüz vize onaylanmamış başvuruların komisyonları
+- "Çekilebilir Bakiye" kartına bir "Ödeme Talep Et" butonu ekle (tıklanınca toast ile "Talep alındı" mesajı göster — gerçek ödeme sistemi daha sonra entegre edilebilir)
+- Mantık doğru: Onaylanmış/Tamamlanmış başvuruların komisyonu = çekilebilir. Diğerleri = işlemde. Bu şekilde kullanıcıya net açıklama yapılır.
 
-### 4b. Danisman Paneli (AdvisorPanel.tsx)
-Mevcut durum: `advisor_assignments` + `applications` + `profiles` tablolari uzerinden atanan musteriler listeleniyor.
+## 5. Performans Metrikleri — Gerçek Veri
 
-Eklenecekler:
-- Musteri detay gorunumunde musteri profili (telefon, e-posta, paket durumu) gosterilecek
-- Musteri basvuru durumunu guncelleme butonlari zaten calisir durumda (handleUpdateApplicationStatus)
-- Mesajlasma mevcut ve calisir durumda
+**Sorun:** `avgResponseTime: "1.2s"` ve `satisfactionRate: 98` hardcoded.
 
----
+**Düzeltme:**
+- `avgResponseTime`: Mesaj yanıt süresi hesapla — gelen mesaj ve danışmanın ilk yanıtı arasındaki fark ortalamasını al (messages tablosundan). Veri yoksa "N/A" göster.
+- `satisfactionRate`: Henüz rating sistemi yok → "Yakında" veya gerçek `completionRate` değerini kullan.
+- Bu iki metriğin altına "(gerçek veri)" veya "(tahmini)" label'ı ekle.
 
-## 5. Booking Sistemi (Availability ve Requestler)
+## 6. Admin Panel — Finansallar Düzeltmesi
 
-### 5a. Danisman Tarafinda Musaitlik Yonetimi
-Mevcut durum: AdvisorPanel'de `advisor_blocked_slots` tablosu kullanilarak gun bazli musaitlik ekleniyor (reason='Musait'). Bu zaten calisir durumda:
-- Takvimden gun sec
-- Saat dilimlerini isaretle
-- Kaydet
+**Sorunlar:** T-cetveli (gelir/gider tablosu) mevcut ama tasarım modern değil. Metrikler düzgün çalışıyor gibi görünüyor ama doğrulanmalı.
 
-**Iyilestirme:** Musaitlik kaydedildikten sonra listeyi yenileyerek guncel durumu gostermek.
+**Düzeltmeler:**
+- Finansal kartları daha modern gradient'ler ve shadow'larla güncelle
+- T-cetveli tablosundaki `<Table>` yapısını daha okunabilir yap (row hover efektleri, daha net renk ayrımı)
+- "Dışa Aktar" butonuna CSV export fonksiyonu bağla (şu an onClick yok)
 
-### 5b. Musteri Tarafinda Randevu Talebi
-Mevcut durum: `BookingCalendar` bileseni zaten calisir durumda:
-- Danisman musait gunleri takvimde gosteriyor
-- Musait saatleri listeli yor
-- Randevu istegi `consultations` tablosuna 'pending' olarak ekleniyor
+## 7. Admin Panel — Genel Bakış Metrikleri
 
-**Iyilestirmeler:**
-- Dashboard'daki "Randevu Al" butonu zaten `isBookingOpen` state ile BookingCalendar'i aciyor
-- Musteri panelinde mevcut randevulari listeleme bolumu eklenecek (consultations tablosundan)
-- Randevu durumu (pending/confirmed/rejected) musteri panelinde gorulecek
+**Sorun:** "+%12 geçen aya göre" gibi hardcoded metrikler var (satır 819).
 
-### 5c. Danisman Tarafinda Randevu Yonetimi
-Mevcut durum: AdvisorPanel "bookings" sekmesinde randevular listeleniyor ve onay/red butonlari mevcut.
+**Düzeltme:**
+- Gerçek ay-ay karşılaştırma hesapla veya hardcoded string'leri kaldır
+- Stats kartlarına gerçek trend göstergesi ekle (bu ay vs geçen ay başvuru sayısı farkı)
 
-**Iyilestirmeler:**
-- Onaylanan randevularin musteri tarafinda da guncellenmesi (realtime veya refetch)
-- Danisman tarafindan dogrudan randevu olusturma (directBookOpen zaten mevcut)
+## 8. Uygulama Sırası
 
----
+1. Mesajlar: `applications.map` → `customers` listesi (basit düzeltme)
+2. Müşterilerim dropdown/tasarım düzeltmesi
+3. Ülke çevirisi + bayrak ekleme (advisor panel genelinde)
+4. Finansal mantık düzeltmesi (advisor + admin)
+5. Performans metrikleri gerçek veriye bağlama
+6. Admin finansallar modernizasyonu
+7. Mesaj bölümünü detay sayfasına ekleme
 
-## 6. Tum Butonlarin Calisir Hale Getirilmesi
+**Tahmini değişiklik:** ~4-5 dosya (AdvisorPanel.tsx, Admin.tsx, AdminAdvisorDetail.tsx, + yardımcı util dosyası ülke çevirisi için)
 
-Mevcut durumda cogu buton zaten backend'e bagli. Kontrol edilecek ve baglanti kurulacak alanlar:
-
-| Sayfa | Buton/Aksiyon | Durum |
-|-------|-------------|-------|
-| Apply.tsx | Basvuru olusturma | Calisiyor (applications tablosuna insert) |
-| Dashboard | Belge yukleme | Kontrol edilecek (storage + application_documents) |
-| Dashboard | Mesaj gonderme | Calisiyor (MessageCenter) |
-| Dashboard | Randevu alma | Calisiyor (BookingCalendar) |
-| AdvisorPanel | Durum guncelleme | Calisiyor |
-| AdvisorPanel | Belge yukleme | Calisiyor |
-| AdvisorPanel | Profil guncelleme | Calisiyor |
-| Pricing | Paket secimi | /apply sayfasina yonlendirme kontrolu |
-| Contact | Form gonderme | Backend entegrasyonu kontrol edilecek |
-
----
-
-## 7. Musteri Paneline Randevularim Bolumu Ekleme
-
-Dashboard.tsx'e yeni bir "Randevularim" bolumu eklenecek:
-- `consultations` tablosundan musterinin randevulari cekilecek
-- Tarih, saat, danisman adi ve durum (Bekliyor/Onaylandi/Reddedildi) gosterilecek
-- Overview sekmesinde yaklasan randevu kartolarak gosterilecek
-
----
-
-## Uygulama Sirasi
-
-1. Google OAuth yapilandirmasi (Configure Social Login araci + Login.tsx butonu)
-2. E-posta dogrulama ayarlarini kontrol et
-3. Dashboard'a randevularim bolumu ekle
-4. Musteri panelinde danisman bilgilerini zenginlestir
-5. Danisman panelinde musteri detaylarini zenginlestir
-6. Tum sayfalardaki butonlarin backend baglantilarini dogrula
-7. Contact formu backend entegrasyonu (gerekiyorsa)
-8. SMS OTP icin kullanici bilgilendirmesi
-
----
-
-## Teknik Notlar
-
-- Google OAuth icin `lovable.auth.signInWithOAuth("google")` kullanilacak, `supabase.auth.signInWithOAuth()` degil
-- Tum storage bucket'lar zaten private (application-documents, message_attachments, documents)
-- RLS politikalari zaten mevcut tablolarda uygulanmis durumda
-- Yeni tablo olusturmaya gerek yok, mevcut sema yeterli
