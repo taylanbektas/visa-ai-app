@@ -1813,7 +1813,24 @@ export default function Admin() {
               <p className="text-slate-500 font-medium mt-1">Tüm gelir ve gider (komisyon) kayıtları tablosu</p>
             </div>
             <div className="flex gap-4">
-              <Button variant="outline" className="rounded-2xl font-bold h-12 shadow-sm border-slate-200">Dışa Aktar</Button>
+              <Button variant="outline" className="rounded-2xl font-bold h-12 shadow-sm border-slate-200" onClick={() => {
+                const headers = ["Tarih", "Tür", "Açıklama", "Müşteri", "Danışman", "Tutar"];
+                const rows = financialTransactions.map(t => [
+                  new Date(t.date).toLocaleDateString('tr-TR'),
+                  t.type === 'income' ? 'Gelir' : 'Gider',
+                  t.category,
+                  t.customerName,
+                  t.advisorName || '-',
+                  `€${t.amount}`
+                ]);
+                const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(";"), ...rows.map(e => e.join(";"))].join("\n");
+                const link = document.createElement("a");
+                link.setAttribute("href", encodeURI(csvContent));
+                link.setAttribute("download", "finansal_rapor.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}>Dışa Aktar</Button>
             </div>
           </div>
 
