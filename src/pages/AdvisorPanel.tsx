@@ -1109,7 +1109,13 @@ export default function AdvisorPanel() {
                             <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">SON ETKİLEŞİM</p>
                             <p className="text-xs font-bold text-slate-500">Bugün, 14:30</p>
                           </div>
-                          <Button className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                          <Button
+                            className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                            onClick={() => {
+                              setSelectedChatUser({ id: customer.user_id, name: customer.applicant_name });
+                              setActiveTab('messages');
+                            }}
+                          >
                             <MessageSquare size={20} />
                           </Button>
                         </div>
