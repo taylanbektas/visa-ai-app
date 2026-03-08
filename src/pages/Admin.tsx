@@ -1836,26 +1836,29 @@ export default function Admin() {
 
           {/* Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-emerald-50/50 p-6 rounded-[2rem] border border-emerald-100/50 relative overflow-hidden group hover:border-emerald-200 transition-colors">
-              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                <TrendingUp size={80} className="text-emerald-900" />
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/30 p-8 rounded-[2rem] border border-emerald-100 relative overflow-hidden group hover:shadow-lg hover:shadow-emerald-100/50 transition-all">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <TrendingUp size={80} className="text-emerald-600" />
               </div>
-              <p className="text-emerald-800 font-bold uppercase text-xs tracking-widest mb-2">Toplam Ciro (Gelir)</p>
+              <p className="text-emerald-700 font-bold uppercase text-xs tracking-widest mb-3">Toplam Ciro (Gelir)</p>
               <p className="text-4xl font-black text-emerald-600">€{financials.revenue.toLocaleString()}</p>
+              <p className="text-xs text-emerald-600/60 mt-2 font-medium">{financialTransactions.filter(t => t.type === 'income').length} işlem</p>
             </div>
-            <div className="bg-rose-50/50 p-6 rounded-[2rem] border border-rose-100/50 relative overflow-hidden group hover:border-rose-200 transition-colors">
-              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                <FileText size={80} className="text-rose-900" />
+            <div className="bg-gradient-to-br from-rose-50 to-rose-100/30 p-8 rounded-[2rem] border border-rose-100 relative overflow-hidden group hover:shadow-lg hover:shadow-rose-100/50 transition-all">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <FileText size={80} className="text-rose-500" />
               </div>
-              <p className="text-rose-800 font-bold uppercase text-xs tracking-widest mb-2">Toplam Komisyon (Gider)</p>
+              <p className="text-rose-700 font-bold uppercase text-xs tracking-widest mb-3">Toplam Komisyon (Gider)</p>
               <p className="text-4xl font-black text-rose-500">€{financials.expenses.toLocaleString()}</p>
+              <p className="text-xs text-rose-500/60 mt-2 font-medium">{financialTransactions.filter(t => t.type === 'expense').length} işlem</p>
             </div>
-            <div className="bg-blue-50/50 p-6 rounded-[2rem] border border-blue-100/50 relative overflow-hidden group hover:border-blue-200 transition-colors">
-              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                <LayoutDashboard size={80} className="text-blue-900" />
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100/30 p-8 rounded-[2rem] border border-blue-100 relative overflow-hidden group hover:shadow-lg hover:shadow-blue-100/50 transition-all">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <LayoutDashboard size={80} className="text-blue-600" />
               </div>
-              <p className="text-blue-800 font-bold uppercase text-xs tracking-widest mb-2">Net Kar</p>
+              <p className="text-blue-700 font-bold uppercase text-xs tracking-widest mb-3">Net Kar</p>
               <p className="text-4xl font-black text-blue-600">€{financials.net.toLocaleString()}</p>
+              <p className="text-xs text-blue-600/60 mt-2 font-medium">Kar marjı: %{financials.revenue ? Math.round((financials.net / financials.revenue) * 100) : 0}</p>
             </div>
           </div>
 
