@@ -1018,8 +1018,8 @@ export default function AdvisorPanel() {
                           )}
                         </div>
                       </div>
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isExpanded ? 'bg-navy-dark text-white shadow-sm shadow-navy-dark/30 rotate-180' : 'bg-slate-50 text-slate-300 rotate-0 hover:bg-slate-100'}`}>
-                        <ChevronDown size={24} />
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${isExpanded ? 'bg-navy-dark text-white shadow-sm rotate-180' : 'bg-slate-50 text-slate-400 rotate-0 hover:bg-slate-100'}`}>
+                        <ChevronDown size={20} />
                       </div>
                     </div>
                   </div>
