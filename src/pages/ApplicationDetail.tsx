@@ -81,8 +81,8 @@ export default function ApplicationDetail() {
                 .single();
 
             if (profileError) throw profileError;
-            setProfile(profileData);
-            setCustomerNotes(profileData.notes || "");
+            setProfile(profileData as any);
+            setCustomerNotes((profileData as any).notes || "");
 
             // 2. Fetch all applications for this user
             const { data: appsData, error: appsError } = await supabase
