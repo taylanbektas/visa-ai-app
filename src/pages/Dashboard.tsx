@@ -294,43 +294,45 @@ export default function Dashboard() {
       noPadding={activeTab === 'messages' || activeTab === 'ai-assistant'}
     >
       {activeTab === 'overview' && (
-        <div className="space-y-8 animate-in fade-in duration-500 w-full mb-10">
-          <header className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 w-full mb-10">
+          <header className="bg-white p-5 md:p-8 rounded-2xl md:rounded-[2rem] shadow-sm border border-slate-100 mb-4 md:mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4">
               <div>
-                <h1 className="text-3xl font-black text-navy-dark tracking-tight mb-2">Hoş geldin, {displayName} 👋</h1>
-                <p className="text-slate-500 font-medium text-lg">Vize süreçlerin kontrol altında.</p>
+                <h1 className="text-xl md:text-3xl font-black text-navy-dark tracking-tight mb-1 md:mb-2">Hoş geldin, {displayName} 👋</h1>
+                <p className="text-slate-500 font-medium text-sm md:text-lg">Vize süreçlerin kontrol altında.</p>
               </div>
             </div>
           </header>
 
           {/* Dashboard Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
             {/* Left Column: Stats & Recent Apps & AI Summary */}
-            <div className="lg:col-span-2 space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6 hover:shadow-md transition-all">
-                  <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner">
-                    <FileText size={32} />
+            <div className="lg:col-span-2 space-y-6 md:space-y-8">
+              <div className="grid grid-cols-2 gap-3 md:gap-6">
+                <div className="bg-white p-4 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-3 md:gap-6 hover:shadow-md transition-all">
+                  <div className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner shrink-0">
+                    <FileText size={20} className="md:hidden" />
+                    <FileText size={32} className="hidden md:block" />
                   </div>
                   <div>
-                    <p className="text-4xl font-black text-navy-dark tracking-tighter">{applications.length}</p>
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">Toplam Başvuru</p>
+                    <p className="text-2xl md:text-4xl font-black text-navy-dark tracking-tighter">{applications.length}</p>
+                    <p className="text-[9px] md:text-xs font-black text-slate-400 uppercase tracking-widest mt-0.5 md:mt-1">Toplam Başvuru</p>
                   </div>
                 </div>
-                <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6 hover:shadow-md transition-all">
-                  <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shadow-inner">
-                    <AlertCircle size={32} />
+                <div className="bg-white p-4 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-3 md:gap-6 hover:shadow-md transition-all">
+                  <div className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shadow-inner shrink-0">
+                    <AlertCircle size={20} className="md:hidden" />
+                    <AlertCircle size={32} className="hidden md:block" />
                   </div>
                   <div>
-                    <p className="text-4xl font-black text-navy-dark tracking-tighter">
+                    <p className="text-2xl md:text-4xl font-black text-navy-dark tracking-tighter">
                       {applications.filter(a =>
                         a.status === 'İşlem Gerekli' ||
                         a.status === 'Belge Bekliyor' ||
                         Object.keys(appDocuments[a.id] || {}).length === 0
                       ).length}
                     </p>
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">İşlem Bekleyen</p>
+                    <p className="text-[9px] md:text-xs font-black text-slate-400 uppercase tracking-widest mt-0.5 md:mt-1">İşlem Bekleyen</p>
                   </div>
                 </div>
               </div>
