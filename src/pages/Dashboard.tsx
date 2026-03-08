@@ -889,6 +889,19 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {activeTab === 'apply' && (
+        <div className="animate-in fade-in duration-500">
+          <Apply
+            embedded
+            preselectedPlan={searchParams.get('plan') || undefined}
+            onComplete={() => {
+              fetchApplications();
+              setActiveTab('applications');
+            }}
+          />
+        </div>
+      )}
       <BookingCalendar
         isOpen={isBookingOpen}
         onClose={() => setIsBookingOpen(false)}
