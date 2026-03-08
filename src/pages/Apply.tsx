@@ -453,10 +453,14 @@ export default function Apply({ embedded, preselectedPlan: embeddedPlan, onCompl
     }
 
     setReferenceId(refId);
-    // Redirect to the new success page instead of inline state
-    window.location.href = `/success/${refId}`;
+    if (embedded && onComplete) {
+      onComplete();
+      toast({ title: "Başvuru Alındı", description: "Başvurunuz başarıyla oluşturuldu." });
+    } else {
+      window.location.href = `/success/${refId}`;
+      toast({ title: "Başvuru Alındı", description: "Ödemeniz onaylandı ve başvurunuz başarıyla oluşturuldu." });
+    }
     setIsLoading(false);
-    toast({ title: "Başvuru Alındı", description: "Ödemeniz onaylandı ve başvurunuz başarıyla oluşturuldu." });
   };
 
   const handleQuizAnswer = (value: string) => {
