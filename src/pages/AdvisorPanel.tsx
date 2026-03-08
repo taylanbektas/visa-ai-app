@@ -359,19 +359,22 @@ export default function AdvisorPanel() {
       const profileByUserId = new Map<string, any>();
       profileCustomers?.forEach((p: any) => profileByUserId.set(p.user_id, p));
 
-      const mappedApps: Application[] = combinedApps.map((app: any) => ({
-        id: app.id,
-        applicant_name: app.profiles?.full_name || 'İsimsiz',
-        passport_type: '-',
-        destination_country: app.destination,
-        visa_type: app.visa_type,
-        status: app.status || 'Alındı',
-        created_at: app.created_at,
-        user_id: app.user_id,
-        profile_id: app.profiles?.id || "",
-        phone: app.profiles?.phone,
-        plan: app.plan || app.profiles?.active_package || '-'
-      }));
+      const mappedApps: Application[] = combinedApps.map((app: any) => {
+        const prof = profileByUserId.get(app.user_id);
+        return {
+          id: app.id,
+          applicant_name: prof?.full_name || 'İsimsiz',
+          passport_type: '-',
+          destination_country: app.destination,
+          visa_type: app.visa_type,
+          status: app.status || 'Alındı',
+          created_at: app.created_at,
+          user_id: app.user_id,
+          profile_id: prof?.id || "",
+          phone: prof?.phone,
+          plan: app.plan || prof?.active_package || '-'
+        };
+      });
 
       const appIds = combinedApps.map(a => a.id);
 
