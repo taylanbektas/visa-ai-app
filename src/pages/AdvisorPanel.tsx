@@ -1000,8 +1000,8 @@ export default function AdvisorPanel() {
                             <>
                               <div className="flex -space-x-3 overflow-hidden">
                                 {customer.applications.slice(0, 5).map((app, idx) => (
-                                  <div key={app.id} className="inline-block h-10 w-10 rounded-xl bg-white border-2 border-slate-50 flex items-center justify-center text-[10px] font-black text-navy-dark shadow-sm hover:z-10 hover:-translate-y-1 transition-all" title={app.destination_country}>
-                                    {app.destination_country.substring(0, 2).toUpperCase()}
+                                  <div key={app.id} className="inline-block h-10 w-10 rounded-xl bg-white border-2 border-slate-50 flex items-center justify-center text-sm font-bold text-navy-dark shadow-sm hover:z-10 hover:-translate-y-1 transition-all" title={translateCountry(app.destination_country)}>
+                                    {countryWithFlag(app.destination_country).split(' ')[0] || app.destination_country.substring(0, 2).toUpperCase()}
                                   </div>
                                 ))}
                                 {customer.applications.length > 5 && (
