@@ -21,7 +21,6 @@ import { contact } from "@/lib/contact";
 
 const navLinks = [
   { labelKey: "nav.home", to: "/" },
-  { labelKey: "nav.pricing", to: "/pricing" },
   { labelKey: "nav.learn", to: "/learn" },
 ];
 

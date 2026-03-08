@@ -123,14 +123,7 @@ const AppContents = () => {
             </PublicLayout>
           }
         />
-        <Route
-          path="/pricing"
-          element={
-            <PublicLayout>
-              <Pricing />
-            </PublicLayout>
-          }
-        />
+        {/* Pricing moved to Dashboard panel */}
         <Route
           path="/login"
           element={
