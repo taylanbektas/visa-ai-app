@@ -110,7 +110,7 @@ export default function Dashboard() {
     hasTriedAutoAssign.current = true;
     (async () => {
       try {
-        const { data: advisorId, error: rpcError } = await supabase.rpc("get_least_busy_advisor");
+        const { data: advisorId, error: rpcError } = await supabase.rpc("get_least_busy_advisor" as any);
         if (rpcError || !advisorId) return;
         const { error: updateError } = await supabase
           .from("profiles")
