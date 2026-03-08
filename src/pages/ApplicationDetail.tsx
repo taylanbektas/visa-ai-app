@@ -40,7 +40,7 @@ type Profile = {
     phone: string | null;
     user_id: string;
     active_package: string | null;
-    notes: string | null; // Profile level notes
+    notes?: string | null; // Profile level notes
 };
 
 export default function ApplicationDetail() {

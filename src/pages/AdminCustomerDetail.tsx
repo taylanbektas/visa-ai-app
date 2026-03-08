@@ -41,7 +41,7 @@ interface Profile {
     package_assigned_at: string | null;
     is_suspended: boolean | null;
     assigned_advisor_id: string | null;
-    notes: string | null;
+    notes?: string | null;
 }
 
 interface Application {

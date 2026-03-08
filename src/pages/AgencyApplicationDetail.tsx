@@ -57,7 +57,7 @@ type Profile = {
   email: string | null;
   user_id: string;
   active_package: string | null;
-  notes: string | null;
+  notes?: string | null;
 };
 
 export default function AgencyApplicationDetail() {
