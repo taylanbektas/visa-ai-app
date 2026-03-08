@@ -1,137 +1,58 @@
 
-# Site Entegrasyon Plani
 
-Bu plan, sitenin tum ozelliklerini canli ve calisir hale getirmek icin gereken degisiklikleri kapsar: Google ile giris, e-posta dogrulama, musteri-danisman eslesmesi, booking sistemi ve tum butonlarin backend entegrasyonu.
+# Build Hataları ve Site Güncellemesi Planı
 
----
+## 1. Build Hatalarının Düzeltilmesi
 
-## 1. Google ile Giris (Login Sayfasina Ekleme)
+Üç TypeScript hatası var:
 
-Login sayfasina "Google ile Giris Yap" butonu eklenecek. Lovable Cloud'un yonetilen Google OAuth ozelligi kullanilacak.
+### 1a. `sync_advisor_assignments` RPC tipi eksik (Admin.tsx:138)
+`types.ts` dosyasındaki `Functions` bölümünde `sync_advisor_assignments` ve `get_least_busy_advisor` fonksiyonları tanımlı değil. Bu fonksiyonlar veritabanında mevcut ama types.ts otomatik oluşturulduğu için düzenlenemez.
 
-- `src/integrations/lovable/index` modulunu import edip `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })` cagrisi yapilacak
-- Login.tsx'e e-posta/sifre formunun ustune veya altina bir ayirici ("veya") ve Google butonu eklenecek
-- Giris basariliysa mevcut rol kontrol mantigi aynen uygulanacak (admin/moderator ise cikis yaptir, user ise /dashboard'a yonlendir)
+**Çözüm:** `supabase.rpc()` yerine `as any` cast kullanarak veya `supabase.rpc("sync_advisor_assignments" as any)` şeklinde çağrı yapılacak. Aynısı Dashboard.tsx'deki `get_least_busy_advisor` için de uygulanacak.
 
-**Teknik Detay:** Lovable Cloud'un Configure Social Login araci cagirilarak `src/integrations/lovable` klasoru otomatik olusturulacak. Ardindan Login.tsx'e buton eklenir.
+### 1b. `travel_date` property eksik (AgencyPanel.tsx:889)
+AgencyPanel'deki `Application` type'ında `travel_date` alanı yok.
 
----
+**Çözüm:** `Application` type tanımına `travel_date?: string | null` eklenmesi.
 
-## 2. E-posta Dogrulama
+## 2. Fiyatlandırmayı Panel İçine Taşıma
 
-Mevcut kayit akisinda e-posta dogrulama zaten uygulanmis durumda (signUp sonrasi `showEmailVerification` ekrani gosteriliyor). Supabase tarafinda auto-confirm KAPALI olmali -- bu kontrol edilip gerekiyorsa onaylanacak.
+Pricing sayfası şu an public bir route (`/pricing`). Giriş yapıldıktan sonra Dashboard içinde gösterilecek.
 
-- Kayit sonrasi kullaniciya dogrulama e-postasi gonderiliyor (Supabase varsayilan davranisi)
-- Kullanici e-postadaki linke tiklayinca hesap aktif oluyor
-- Mevcut akis korunacak, ek bir degisiklik gerekmeyecek
+**Değişiklikler:**
+- Dashboard.tsx'e yeni bir "Paketler" sidebar sekmesi eklenir
+- Pricing içeriği Dashboard panelinde render edilir (plan seçince doğrudan `/apply` sayfasına yönlendirilir)
+- Public `/pricing` route'u kaldırılmaz ama navbar'dan giriş yapmış kullanıcılar `/dashboard?tab=pricing` e yönlendirilir
 
----
+## 3. AI Bileşenlerinin Güçlendirilmesi
 
-## 3. SMS Dogrulama (OTP)
+- `AIDashboardChat.tsx`: Mesaj balonlarının görünümü düzeltilecek, boş state'de hoş geldin mesajı eklenecek
+- `AIApplicationSummary.tsx`: Loading skeleton ve hata durumu iyileştirilecek  
+- `AIDocumentReview.tsx`: Sonuç kartlarının görünümü tutarlı hale getirilecek
 
-SMS OTP destegi icin Supabase Phone Auth yapilandirilacak. Ancak SMS OTP, Lovable Cloud'da harici bir SMS saglayicisi (Twilio vb.) gerektirir.
+## 4. Eşleşme Sorunlarının Çözümü
 
-- Kullaniciya SMS dogrulama icin Twilio entegrasyonu gerektigi bildirilecek
-- Alternatif olarak, telefon numarasi profilde saklanmaya devam edecek (mevcut haliyle)
-- SMS OTP tam entegrasyon icin kullanicidan Twilio API anahtari talep edilecek
+Dashboard'daki auto-assign `get_least_busy_advisor` RPC çağrısı type hatası veriyor. Cast ile düzeltilecek. Ayrıca advisor bilgilerinin (specializations, bio) müşteri panelinde gösterilmesi sağlanacak.
 
-**Not:** Bu adim kullanici onayina bagli olarak opsiyonel kalacak.
+## 5. Tüm Dashboard Butonlarının İşlevselleştirilmesi
 
----
+- Profil düzenleme kaydet butonu → `profiles` tablosuna `UPDATE`
+- Belge yükleme → `application-documents` bucket + `application_documents` tablosu
+- Randevu al butonu → BookingCalendar bileşeni (zaten çalışıyor)
+- Mesaj gönder → messages tablosuna INSERT (zaten çalışıyor)
 
-## 4. Musteri-Danisman Eslesmesi (Iki Tarafli Gorunum)
+## 6. Tasarım Tutarlılığı
 
-### 4a. Musteri Paneli (Dashboard.tsx)
-Mevcut durum: Dashboard zaten `assigned_advisor_id` uzerinden danisman bilgilerini cekiyor ve "Danisman" kartinda gosteriyor. Ayrica `advisor_assignments` tablosu uzerinden basvuru bazli eslesmeler de gorunuyor.
+- Tüm panellerde (Dashboard, AdvisorPanel, AgencyPanel, Admin) aynı kart stilleri, buton boyutları ve renk şeması kullanılacak
+- Sidebar navigation stillerinin tutarlılığı sağlanacak
 
-Eklenecekler:
-- Overview'daki danisman kartina danisman uzmanliklari (specializations) ve kisa bio eklenecek
-- Her basvurunun detayinda atanan danisman bilgisi daha belirgin gosterilecek
-- Eslesmesi olmayan kullanicilara "Danisman atamaniz bekleniyor" mesaji gosterilecek
+## Uygulama Sırası
 
-### 4b. Danisman Paneli (AdvisorPanel.tsx)
-Mevcut durum: `advisor_assignments` + `applications` + `profiles` tablolari uzerinden atanan musteriler listeleniyor.
+1. Build hatalarını düzelt (3 dosya: Admin.tsx, Dashboard.tsx, AgencyPanel.tsx)
+2. Pricing'i Dashboard'a taşı
+3. AI bileşenlerini güçlendir ve görünümlerini düzelt
+4. Eşleşme mantığını düzelt
+5. Eksik buton işlevlerini tamamla
+6. Tasarım tutarlılığı güncellemeleri
 
-Eklenecekler:
-- Musteri detay gorunumunde musteri profili (telefon, e-posta, paket durumu) gosterilecek
-- Musteri basvuru durumunu guncelleme butonlari zaten calisir durumda (handleUpdateApplicationStatus)
-- Mesajlasma mevcut ve calisir durumda
-
----
-
-## 5. Booking Sistemi (Availability ve Requestler)
-
-### 5a. Danisman Tarafinda Musaitlik Yonetimi
-Mevcut durum: AdvisorPanel'de `advisor_blocked_slots` tablosu kullanilarak gun bazli musaitlik ekleniyor (reason='Musait'). Bu zaten calisir durumda:
-- Takvimden gun sec
-- Saat dilimlerini isaretle
-- Kaydet
-
-**Iyilestirme:** Musaitlik kaydedildikten sonra listeyi yenileyerek guncel durumu gostermek.
-
-### 5b. Musteri Tarafinda Randevu Talebi
-Mevcut durum: `BookingCalendar` bileseni zaten calisir durumda:
-- Danisman musait gunleri takvimde gosteriyor
-- Musait saatleri listeli yor
-- Randevu istegi `consultations` tablosuna 'pending' olarak ekleniyor
-
-**Iyilestirmeler:**
-- Dashboard'daki "Randevu Al" butonu zaten `isBookingOpen` state ile BookingCalendar'i aciyor
-- Musteri panelinde mevcut randevulari listeleme bolumu eklenecek (consultations tablosundan)
-- Randevu durumu (pending/confirmed/rejected) musteri panelinde gorulecek
-
-### 5c. Danisman Tarafinda Randevu Yonetimi
-Mevcut durum: AdvisorPanel "bookings" sekmesinde randevular listeleniyor ve onay/red butonlari mevcut.
-
-**Iyilestirmeler:**
-- Onaylanan randevularin musteri tarafinda da guncellenmesi (realtime veya refetch)
-- Danisman tarafindan dogrudan randevu olusturma (directBookOpen zaten mevcut)
-
----
-
-## 6. Tum Butonlarin Calisir Hale Getirilmesi
-
-Mevcut durumda cogu buton zaten backend'e bagli. Kontrol edilecek ve baglanti kurulacak alanlar:
-
-| Sayfa | Buton/Aksiyon | Durum |
-|-------|-------------|-------|
-| Apply.tsx | Basvuru olusturma | Calisiyor (applications tablosuna insert) |
-| Dashboard | Belge yukleme | Kontrol edilecek (storage + application_documents) |
-| Dashboard | Mesaj gonderme | Calisiyor (MessageCenter) |
-| Dashboard | Randevu alma | Calisiyor (BookingCalendar) |
-| AdvisorPanel | Durum guncelleme | Calisiyor |
-| AdvisorPanel | Belge yukleme | Calisiyor |
-| AdvisorPanel | Profil guncelleme | Calisiyor |
-| Pricing | Paket secimi | /apply sayfasina yonlendirme kontrolu |
-| Contact | Form gonderme | Backend entegrasyonu kontrol edilecek |
-
----
-
-## 7. Musteri Paneline Randevularim Bolumu Ekleme
-
-Dashboard.tsx'e yeni bir "Randevularim" bolumu eklenecek:
-- `consultations` tablosundan musterinin randevulari cekilecek
-- Tarih, saat, danisman adi ve durum (Bekliyor/Onaylandi/Reddedildi) gosterilecek
-- Overview sekmesinde yaklasan randevu kartolarak gosterilecek
-
----
-
-## Uygulama Sirasi
-
-1. Google OAuth yapilandirmasi (Configure Social Login araci + Login.tsx butonu)
-2. E-posta dogrulama ayarlarini kontrol et
-3. Dashboard'a randevularim bolumu ekle
-4. Musteri panelinde danisman bilgilerini zenginlestir
-5. Danisman panelinde musteri detaylarini zenginlestir
-6. Tum sayfalardaki butonlarin backend baglantilarini dogrula
-7. Contact formu backend entegrasyonu (gerekiyorsa)
-8. SMS OTP icin kullanici bilgilendirmesi
-
----
-
-## Teknik Notlar
-
-- Google OAuth icin `lovable.auth.signInWithOAuth("google")` kullanilacak, `supabase.auth.signInWithOAuth()` degil
-- Tum storage bucket'lar zaten private (application-documents, message_attachments, documents)
-- RLS politikalari zaten mevcut tablolarda uygulanmis durumda
-- Yeni tablo olusturmaya gerek yok, mevcut sema yeterli
