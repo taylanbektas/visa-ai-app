@@ -469,9 +469,9 @@ export default function AdvisorPanel() {
           withdrawableBalance: withdrawableBalance,
           pendingRevenue: pendingRevenue,
           activeApps: appsData.length - completedApps.length,
-          pendingConsultations: 0, // Will be updated below
-          avgResponseTime: "1.2s", // Simulated for now
-          satisfactionRate: 98,
+          pendingConsultations: 0,
+          avgResponseTime: "N/A",
+          satisfactionRate: 0,
           completionRate: Math.round((completedApps.length / (appsData.length || 1)) * 100)
         });
 
