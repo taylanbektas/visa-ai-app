@@ -40,7 +40,7 @@ type Profile = {
     phone: string | null;
     user_id: string;
     active_package: string | null;
-    notes: string | null; // Profile level notes
+    notes?: string | null; // Profile level notes
 };
 
 export default function ApplicationDetail() {
@@ -81,8 +81,8 @@ export default function ApplicationDetail() {
                 .single();
 
             if (profileError) throw profileError;
-            setProfile(profileData);
-            setCustomerNotes(profileData.notes || "");
+            setProfile(profileData as any);
+            setCustomerNotes((profileData as any).notes || "");
 
             // 2. Fetch all applications for this user
             const { data: appsData, error: appsError } = await supabase
@@ -146,7 +146,7 @@ export default function ApplicationDetail() {
 
         const { error } = await supabase
             .from('profiles')
-            .update({ notes: customerNotes })
+            .update({ notes: customerNotes } as any)
             .eq('id', profile.id);
 
         if (error) {

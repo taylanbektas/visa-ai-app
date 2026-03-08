@@ -57,7 +57,7 @@ type Profile = {
   email: string | null;
   user_id: string;
   active_package: string | null;
-  notes: string | null;
+  notes?: string | null;
 };
 
 export default function AgencyApplicationDetail() {
@@ -109,8 +109,8 @@ export default function AgencyApplicationDetail() {
         return;
       }
 
-      setProfile(profileData);
-      setCustomerNotes(profileData.notes || "");
+      setProfile(profileData as any);
+      setCustomerNotes((profileData as any).notes || "");
       setApplication({
         ...appData,
         destination: appData.destination,
@@ -146,7 +146,7 @@ export default function AgencyApplicationDetail() {
   const handleSaveNotes = async () => {
     if (!profile) return;
     setSavingNotes(true);
-    const { error } = await supabase.from("profiles").update({ notes: customerNotes }).eq("id", profile.id);
+    const { error } = await supabase.from("profiles").update({ notes: customerNotes } as any).eq("id", profile.id);
     if (error) toast({ title: "Hata", description: error.message, variant: "destructive" });
     else {
       toast({ title: "Notlar kaydedildi." });

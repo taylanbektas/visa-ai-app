@@ -135,7 +135,7 @@ function SyncAdvisorAssignmentsButton({ onSuccess, toast }: { onSuccess: () => v
   const runSync = async () => {
     setSyncing(true);
     try {
-      const { data, error } = await supabase.rpc("sync_advisor_assignments");
+      const { data, error } = await supabase.rpc("sync_advisor_assignments" as any);
       if (error) throw error;
       const row = Array.isArray(data) && data[0] ? data[0] : data;
       const updated = row?.applications_updated ?? 0;

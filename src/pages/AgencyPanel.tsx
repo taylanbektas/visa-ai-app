@@ -75,6 +75,7 @@ type Application = {
   phone?: string | null;
   plan?: string;
   reference_id?: string;
+  travel_date?: string | null;
 };
 
 type Customer = {
