@@ -102,7 +102,13 @@ function getRecommendation(answers: string[]): string {
   return "pro";
 }
 
-export default function Apply() {
+type ApplyProps = {
+  embedded?: boolean;
+  preselectedPlan?: string;
+  onComplete?: () => void;
+};
+
+export default function Apply({ embedded, preselectedPlan: embeddedPlan, onComplete }: ApplyProps = {}) {
   const { t } = useLanguage();
   const location = useLocation();
   const { user, signIn, signUp } = useAuth();
@@ -120,7 +126,7 @@ export default function Apply() {
 
   const preselectedDestination = location.state?.destination as string | undefined;
   const preselectedPassport = location.state?.passport as string | undefined;
-  const preselectedPlan = location.state?.plan as string | undefined;
+  const preselectedPlan = embeddedPlan || location.state?.plan as string | undefined;
 
   const [step, setStep] = useState(1);
   const [selectedPassport, setSelectedPassport] = useState(preselectedPassport || "TR");
