@@ -64,6 +64,8 @@ import { MessageCenter } from "@/components/MessageCenter";
 import { Calendar as CalendarUI } from "@/components/ui/calendar";
 import { BookingCalendar } from "@/components/BookingCalendar";
 import { Sparkles } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { countryWithFlag, translateCountry } from "@/lib/countryUtils";
 
 // Types
 type Application = {
@@ -117,9 +119,9 @@ export default function AdvisorPanel() {
     pendingRevenue: 0,
     activeApps: 0,
     pendingConsultations: 0,
-    avgResponseTime: "1.2s",
-    satisfactionRate: 98,
-    completionRate: 94
+    avgResponseTime: "N/A",
+    satisfactionRate: 0,
+    completionRate: 0
   });
 
   // Profile Form State
@@ -467,9 +469,9 @@ export default function AdvisorPanel() {
           withdrawableBalance: withdrawableBalance,
           pendingRevenue: pendingRevenue,
           activeApps: appsData.length - completedApps.length,
-          pendingConsultations: 0, // Will be updated below
-          avgResponseTime: "1.2s", // Simulated for now
-          satisfactionRate: 98,
+          pendingConsultations: 0,
+          avgResponseTime: "N/A",
+          satisfactionRate: 0,
           completionRate: Math.round((completedApps.length / (appsData.length || 1)) * 100)
         });
 
@@ -825,16 +827,17 @@ export default function AdvisorPanel() {
                 </div>
                 <div className="flex gap-3 items-center">
                   <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 px-4 py-1.5 rounded-full text-xs font-black shadow-sm tracking-wider uppercase hidden sm:flex">Yüksek Performans</Badge>
-                  <select
-                    className="bg-slate-50 border border-slate-200 text-slate-600 px-4 py-1.5 rounded-xl font-bold text-xs h-8 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all hover:bg-slate-100 cursor-pointer"
-                    value={timeFilter}
-                    onChange={(e) => setTimeFilter(e.target.value)}
-                  >
-                    <option value="3months">Son 3 Ay</option>
-                    <option value="6months">Son 6 Ay</option>
-                    <option value="year">Son 1 Yıl</option>
-                    <option value="all">Tüm Zamanlar</option>
-                  </select>
+                  <Select value={timeFilter} onValueChange={setTimeFilter}>
+                    <SelectTrigger className="bg-slate-50 border-slate-200 text-slate-600 rounded-xl font-bold text-xs h-8 w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3months">Son 3 Ay</SelectItem>
+                      <SelectItem value="6months">Son 6 Ay</SelectItem>
+                      <SelectItem value="year">Son 1 Yıl</SelectItem>
+                      <SelectItem value="all">Tüm Zamanlar</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="flex-1 w-full min-h-[250px]">
@@ -864,31 +867,27 @@ export default function AdvisorPanel() {
                 <h3 className="text-xl font-black text-navy-dark mb-6 tracking-tight">Performans Metrikleri</h3>
                 <div className="grid grid-cols-1 gap-4">
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-blue-200 transition-colors">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cevap Süresi</span>
-                      <Badge className="bg-emerald-50 text-emerald-600 border-none text-[10px] font-black">Mükemmel</Badge>
+                  <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Toplam Müşteri</span>
                     </div>
                     <div className="flex items-end gap-2">
-                      <span className="text-2xl font-black text-navy-dark">{stats.avgResponseTime}</span>
-                      <span className="text-[10px] font-bold text-slate-400 mb-1.5">Hedef: &lt; 2s</span>
+                      <span className="text-2xl font-black text-navy-dark">{stats.assigned}</span>
                     </div>
                   </div>
 
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-violet-200 transition-colors">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Müşteri Memnuniyeti</span>
-                      <Badge className="bg-emerald-50 text-emerald-600 border-none text-[10px] font-black">Yüksek</Badge>
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Aktif Başvuru</span>
                     </div>
                     <div className="flex items-end gap-2">
-                      <span className="text-2xl font-black text-navy-dark">%{stats.satisfactionRate}</span>
-                      <span className="text-[10px] font-bold text-slate-400 mb-1.5">Hedef: &gt; %90</span>
+                      <span className="text-2xl font-black text-navy-dark">{stats.activeApps}</span>
                     </div>
                   </div>
 
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-emerald-200 transition-colors">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Başarı Oranı</span>
-                      <Badge className="bg-blue-50 text-blue-600 border-none text-[10px] font-black">İyi</Badge>
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Başarı Oranı</span>
+                      <Badge className="bg-blue-50 text-blue-600 border-none text-[10px] font-bold">{stats.completionRate > 85 ? 'İyi' : 'Gelişiyor'}</Badge>
                     </div>
                     <div className="flex items-end gap-2">
                       <span className="text-2xl font-black text-navy-dark">%{stats.completionRate}</span>
@@ -940,22 +939,20 @@ export default function AdvisorPanel() {
 
                 <div className="flex items-center gap-2 bg-slate-50/50 p-2 rounded-2xl border border-slate-100">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-3 mr-2">FİLTRE:</span>
-                  <div className="relative">
-                    <ChevronDown className="absolute right-4 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
-                    <select
-                      className="bg-white border border-slate-100 text-navy-dark px-5 py-2 rounded-xl font-bold text-sm h-11 focus:outline-none focus:ring-2 focus:ring-blue-500/10 min-w-[200px] appearance-none cursor-pointer hover:border-slate-300 transition-all shadow-sm"
-                      value={appStatusFilter}
-                      onChange={(e) => setAppStatusFilter(e.target.value)}
-                    >
-                      <option value="all">Tüm Başvurular</option>
-                      <option value="Alındı">Yeni Başvurular</option>
-                      <option value="İnceleniyor">İncelenenler</option>
-                      <option value="İşlem Gerekli">Eksik Evraklı</option>
-                      <option value="Gönderildi">Konsolosluğa Verildi</option>
-                      <option value="Onaylandı">Vizesi Çıkanlar</option>
-                      <option value="Reddedildi">Red Gelenler</option>
-                    </select>
-                  </div>
+                  <Select value={appStatusFilter} onValueChange={setAppStatusFilter}>
+                    <SelectTrigger className="bg-white border-slate-100 text-navy-dark font-bold text-sm h-11 min-w-[200px] rounded-xl shadow-sm">
+                      <SelectValue placeholder="Tüm Başvurular" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tüm Başvurular</SelectItem>
+                      <SelectItem value="Alındı">Yeni Başvurular</SelectItem>
+                      <SelectItem value="İnceleniyor">İncelenenler</SelectItem>
+                      <SelectItem value="İşlem Gerekli">Eksik Evraklı</SelectItem>
+                      <SelectItem value="Gönderildi">Konsolosluğa Verildi</SelectItem>
+                      <SelectItem value="Onaylandı">Vizesi Çıkanlar</SelectItem>
+                      <SelectItem value="Reddedildi">Red Gelenler</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <Button variant="outline" className="h-14 rounded-2xl font-black border-slate-200 text-slate-600 px-8 hover:bg-white hover:border-blue-500 hover:text-blue-500 active:scale-95 transition-all text-xs tracking-[0.2em] uppercase shadow-sm" onClick={handleExportAppsCSV}>
@@ -1000,8 +997,8 @@ export default function AdvisorPanel() {
                             <>
                               <div className="flex -space-x-3 overflow-hidden">
                                 {customer.applications.slice(0, 5).map((app, idx) => (
-                                  <div key={app.id} className="inline-block h-10 w-10 rounded-xl bg-white border-2 border-slate-50 flex items-center justify-center text-[10px] font-black text-navy-dark shadow-sm hover:z-10 hover:-translate-y-1 transition-all" title={app.destination_country}>
-                                    {app.destination_country.substring(0, 2).toUpperCase()}
+                                  <div key={app.id} className="inline-block h-10 w-10 rounded-xl bg-white border-2 border-slate-50 flex items-center justify-center text-sm font-bold text-navy-dark shadow-sm hover:z-10 hover:-translate-y-1 transition-all" title={translateCountry(app.destination_country)}>
+                                    {countryWithFlag(app.destination_country).split(' ')[0] || app.destination_country.substring(0, 2).toUpperCase()}
                                   </div>
                                 ))}
                                 {customer.applications.length > 5 && (
@@ -1018,8 +1015,8 @@ export default function AdvisorPanel() {
                           )}
                         </div>
                       </div>
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${isExpanded ? 'bg-navy-dark text-white shadow-sm shadow-navy-dark/30 rotate-180' : 'bg-slate-50 text-slate-300 rotate-0 hover:bg-slate-100'}`}>
-                        <ChevronDown size={24} />
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${isExpanded ? 'bg-navy-dark text-white shadow-sm rotate-180' : 'bg-slate-50 text-slate-400 rotate-0 hover:bg-slate-100'}`}>
+                        <ChevronDown size={20} />
                       </div>
                     </div>
                   </div>
@@ -1037,7 +1034,7 @@ export default function AdvisorPanel() {
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 flex-1">
                                   <div>
                                     <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Ülke</p>
-                                    <h4 className="font-bold text-navy-dark">{app.destination_country}</h4>
+                                    <h4 className="font-bold text-navy-dark">{countryWithFlag(app.destination_country)}</h4>
                                   </div>
                                   <div>
                                     <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Tür</p>
@@ -1106,10 +1103,7 @@ export default function AdvisorPanel() {
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <div className="flex flex-col items-end mr-4">
-                            <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">SON ETKİLEŞİM</p>
-                            <p className="text-xs font-bold text-slate-500">Bugün, 14:30</p>
-                          </div>
+                        
                           <Button
                             className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
                             onClick={() => {
@@ -1200,25 +1194,25 @@ export default function AdvisorPanel() {
                 <h3 className="text-2xl font-black text-navy-dark tracking-tight">Görüşmeler</h3>
               </div>
               <div className="flex-1 overflow-y-auto w-full">
-                <div className="space-y-4">
-                  {applications.map(app => (
+                <div className="space-y-1">
+                  {customers.map(cust => (
                     <div
-                      key={app.id}
-                      className={`p-6 rounded-3xl cursor-pointer transition-all duration-300 ${selectedChatUser?.id === app.user_id ? 'bg-white shadow-sm shadow-slate-200/50 scale-[1.02] border border-emerald-100' : 'hover:bg-white hover:shadow-lg hover:shadow-slate-200/30'}`}
-                      onClick={() => setSelectedChatUser({ id: app.user_id, name: app.applicant_name })}
+                      key={cust.user_id}
+                      className={`p-4 rounded-2xl cursor-pointer transition-all duration-200 ${selectedChatUser?.id === cust.user_id ? 'bg-white shadow-sm border border-emerald-100' : 'hover:bg-white hover:shadow-sm'}`}
+                      onClick={() => setSelectedChatUser({ id: cust.user_id, name: cust.applicant_name })}
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-navy-dark to-navy-light text-white flex items-center justify-center font-black text-lg">
-                          {app.applicant_name.substring(0, 2).toUpperCase()}
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-navy-dark to-navy-light text-white flex items-center justify-center font-bold text-sm shrink-0">
+                          {cust.applicant_name.substring(0, 2).toUpperCase()}
                         </div>
-                        <div className="overflow-hidden">
-                          <p className="text-lg font-black text-navy-dark truncate">{app.applicant_name}</p>
-                          <p className="text-sm font-bold text-slate-400 truncate uppercase tracking-wider">{app.destination_country}</p>
+                        <div className="overflow-hidden min-w-0">
+                          <p className="text-sm font-bold text-navy-dark truncate">{cust.applicant_name}</p>
+                          <p className="text-xs text-slate-400 truncate">{cust.applications.length} başvuru</p>
                         </div>
                       </div>
                     </div>
                   ))}
-                  {applications.length === 0 && <p className="text-center py-20 text-slate-400 font-bold">Aktif görüşme bulunmuyor.</p>}
+                  {customers.length === 0 && <p className="text-center py-20 text-slate-400 font-bold">Aktif görüşme bulunmuyor.</p>}
                 </div>
               </div>
             </div>
@@ -1680,6 +1674,15 @@ export default function AdvisorPanel() {
                 <div className="relative z-10">
                   <p className="text-4xl font-black tracking-tighter text-navy-dark">€{stats.withdrawableBalance.toLocaleString()}</p>
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">Çekilebilir Bakiye</p>
+                  {stats.withdrawableBalance > 0 && (
+                    <Button
+                      size="sm"
+                      className="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs h-8 px-4"
+                      onClick={() => toast({ title: "Talep Alındı", description: "Ödeme talebiniz işleme alındı. En kısa sürede hesabınıza aktarılacaktır." })}
+                    >
+                      Ödeme Talep Et
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -1692,7 +1695,8 @@ export default function AdvisorPanel() {
                 </div>
                 <div className="relative z-10">
                   <p className="text-4xl font-black tracking-tighter text-navy-dark">€{stats.pendingRevenue.toLocaleString()}</p>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">Bekleyen Ödeme</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">İşlemdeki Kazanç</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Vize onayı bekleyen başvurular</p>
                 </div>
               </div>
             </div>

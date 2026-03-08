@@ -815,9 +815,6 @@ export default function Admin() {
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Toplam Başvuru</h3>
               <div className="flex items-end gap-2">
                 <p className="text-4xl font-black text-navy-dark">{stats.totalApplications}</p>
-                <span className="text-xs text-emerald-500 font-bold mb-1 flex items-center bg-emerald-50 px-2 py-0.5 rounded-lg">
-                  +%12 geçen aya göre
-                </span>
               </div>
             </div>
 
@@ -1816,58 +1813,79 @@ export default function Admin() {
               <p className="text-slate-500 font-medium mt-1">Tüm gelir ve gider (komisyon) kayıtları tablosu</p>
             </div>
             <div className="flex gap-4">
-              <Button variant="outline" className="rounded-2xl font-bold h-12 shadow-sm border-slate-200">Dışa Aktar</Button>
+              <Button variant="outline" className="rounded-2xl font-bold h-12 shadow-sm border-slate-200" onClick={() => {
+                const headers = ["Tarih", "Tür", "Açıklama", "Müşteri", "Danışman", "Tutar"];
+                const rows = financialTransactions.map(t => [
+                  new Date(t.date).toLocaleDateString('tr-TR'),
+                  t.type === 'income' ? 'Gelir' : 'Gider',
+                  t.category,
+                  t.customerName,
+                  t.advisorName || '-',
+                  `€${t.amount}`
+                ]);
+                const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + [headers.join(";"), ...rows.map(e => e.join(";"))].join("\n");
+                const link = document.createElement("a");
+                link.setAttribute("href", encodeURI(csvContent));
+                link.setAttribute("download", "finansal_rapor.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}>Dışa Aktar</Button>
             </div>
           </div>
 
           {/* Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-emerald-50/50 p-6 rounded-[2rem] border border-emerald-100/50 relative overflow-hidden group hover:border-emerald-200 transition-colors">
-              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                <TrendingUp size={80} className="text-emerald-900" />
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/30 p-8 rounded-[2rem] border border-emerald-100 relative overflow-hidden group hover:shadow-lg hover:shadow-emerald-100/50 transition-all">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <TrendingUp size={80} className="text-emerald-600" />
               </div>
-              <p className="text-emerald-800 font-bold uppercase text-xs tracking-widest mb-2">Toplam Ciro (Gelir)</p>
+              <p className="text-emerald-700 font-bold uppercase text-xs tracking-widest mb-3">Toplam Ciro (Gelir)</p>
               <p className="text-4xl font-black text-emerald-600">€{financials.revenue.toLocaleString()}</p>
+              <p className="text-xs text-emerald-600/60 mt-2 font-medium">{financialTransactions.filter(t => t.type === 'income').length} işlem</p>
             </div>
-            <div className="bg-rose-50/50 p-6 rounded-[2rem] border border-rose-100/50 relative overflow-hidden group hover:border-rose-200 transition-colors">
-              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                <FileText size={80} className="text-rose-900" />
+            <div className="bg-gradient-to-br from-rose-50 to-rose-100/30 p-8 rounded-[2rem] border border-rose-100 relative overflow-hidden group hover:shadow-lg hover:shadow-rose-100/50 transition-all">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <FileText size={80} className="text-rose-500" />
               </div>
-              <p className="text-rose-800 font-bold uppercase text-xs tracking-widest mb-2">Toplam Komisyon (Gider)</p>
+              <p className="text-rose-700 font-bold uppercase text-xs tracking-widest mb-3">Toplam Komisyon (Gider)</p>
               <p className="text-4xl font-black text-rose-500">€{financials.expenses.toLocaleString()}</p>
+              <p className="text-xs text-rose-500/60 mt-2 font-medium">{financialTransactions.filter(t => t.type === 'expense').length} işlem</p>
             </div>
-            <div className="bg-blue-50/50 p-6 rounded-[2rem] border border-blue-100/50 relative overflow-hidden group hover:border-blue-200 transition-colors">
-              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                <LayoutDashboard size={80} className="text-blue-900" />
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100/30 p-8 rounded-[2rem] border border-blue-100 relative overflow-hidden group hover:shadow-lg hover:shadow-blue-100/50 transition-all">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <LayoutDashboard size={80} className="text-blue-600" />
               </div>
-              <p className="text-blue-800 font-bold uppercase text-xs tracking-widest mb-2">Net Kar</p>
+              <p className="text-blue-700 font-bold uppercase text-xs tracking-widest mb-3">Net Kar</p>
               <p className="text-4xl font-black text-blue-600">€{financials.net.toLocaleString()}</p>
+              <p className="text-xs text-blue-600/60 mt-2 font-medium">Kar marjı: %{financials.revenue ? Math.round((financials.net / financials.revenue) * 100) : 0}</p>
             </div>
           </div>
 
           {/* T-Table (T-Cetveli) Layout */}
           <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 flex flex-col md:flex-row overflow-hidden min-h-[500px]">
             {/* Income Side */}
-            <div className="flex-1 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col bg-slate-50/10">
-              <div className="bg-emerald-50/30 p-5 border-b border-emerald-100/50 text-center sticky top-0 z-10">
-                <h3 className="font-black text-emerald-600 text-lg uppercase tracking-[0.3em]">GELİRLER</h3>
+            <div className="flex-1 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col">
+              <div className="bg-gradient-to-r from-emerald-50 to-emerald-100/30 p-5 border-b border-emerald-100/50 text-center sticky top-0 z-10 flex items-center justify-between px-8">
+                <h3 className="font-black text-emerald-600 text-lg uppercase tracking-[0.2em]">GELİRLER</h3>
+                <Badge className="bg-emerald-100 text-emerald-600 border-emerald-200 font-bold">{financialTransactions.filter(t => t.type === 'income').length} kayıt</Badge>
               </div>
-              <div className="flex-1 overflow-auto">
+              <div className="flex-1 overflow-auto custom-scrollbar">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-100/50">
-                      <TableHead className="font-bold text-slate-400">Tarih</TableHead>
-                      <TableHead className="font-bold text-slate-400">Açıklama</TableHead>
-                      <TableHead className="text-right font-bold text-slate-400">Tutar</TableHead>
+                    <TableRow className="border-slate-100/50 bg-slate-50/50">
+                      <TableHead className="font-bold text-slate-400 text-xs">Tarih</TableHead>
+                      <TableHead className="font-bold text-slate-400 text-xs">Açıklama</TableHead>
+                      <TableHead className="text-right font-bold text-slate-400 text-xs">Tutar</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {financialTransactions.filter(t => t.type === 'income').map((t, idx) => (
-                      <TableRow key={idx} className="border-slate-50 group hover:bg-emerald-50/20">
+                      <TableRow key={idx} className="border-slate-50 group hover:bg-emerald-50/30 transition-colors">
                         <TableCell className="text-xs font-medium text-slate-500">{new Date(t.date).toLocaleDateString('tr-TR')}</TableCell>
                         <TableCell>
-                          <div className="font-black text-navy-dark text-sm">{t.category}</div>
-                          <div className="text-xs font-bold text-slate-400 group-hover:text-emerald-700 transition-colors">{t.customerName}</div>
+                          <div className="font-bold text-navy-dark text-sm">{t.category}</div>
+                          <div className="text-xs text-slate-400 group-hover:text-emerald-700 transition-colors">{t.customerName}</div>
                         </TableCell>
                         <TableCell className="text-right font-black text-emerald-600 text-base">+€{t.amount.toLocaleString()}</TableCell>
                       </TableRow>
@@ -1881,26 +1899,27 @@ export default function Admin() {
             </div>
 
             {/* Expense Side */}
-            <div className="flex-1 flex flex-col bg-slate-50/10">
-              <div className="bg-rose-50/30 p-5 border-b border-rose-100/50 text-center sticky top-0 z-10">
-                <h3 className="font-black text-rose-500 text-lg uppercase tracking-[0.3em]">GİDERLER</h3>
+            <div className="flex-1 flex flex-col">
+              <div className="bg-gradient-to-r from-rose-50 to-rose-100/30 p-5 border-b border-rose-100/50 text-center sticky top-0 z-10 flex items-center justify-between px-8">
+                <h3 className="font-black text-rose-500 text-lg uppercase tracking-[0.2em]">GİDERLER</h3>
+                <Badge className="bg-rose-100 text-rose-500 border-rose-200 font-bold">{financialTransactions.filter(t => t.type === 'expense').length} kayıt</Badge>
               </div>
-              <div className="flex-1 overflow-auto">
+              <div className="flex-1 overflow-auto custom-scrollbar">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-100/50">
-                      <TableHead className="font-bold text-slate-400">Tarih</TableHead>
-                      <TableHead className="font-bold text-slate-400">Açıklama</TableHead>
-                      <TableHead className="text-right font-bold text-slate-400">Tutar</TableHead>
+                    <TableRow className="border-slate-100/50 bg-slate-50/50">
+                      <TableHead className="font-bold text-slate-400 text-xs">Tarih</TableHead>
+                      <TableHead className="font-bold text-slate-400 text-xs">Açıklama</TableHead>
+                      <TableHead className="text-right font-bold text-slate-400 text-xs">Tutar</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {financialTransactions.filter(t => t.type === 'expense').map((t, idx) => (
-                      <TableRow key={idx} className="border-slate-50 group hover:bg-rose-50/20">
+                      <TableRow key={idx} className="border-slate-50 group hover:bg-rose-50/30 transition-colors">
                         <TableCell className="text-xs font-medium text-slate-500">{new Date(t.date).toLocaleDateString('tr-TR')}</TableCell>
                         <TableCell>
-                          <div className="font-black text-navy-dark text-sm">{t.category}</div>
-                          <div className="text-xs font-bold text-slate-400 group-hover:text-rose-700 transition-colors">{t.advisorName} ({t.customerName})</div>
+                          <div className="font-bold text-navy-dark text-sm">{t.category}</div>
+                          <div className="text-xs text-slate-400 group-hover:text-rose-700 transition-colors">{t.advisorName} ({t.customerName})</div>
                         </TableCell>
                         <TableCell className="text-right font-black text-rose-500 text-base">-€{t.amount.toLocaleString()}</TableCell>
                       </TableRow>
