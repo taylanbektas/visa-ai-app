@@ -119,9 +119,9 @@ export default function AdvisorPanel() {
     pendingRevenue: 0,
     activeApps: 0,
     pendingConsultations: 0,
-    avgResponseTime: "1.2s",
-    satisfactionRate: 98,
-    completionRate: 94
+    avgResponseTime: "N/A",
+    satisfactionRate: 0,
+    completionRate: 0
   });
 
   // Profile Form State
