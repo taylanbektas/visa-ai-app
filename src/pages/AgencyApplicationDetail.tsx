@@ -109,8 +109,8 @@ export default function AgencyApplicationDetail() {
         return;
       }
 
-      setProfile(profileData);
-      setCustomerNotes(profileData.notes || "");
+      setProfile(profileData as any);
+      setCustomerNotes((profileData as any).notes || "");
       setApplication({
         ...appData,
         destination: appData.destination,
