@@ -336,7 +336,7 @@ export default function AdvisorPanel() {
       if (customerUserIds.length > 0) {
         const { data: appsByUsers } = await supabase
           .from('applications')
-          .select('*, profiles(id, full_name, phone, active_package)')
+          .select('*')
           .in('user_id', customerUserIds);
         if (appsByUsers) combinedApps = [...appsByUsers];
       }
@@ -349,11 +349,15 @@ export default function AdvisorPanel() {
         if (missingIds.length > 0) {
           const { data: appsByExplicit } = await supabase
             .from('applications')
-            .select('*, profiles(id, full_name, phone, active_package)')
+            .select('*')
             .in('id', missingIds);
           if (appsByExplicit) combinedApps = [...combinedApps, ...appsByExplicit];
         }
       }
+
+      // Build a profile map from already-fetched profileCustomers
+      const profileByUserId = new Map<string, any>();
+      profileCustomers?.forEach((p: any) => profileByUserId.set(p.user_id, p));
 
       const mappedApps: Application[] = combinedApps.map((app: any) => ({
         id: app.id,
