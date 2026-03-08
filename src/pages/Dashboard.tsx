@@ -279,6 +279,7 @@ export default function Dashboard() {
   const navItems: SidebarItem[] = [
     { id: 'overview', label: 'Hızlı Bakış', icon: LayoutDashboard },
     { id: 'applications', label: 'Başvurularım', icon: FileText },
+    { id: 'pricing', label: 'Paketler', icon: Package },
     { id: 'messages', label: 'Mesajlar', icon: MessageSquare, badgeCount: applications.some(a => a.status === 'İşlem Gerekli') ? 1 : undefined },
     { id: 'ai-assistant', label: 'AI Asistan', icon: Bot },
     { id: 'profile', label: 'Profilim', icon: User },
