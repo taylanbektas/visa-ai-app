@@ -869,7 +869,11 @@ export default function Dashboard() {
                   ))}
                 </ul>
                 <Button
-                  onClick={() => navigate("/apply", { state: { plan: plan.id } })}
+                  onClick={() => {
+                    setActiveTab('apply');
+                    // Pass plan via searchParams so Apply can pick it up
+                    setSearchParams({ tab: 'apply', plan: plan.id });
+                  }}
                   className={`w-full font-bold h-12 rounded-xl transition-all ${
                     plan.popular
                       ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-200/50"
