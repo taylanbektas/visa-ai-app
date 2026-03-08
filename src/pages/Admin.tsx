@@ -1865,26 +1865,27 @@ export default function Admin() {
           {/* T-Table (T-Cetveli) Layout */}
           <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 flex flex-col md:flex-row overflow-hidden min-h-[500px]">
             {/* Income Side */}
-            <div className="flex-1 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col bg-slate-50/10">
-              <div className="bg-emerald-50/30 p-5 border-b border-emerald-100/50 text-center sticky top-0 z-10">
-                <h3 className="font-black text-emerald-600 text-lg uppercase tracking-[0.3em]">GELİRLER</h3>
+            <div className="flex-1 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col">
+              <div className="bg-gradient-to-r from-emerald-50 to-emerald-100/30 p-5 border-b border-emerald-100/50 text-center sticky top-0 z-10 flex items-center justify-between px-8">
+                <h3 className="font-black text-emerald-600 text-lg uppercase tracking-[0.2em]">GELİRLER</h3>
+                <Badge className="bg-emerald-100 text-emerald-600 border-emerald-200 font-bold">{financialTransactions.filter(t => t.type === 'income').length} kayıt</Badge>
               </div>
-              <div className="flex-1 overflow-auto">
+              <div className="flex-1 overflow-auto custom-scrollbar">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-100/50">
-                      <TableHead className="font-bold text-slate-400">Tarih</TableHead>
-                      <TableHead className="font-bold text-slate-400">Açıklama</TableHead>
-                      <TableHead className="text-right font-bold text-slate-400">Tutar</TableHead>
+                    <TableRow className="border-slate-100/50 bg-slate-50/50">
+                      <TableHead className="font-bold text-slate-400 text-xs">Tarih</TableHead>
+                      <TableHead className="font-bold text-slate-400 text-xs">Açıklama</TableHead>
+                      <TableHead className="text-right font-bold text-slate-400 text-xs">Tutar</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {financialTransactions.filter(t => t.type === 'income').map((t, idx) => (
-                      <TableRow key={idx} className="border-slate-50 group hover:bg-emerald-50/20">
+                      <TableRow key={idx} className="border-slate-50 group hover:bg-emerald-50/30 transition-colors">
                         <TableCell className="text-xs font-medium text-slate-500">{new Date(t.date).toLocaleDateString('tr-TR')}</TableCell>
                         <TableCell>
-                          <div className="font-black text-navy-dark text-sm">{t.category}</div>
-                          <div className="text-xs font-bold text-slate-400 group-hover:text-emerald-700 transition-colors">{t.customerName}</div>
+                          <div className="font-bold text-navy-dark text-sm">{t.category}</div>
+                          <div className="text-xs text-slate-400 group-hover:text-emerald-700 transition-colors">{t.customerName}</div>
                         </TableCell>
                         <TableCell className="text-right font-black text-emerald-600 text-base">+€{t.amount.toLocaleString()}</TableCell>
                       </TableRow>
@@ -1898,26 +1899,27 @@ export default function Admin() {
             </div>
 
             {/* Expense Side */}
-            <div className="flex-1 flex flex-col bg-slate-50/10">
-              <div className="bg-rose-50/30 p-5 border-b border-rose-100/50 text-center sticky top-0 z-10">
-                <h3 className="font-black text-rose-500 text-lg uppercase tracking-[0.3em]">GİDERLER</h3>
+            <div className="flex-1 flex flex-col">
+              <div className="bg-gradient-to-r from-rose-50 to-rose-100/30 p-5 border-b border-rose-100/50 text-center sticky top-0 z-10 flex items-center justify-between px-8">
+                <h3 className="font-black text-rose-500 text-lg uppercase tracking-[0.2em]">GİDERLER</h3>
+                <Badge className="bg-rose-100 text-rose-500 border-rose-200 font-bold">{financialTransactions.filter(t => t.type === 'expense').length} kayıt</Badge>
               </div>
-              <div className="flex-1 overflow-auto">
+              <div className="flex-1 overflow-auto custom-scrollbar">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-slate-100/50">
-                      <TableHead className="font-bold text-slate-400">Tarih</TableHead>
-                      <TableHead className="font-bold text-slate-400">Açıklama</TableHead>
-                      <TableHead className="text-right font-bold text-slate-400">Tutar</TableHead>
+                    <TableRow className="border-slate-100/50 bg-slate-50/50">
+                      <TableHead className="font-bold text-slate-400 text-xs">Tarih</TableHead>
+                      <TableHead className="font-bold text-slate-400 text-xs">Açıklama</TableHead>
+                      <TableHead className="text-right font-bold text-slate-400 text-xs">Tutar</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {financialTransactions.filter(t => t.type === 'expense').map((t, idx) => (
-                      <TableRow key={idx} className="border-slate-50 group hover:bg-rose-50/20">
+                      <TableRow key={idx} className="border-slate-50 group hover:bg-rose-50/30 transition-colors">
                         <TableCell className="text-xs font-medium text-slate-500">{new Date(t.date).toLocaleDateString('tr-TR')}</TableCell>
                         <TableCell>
-                          <div className="font-black text-navy-dark text-sm">{t.category}</div>
-                          <div className="text-xs font-bold text-slate-400 group-hover:text-rose-700 transition-colors">{t.advisorName} ({t.customerName})</div>
+                          <div className="font-bold text-navy-dark text-sm">{t.category}</div>
+                          <div className="text-xs text-slate-400 group-hover:text-rose-700 transition-colors">{t.advisorName} ({t.customerName})</div>
                         </TableCell>
                         <TableCell className="text-right font-black text-rose-500 text-base">-€{t.amount.toLocaleString()}</TableCell>
                       </TableRow>
