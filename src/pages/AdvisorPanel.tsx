@@ -1197,25 +1197,25 @@ export default function AdvisorPanel() {
                 <h3 className="text-2xl font-black text-navy-dark tracking-tight">Görüşmeler</h3>
               </div>
               <div className="flex-1 overflow-y-auto w-full">
-                <div className="space-y-4">
-                  {applications.map(app => (
+                <div className="space-y-1">
+                  {customers.map(cust => (
                     <div
-                      key={app.id}
-                      className={`p-6 rounded-3xl cursor-pointer transition-all duration-300 ${selectedChatUser?.id === app.user_id ? 'bg-white shadow-sm shadow-slate-200/50 scale-[1.02] border border-emerald-100' : 'hover:bg-white hover:shadow-lg hover:shadow-slate-200/30'}`}
-                      onClick={() => setSelectedChatUser({ id: app.user_id, name: app.applicant_name })}
+                      key={cust.user_id}
+                      className={`p-4 rounded-2xl cursor-pointer transition-all duration-200 ${selectedChatUser?.id === cust.user_id ? 'bg-white shadow-sm border border-emerald-100' : 'hover:bg-white hover:shadow-sm'}`}
+                      onClick={() => setSelectedChatUser({ id: cust.user_id, name: cust.applicant_name })}
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-navy-dark to-navy-light text-white flex items-center justify-center font-black text-lg">
-                          {app.applicant_name.substring(0, 2).toUpperCase()}
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-navy-dark to-navy-light text-white flex items-center justify-center font-bold text-sm shrink-0">
+                          {cust.applicant_name.substring(0, 2).toUpperCase()}
                         </div>
-                        <div className="overflow-hidden">
-                          <p className="text-lg font-black text-navy-dark truncate">{app.applicant_name}</p>
-                          <p className="text-sm font-bold text-slate-400 truncate uppercase tracking-wider">{app.destination_country}</p>
+                        <div className="overflow-hidden min-w-0">
+                          <p className="text-sm font-bold text-navy-dark truncate">{cust.applicant_name}</p>
+                          <p className="text-xs text-slate-400 truncate">{cust.applications.length} başvuru</p>
                         </div>
                       </div>
                     </div>
                   ))}
-                  {applications.length === 0 && <p className="text-center py-20 text-slate-400 font-bold">Aktif görüşme bulunmuyor.</p>}
+                  {customers.length === 0 && <p className="text-center py-20 text-slate-400 font-bold">Aktif görüşme bulunmuyor.</p>}
                 </div>
               </div>
             </div>
