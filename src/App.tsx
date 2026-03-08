@@ -17,7 +17,7 @@ import Apply from "./pages/Apply";
 import Track from "./pages/Track";
 import Learn from "./pages/Learn";
 import ArticlePage from "./pages/ArticlePage";
-import Pricing from "./pages/Pricing";
+// Pricing removed from public routes — now inside Dashboard
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
 import AdminCustomerDetail from "./pages/AdminCustomerDetail";
