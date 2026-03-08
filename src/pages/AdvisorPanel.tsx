@@ -1037,7 +1037,7 @@ export default function AdvisorPanel() {
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 flex-1">
                                   <div>
                                     <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Ülke</p>
-                                    <h4 className="font-bold text-navy-dark">{app.destination_country}</h4>
+                                    <h4 className="font-bold text-navy-dark">{countryWithFlag(app.destination_country)}</h4>
                                   </div>
                                   <div>
                                     <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Tür</p>
