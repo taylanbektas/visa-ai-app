@@ -1685,7 +1685,8 @@ export default function AdvisorPanel() {
                 </div>
                 <div className="relative z-10">
                   <p className="text-4xl font-black tracking-tighter text-navy-dark">€{stats.pendingRevenue.toLocaleString()}</p>
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">Bekleyen Ödeme</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">İşlemdeki Kazanç</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Vize onayı bekleyen başvurular</p>
                 </div>
               </div>
             </div>
