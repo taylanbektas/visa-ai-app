@@ -866,31 +866,27 @@ export default function AdvisorPanel() {
                 <h3 className="text-xl font-black text-navy-dark mb-6 tracking-tight">Performans Metrikleri</h3>
                 <div className="grid grid-cols-1 gap-4">
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-blue-200 transition-colors">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cevap Süresi</span>
-                      <Badge className="bg-emerald-50 text-emerald-600 border-none text-[10px] font-black">Mükemmel</Badge>
+                  <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Toplam Müşteri</span>
                     </div>
                     <div className="flex items-end gap-2">
-                      <span className="text-2xl font-black text-navy-dark">{stats.avgResponseTime}</span>
-                      <span className="text-[10px] font-bold text-slate-400 mb-1.5">Hedef: &lt; 2s</span>
+                      <span className="text-2xl font-black text-navy-dark">{stats.assigned}</span>
                     </div>
                   </div>
 
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-violet-200 transition-colors">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Müşteri Memnuniyeti</span>
-                      <Badge className="bg-emerald-50 text-emerald-600 border-none text-[10px] font-black">Yüksek</Badge>
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Aktif Başvuru</span>
                     </div>
                     <div className="flex items-end gap-2">
-                      <span className="text-2xl font-black text-navy-dark">%{stats.satisfactionRate}</span>
-                      <span className="text-[10px] font-bold text-slate-400 mb-1.5">Hedef: &gt; %90</span>
+                      <span className="text-2xl font-black text-navy-dark">{stats.activeApps}</span>
                     </div>
                   </div>
 
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-emerald-200 transition-colors">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Başarı Oranı</span>
-                      <Badge className="bg-blue-50 text-blue-600 border-none text-[10px] font-black">İyi</Badge>
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Başarı Oranı</span>
+                      <Badge className="bg-blue-50 text-blue-600 border-none text-[10px] font-bold">{stats.completionRate > 85 ? 'İyi' : 'Gelişiyor'}</Badge>
                     </div>
                     <div className="flex items-end gap-2">
                       <span className="text-2xl font-black text-navy-dark">%{stats.completionRate}</span>
