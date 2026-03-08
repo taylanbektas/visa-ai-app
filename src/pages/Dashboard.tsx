@@ -623,14 +623,14 @@ export default function Dashboard() {
           )}
 
           {!selectedApp && (
-            <Link to="/apply" className="block mt-12">
+            <div className="block mt-12 cursor-pointer" onClick={() => setActiveTab('apply')}>
               <div className="border-2 border-dashed border-slate-200 rounded-[2rem] p-12 text-center hover:border-emerald-300 hover:bg-emerald-50/30 transition-all group">
                 <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-emerald-100 transition-colors">
                   <Plus className="text-slate-400 group-hover:text-emerald-500" size={32} />
                 </div>
                 <p className="text-lg font-black text-slate-500 group-hover:text-emerald-600">Yeni Başvuru Oluştur</p>
               </div>
-            </Link>
+            </div>
           )}
         </div>
       )}
