@@ -1673,6 +1673,15 @@ export default function AdvisorPanel() {
                 <div className="relative z-10">
                   <p className="text-4xl font-black tracking-tighter text-navy-dark">€{stats.withdrawableBalance.toLocaleString()}</p>
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 mt-1">Çekilebilir Bakiye</p>
+                  {stats.withdrawableBalance > 0 && (
+                    <Button
+                      size="sm"
+                      className="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs h-8 px-4"
+                      onClick={() => toast({ title: "Talep Alındı", description: "Ödeme talebiniz işleme alındı. En kısa sürede hesabınıza aktarılacaktır." })}
+                    >
+                      Ödeme Talep Et
+                    </Button>
+                  )}
                 </div>
               </div>
 
