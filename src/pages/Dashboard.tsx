@@ -804,6 +804,83 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {activeTab === 'pricing' && (
+        <div className="space-y-8 animate-in fade-in duration-500">
+          <header className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+            <h2 className="text-3xl font-black text-navy-dark tracking-tight mb-2">Paketler & Fiyatlandırma</h2>
+            <p className="text-slate-500 font-medium">Size en uygun paketi seçin ve hemen başvurunuzu oluşturun.</p>
+          </header>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                id: "starter",
+                name: "Starter",
+                price: "49",
+                subtitle: "Kendi başına yapabilenler için",
+                features: ["Adım adım rehber", "Belge kontrol listesi", "AI destekli kontrol", "E-posta desteği", "Bilgi bankası erişimi"],
+                popular: false,
+              },
+              {
+                id: "pro",
+                name: "Pro",
+                price: "149",
+                subtitle: "Profesyonel destek isteyenler için",
+                features: ["Starter'daki her şey", "Uzman belge incelemesi", "Başvuru desteği", "AI doğrulama", "Süreç takibi", "Telefon desteği", "Yeniden başvuru desteği"],
+                popular: true,
+              },
+              {
+                id: "elite",
+                name: "Elite",
+                price: "349",
+                subtitle: "Tam kapsamlı VIP hizmet",
+                features: ["Pro'daki her şey", "Kişisel danışman", "WhatsApp iletişim", "Seyahat planı", "Otel & uçuş önerileri", "Havalimanı rehberliği", "Onay garantisi", "Öncelikli işlem"],
+                popular: false,
+              },
+            ].map((plan) => (
+              <div
+                key={plan.id}
+                className={`bg-white rounded-[2rem] border-2 p-8 flex flex-col relative ${
+                  plan.popular ? "border-emerald-300 shadow-lg shadow-emerald-100/50" : "border-slate-100"
+                }`}
+              >
+                {plan.popular && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-xs font-black px-4 py-1.5 rounded-full shadow-md">
+                    ⭐ En Popüler
+                  </div>
+                )}
+                <div className="mb-6 mt-1">
+                  <h3 className="text-xl font-black text-navy-dark">{plan.name}</h3>
+                  <p className="text-sm text-slate-500 mt-1">{plan.subtitle}</p>
+                </div>
+                <div className="mb-6">
+                  <span className="text-4xl font-black text-navy-dark">€{plan.price}</span>
+                  <span className="text-slate-400 font-medium ml-1">/ başvuru</span>
+                </div>
+                <ul className="space-y-3 mb-8 flex-1">
+                  {plan.features.map((f, i) => (
+                    <li key={i} className="flex items-start gap-2.5 text-sm">
+                      <CheckCircle size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                      <span className="text-slate-700">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  onClick={() => navigate("/apply", { state: { plan: plan.id } })}
+                  className={`w-full font-bold h-12 rounded-xl transition-all ${
+                    plan.popular
+                      ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-200/50"
+                      : "bg-slate-100 text-navy-dark hover:bg-slate-200"
+                  }`}
+                >
+                  {plan.name} ile Başvur
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <BookingCalendar
         isOpen={isBookingOpen}
         onClose={() => setIsBookingOpen(false)}
