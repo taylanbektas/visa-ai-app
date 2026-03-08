@@ -900,6 +900,7 @@ export default function AdvisorPanel() {
               <Button
                 variant="outline"
                 className="w-full mt-6 h-12 rounded-xl border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all active:scale-[0.98]"
+                onClick={() => setActiveTab('financials')}
               >
                 Performans Detayları
               </Button>
