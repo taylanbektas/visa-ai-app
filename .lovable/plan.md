@@ -1,114 +1,137 @@
 
+# Site Entegrasyon Plani
 
-# Kapsamlı Site Güncellemesi Planı
-
-Bu plan; Pricing sayfasının kaldırılması, müşteri paneli modernizasyonu, mobil uyumluluk, AI iyileştirmeleri, danışman/admin paneli düzeltmeleri ve tüm butonların işlevselliği konularını kapsar.
+Bu plan, sitenin tum ozelliklerini canli ve calisir hale getirmek icin gereken degisiklikleri kapsar: Google ile giris, e-posta dogrulama, musteri-danisman eslesmesi, booking sistemi ve tum butonlarin backend entegrasyonu.
 
 ---
 
-## 1. Pricing Sayfasını Kaldır
+## 1. Google ile Giris (Login Sayfasina Ekleme)
 
-- `App.tsx`: `/pricing` route'unu kaldır
-- `Navbar.tsx`: `navLinks` dizisinden `nav.pricing` linkini çıkar
-- `MobileBottomNav.tsx`: Pricing linki varsa çıkar
-- Dashboard'daki `pricing` sekmesi zaten mevcut, kalacak (panel içi fiyatlandırma)
+Login sayfasina "Google ile Giris Yap" butonu eklenecek. Lovable Cloud'un yonetilen Google OAuth ozelligi kullanilacak.
 
-## 2. Müşteri Paneli (Dashboard.tsx) — Mobil Uyumluluk & UI
+- `src/integrations/lovable/index` modulunu import edip `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })` cagrisi yapilacak
+- Login.tsx'e e-posta/sifre formunun ustune veya altina bir ayirici ("veya") ve Google butonu eklenecek
+- Giris basariliysa mevcut rol kontrol mantigi aynen uygulanacak (admin/moderator ise cikis yaptir, user ise /dashboard'a yonlendir)
 
-**Mobil responsive düzeltmeleri:**
-- DashboardLayout sidebar'ı mobilde gizli olmalı, hamburger menü ile açılmalı — `SidebarProvider` zaten bunu destekliyor ancak `min-h-screen` ve sabit genişlikler sorun yaratıyor
-- Tüm `rounded-[2rem]` ve `rounded-[2.5rem]` değerleri mobilde `rounded-2xl` ile değiştirilecek
-- `grid-cols-3` alanları mobilde `grid-cols-1` olacak (zaten bazıları var, eksikleri tamamlanacak)
-- Stat kartlarının `p-8`, `gap-6` değerleri mobilde küçültülecek
-- `text-3xl`, `text-4xl` başlıklar mobilde `text-xl`/`text-2xl` olacak
-- Başvuru listesi kartlarındaki `flex-row` düzeni mobilde `flex-col` olacak
-- Profil düzenleme formu mobilde tam genişlik
+**Teknik Detay:** Lovable Cloud'un Configure Social Login araci cagirilarak `src/integrations/lovable` klasoru otomatik olusturulacak. Ardindan Login.tsx'e buton eklenir.
 
-**Aktif başvuru "yok" görünme hatası:**
-- `MyConsultations` bileşeni `customer_id` ile sorgu yapıyor ama consultations tablosunda `customer_id` profiles.id'ye referans veriyor. Doğru `profile.id` gönderiliyor — sorun yok
-- "Aktif başvuru yok" sorunu: Danışman panelinde `no-app-` prefix'li dummy kayıtlar oluşturuluyor. Bunlar filtrelenmeli veya doğru gösterilmeli
+---
 
-**Randevularım — geçmiş randevuları ayır:**
-- `MyConsultations.tsx`: Gelecekteki ve geçmiş randevuları iki ayrı bölümde göster
-- Geçmiş olanlar ayrı bir "Geçmiş" accordion altında, daha soluk (opacity-60) gösterilecek
-- Sadece aktif/yaklaşan randevular ana listede
+## 2. E-posta Dogrulama
 
-## 3. AI İyileştirmeleri
+Mevcut kayit akisinda e-posta dogrulama zaten uygulanmis durumda (signUp sonrasi `showEmailVerification` ekrani gosteriliyor). Supabase tarafinda auto-confirm KAPALI olmali -- bu kontrol edilip gerekiyorsa onaylanacak.
 
-**AI Chatbot konuşma stili:**
-- `ai-chat/index.ts` system prompt: Daha doğal, samimi Türkçe kullanması için prompt güncelleme — "yapay" ve "resmi" dil yerine günlük konuşma tonu
-- Emojilerin aşırı kullanımını sınırla
+- Kayit sonrasi kullaniciya dogrulama e-postasi gonderiliyor (Supabase varsayilan davranisi)
+- Kullanici e-postadaki linke tiklayinca hesap aktif oluyor
+- Mevcut akis korunacak, ek bir degisiklik gerekmeyecek
 
-**AI Belge Özetleyici:**
-- `ai-application-summary/index.ts`: Prompt'u daha kısa, net ve doğal cümleler üretecek şekilde güncelle
-- `ai-document-review/index.ts`: Sonuç kartlarını daha okunaklı hale getir
+---
 
-**AI Asistan başvuru görünürlüğü:**
-- Dashboard'dan AI'a gönderilen `applications` context'i zaten tüm başvuruları içeriyor
-- `ai-chat/index.ts`'deki RPC fallback `get_applications_for_ai_chat` da tüm başvuruları çekiyor (LIMIT 5000)
-- Sorun: Context getter her çağrıldığında `applications` state'i kullanıyor — eğer data henüz yüklenmediyse boş gidiyor. Çözüm: `applications.length === 0 && dataLoading` durumunda AI'a veri henüz yükleniyor mesajı göster
+## 3. SMS Dogrulama (OTP)
 
-## 4. DashboardLayout — Mobil Uyumluluk
+SMS OTP destegi icin Supabase Phone Auth yapilandirilacak. Ancak SMS OTP, Lovable Cloud'da harici bir SMS saglayicisi (Twilio vb.) gerektirir.
 
-- Sidebar'ı mobilde (< 768px) varsayılan kapalı olarak ayarla
-- `SidebarProvider` zaten mobilde sheet/drawer olarak çalışıyor — bunu doğrula
-- Main content'e mobilde `p-4` padding uygula (şu an `p-8 lg:p-12`)
-- Sidebar trigger (hamburger) butonu ekle mobil header'a
+- Kullaniciya SMS dogrulama icin Twilio entegrasyonu gerektigi bildirilecek
+- Alternatif olarak, telefon numarasi profilde saklanmaya devam edecek (mevcut haliyle)
+- SMS OTP tam entegrasyon icin kullanicidan Twilio API anahtari talep edilecek
 
-## 5. Danışman Paneli (AdvisorPanel.tsx) Düzeltmeleri
+**Not:** Bu adim kullanici onayina bagli olarak opsiyonel kalacak.
 
-**Müşterilerim sayfası uyumu:**
-- Customer kartlarındaki `rounded-[3rem]` ve aşırı padding değerlerini diğer sekmelerle tutarlı hale getir (`rounded-[2rem]`, `p-6`)
-- "Aktif Başvuru Bulunamadı" mesajı: `no-app-` prefix kontrolü düzgün çalışıyor ama UI'da "Aktif başvuru yok" yerine başvuru varsa gösterilmeli
-- Müşteri kartlarında profil fotoğrafı göster (şu an sadece baş harfler)
+---
 
-**Finansal Durum sayfası:**
-- Mevcut tablo yapısı çalışıyor, UI modernize edilecek
-- Kart tasarımlarını daha modern ve tutarlı yap
-- `DollarSign` ikonu yerine daha uygun finansal ikonlar
+## 4. Musteri-Danisman Eslesmesi (Iki Tarafli Gorunum)
 
-**Performans metrikleri:**
-- `avgResponseTime: "1.2s"` gibi hardcoded değerler yerine gerçek veriye dönüştür veya "Yakında" olarak göster
-- `satisfactionRate: 98` ve `completionRate` → gerçek veri zaten hesaplanıyor (completionRate)
+### 4a. Musteri Paneli (Dashboard.tsx)
+Mevcut durum: Dashboard zaten `assigned_advisor_id` uzerinden danisman bilgilerini cekiyor ve "Danisman" kartinda gosteriyor. Ayrica `advisor_assignments` tablosu uzerinden basvuru bazli eslesmeler de gorunuyor.
 
-**Profil fotoğrafları:**
-- `documents` bucket private — `getPublicUrl` çalışmaz. `createSignedUrl` kullanılmalı
-- Veya storage bucket'ı public yapılmalı (sadece profil fotoları için)
+Eklenecekler:
+- Overview'daki danisman kartina danisman uzmanliklari (specializations) ve kisa bio eklenecek
+- Her basvurunun detayinda atanan danisman bilgisi daha belirgin gosterilecek
+- Eslesmesi olmayan kullanicilara "Danisman atamaniz bekleniyor" mesaji gosterilecek
 
-**SVG/İkon güncellemeleri:**
-- Lucide ikonları zaten modern, ek SVG sorunu yok
-- Badge ref uyarısını düzelt: `forwardRef` ile sarma
+### 4b. Danisman Paneli (AdvisorPanel.tsx)
+Mevcut durum: `advisor_assignments` + `applications` + `profiles` tablolari uzerinden atanan musteriler listeleniyor.
 
-## 6. Admin Paneli Düzeltmeleri
+Eklenecekler:
+- Musteri detay gorunumunde musteri profili (telefon, e-posta, paket durumu) gosterilecek
+- Musteri basvuru durumunu guncelleme butonlari zaten calisir durumda (handleUpdateApplicationStatus)
+- Mesajlasma mevcut ve calisir durumda
 
-- Grafiklerde gerçek veri zaten kullanılıyor (usersList üzerinden hesaplanıyor)
-- Admin dashboard kartlarını ve chart alanını mobilde responsive yap
-- Profil fotoğrafları için aynı signed URL düzeltmesi
+---
 
-## 7. Tüm Butonların İşlevselliği
+## 5. Booking Sistemi (Availability ve Requestler)
 
-Çalışmayan/eksik butonlar:
-- AdvisorPanel → "Performans Detayları" butonu: Şu an `onClick` yok → tab değişikliği veya modal ekle
-- AdvisorPanel → Mesajlar sekmesindeki müşteri mesaj butonu: `MessageSquare` butonu `onClick` yok → `setSelectedChatUser` bağla
-- Customer listesindeki mesaj butonu (satır 1105): onClick handler ekle
+### 5a. Danisman Tarafinda Musaitlik Yonetimi
+Mevcut durum: AdvisorPanel'de `advisor_blocked_slots` tablosu kullanilarak gun bazli musaitlik ekleniyor (reason='Musait'). Bu zaten calisir durumda:
+- Takvimden gun sec
+- Saat dilimlerini isaretle
+- Kaydet
 
-## 8. Uygulama Sırası
+**Iyilestirme:** Musaitlik kaydedildikten sonra listeyi yenileyerek guncel durumu gostermek.
 
-1. Pricing route/navbar kaldır
-2. DashboardLayout mobil responsive düzelt (en kritik — tüm panelleri etkiler)
-3. Dashboard.tsx mobil uyumluluk + MyConsultations geçmiş ayırma
-4. AI prompt ve context düzeltmeleri (edge functions + frontend)
-5. AdvisorPanel müşterilerim + finansal + profil fotoğrafı düzeltmeleri
-6. Admin paneli responsive + grafik düzeltmeleri
-7. Çalışmayan butonları işlevsel hale getir
-8. Badge ref uyarısını düzelt
+### 5b. Musteri Tarafinda Randevu Talebi
+Mevcut durum: `BookingCalendar` bileseni zaten calisir durumda:
+- Danisman musait gunleri takvimde gosteriyor
+- Musait saatleri listeli yor
+- Randevu istegi `consultations` tablosuna 'pending' olarak ekleniyor
+
+**Iyilestirmeler:**
+- Dashboard'daki "Randevu Al" butonu zaten `isBookingOpen` state ile BookingCalendar'i aciyor
+- Musteri panelinde mevcut randevulari listeleme bolumu eklenecek (consultations tablosundan)
+- Randevu durumu (pending/confirmed/rejected) musteri panelinde gorulecek
+
+### 5c. Danisman Tarafinda Randevu Yonetimi
+Mevcut durum: AdvisorPanel "bookings" sekmesinde randevular listeleniyor ve onay/red butonlari mevcut.
+
+**Iyilestirmeler:**
+- Onaylanan randevularin musteri tarafinda da guncellenmesi (realtime veya refetch)
+- Danisman tarafindan dogrudan randevu olusturma (directBookOpen zaten mevcut)
+
+---
+
+## 6. Tum Butonlarin Calisir Hale Getirilmesi
+
+Mevcut durumda cogu buton zaten backend'e bagli. Kontrol edilecek ve baglanti kurulacak alanlar:
+
+| Sayfa | Buton/Aksiyon | Durum |
+|-------|-------------|-------|
+| Apply.tsx | Basvuru olusturma | Calisiyor (applications tablosuna insert) |
+| Dashboard | Belge yukleme | Kontrol edilecek (storage + application_documents) |
+| Dashboard | Mesaj gonderme | Calisiyor (MessageCenter) |
+| Dashboard | Randevu alma | Calisiyor (BookingCalendar) |
+| AdvisorPanel | Durum guncelleme | Calisiyor |
+| AdvisorPanel | Belge yukleme | Calisiyor |
+| AdvisorPanel | Profil guncelleme | Calisiyor |
+| Pricing | Paket secimi | /apply sayfasina yonlendirme kontrolu |
+| Contact | Form gonderme | Backend entegrasyonu kontrol edilecek |
+
+---
+
+## 7. Musteri Paneline Randevularim Bolumu Ekleme
+
+Dashboard.tsx'e yeni bir "Randevularim" bolumu eklenecek:
+- `consultations` tablosundan musterinin randevulari cekilecek
+- Tarih, saat, danisman adi ve durum (Bekliyor/Onaylandi/Reddedildi) gosterilecek
+- Overview sekmesinde yaklasan randevu kartolarak gosterilecek
+
+---
+
+## Uygulama Sirasi
+
+1. Google OAuth yapilandirmasi (Configure Social Login araci + Login.tsx butonu)
+2. E-posta dogrulama ayarlarini kontrol et
+3. Dashboard'a randevularim bolumu ekle
+4. Musteri panelinde danisman bilgilerini zenginlestir
+5. Danisman panelinde musteri detaylarini zenginlestir
+6. Tum sayfalardaki butonlarin backend baglantilarini dogrula
+7. Contact formu backend entegrasyonu (gerekiyorsa)
+8. SMS OTP icin kullanici bilgilendirmesi
 
 ---
 
 ## Teknik Notlar
 
-- Storage bucket `documents` private olduğu için profil fotoğrafları `getPublicUrl` ile erişilemez → `createSignedUrl` ile geçici URL oluşturulacak
-- Mobil responsive için Tailwind `sm:`, `md:`, `lg:` prefix'leri kullanılacak; sabit pixel değerleri kaldırılacak
-- AI prompt güncellemeleri edge function'larda yapılacak (otomatik deploy)
-- Yaklaşık 8-10 dosya düzenlenecek
-
+- Google OAuth icin `lovable.auth.signInWithOAuth("google")` kullanilacak, `supabase.auth.signInWithOAuth()` degil
+- Tum storage bucket'lar zaten private (application-documents, message_attachments, documents)
+- RLS politikalari zaten mevcut tablolarda uygulanmis durumda
+- Yeni tablo olusturmaya gerek yok, mevcut sema yeterli

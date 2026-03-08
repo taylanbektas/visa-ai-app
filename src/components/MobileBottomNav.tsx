@@ -4,7 +4,6 @@ import { useLanguage } from "@/i18n/LanguageContext";
 
 const tabs = [
   { to: "/", icon: Home, labelKey: "nav.home" },
-  { to: "/pricing", icon: FileText, labelKey: "nav.pricing" },
   { to: "/apply", icon: Send, labelKey: "nav.apply" },
   { to: "/learn", icon: BookOpen, labelKey: "nav.learn" },
   { to: "/track", icon: Search, labelKey: "nav.track" },

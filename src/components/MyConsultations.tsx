@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarIcon, Clock, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CalendarIcon, Clock, CheckCircle, XCircle, Loader2, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -23,6 +23,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: typeof 
 export default function MyConsultations({ userId }: { userId: string }) {
   const [consultations, setConsultations] = useState<Consultation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPast, setShowPast] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -38,7 +39,6 @@ export default function MyConsultations({ userId }: { userId: string }) {
         return;
       }
 
-      // Get advisor names
       const advisorIds = [...new Set((data as any[]).map((c: any) => c.advisor_id))];
       const { data: advisors } = await supabase
         .from("advisors")
@@ -73,73 +73,104 @@ export default function MyConsultations({ userId }: { userId: string }) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm flex items-center justify-center">
+      <div className="bg-white rounded-2xl md:rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-sm flex items-center justify-center">
         <Loader2 className="animate-spin text-slate-300" size={24} />
       </div>
     );
   }
 
-  if (consultations.length === 0) {
+  const now = new Date();
+  const upcoming = consultations.filter(c => new Date(c.start_time) >= now);
+  const past = consultations.filter(c => new Date(c.start_time) < now);
+
+  if (upcoming.length === 0 && past.length === 0) {
     return (
-      <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
+      <div className="bg-white rounded-2xl md:rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-3 mb-4 md:mb-6">
           <div className="p-2 bg-blue-50 rounded-xl">
             <CalendarIcon size={20} className="text-blue-600" />
           </div>
-          <h3 className="text-xl font-black text-navy-dark">Randevularım</h3>
+          <h3 className="text-lg md:text-xl font-black text-navy-dark">Randevularım</h3>
         </div>
-        <div className="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100">
-          <CalendarIcon size={40} className="mx-auto text-slate-200 mb-4" />
-          <p className="text-slate-400 font-bold">Henüz planlanmış randevunuz bulunmuyor.</p>
+        <div className="text-center py-8 md:py-12 bg-slate-50 rounded-xl md:rounded-2xl border-2 border-dashed border-slate-100">
+          <CalendarIcon size={32} className="mx-auto text-slate-200 mb-3 md:mb-4" />
+          <p className="text-slate-400 font-bold text-sm md:text-base">Henüz planlanmış randevunuz bulunmuyor.</p>
         </div>
       </div>
     );
   }
 
+  const renderItem = (c: Consultation, faded = false) => {
+    const cfg = statusConfig[c.status] || statusConfig.pending;
+    const StatusIcon = cfg.icon;
+    const startDate = new Date(c.start_time);
+
+    return (
+      <div
+        key={c.id}
+        className={`flex items-center justify-between p-3 md:p-4 rounded-xl border border-slate-100 ${faded ? "opacity-50" : ""}`}
+      >
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-slate-50 flex flex-col items-center justify-center text-center shrink-0">
+            <span className="text-[10px] md:text-xs font-black text-slate-500 uppercase leading-none">
+              {format(startDate, "MMM", { locale: tr })}
+            </span>
+            <span className="text-base md:text-lg font-black text-navy-dark leading-none">
+              {format(startDate, "d")}
+            </span>
+          </div>
+          <div className="min-w-0">
+            <p className="font-bold text-navy-dark text-sm md:text-base truncate">{c.advisor_name}</p>
+            <p className="text-[10px] md:text-xs text-slate-400 font-medium">
+              {format(startDate, "HH:mm")} - {format(new Date(c.end_time), "HH:mm")}
+            </p>
+          </div>
+        </div>
+        <Badge className={`${cfg.color} border font-bold py-1 md:py-1.5 px-2 md:px-3 flex items-center gap-1 md:gap-1.5 text-[10px] md:text-xs shrink-0`}>
+          <StatusIcon size={12} /> <span className="hidden sm:inline">{cfg.label}</span>
+        </Badge>
+      </div>
+    );
+  };
+
   return (
-    <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm">
-      <div className="flex items-center gap-3 mb-6">
+    <div className="bg-white rounded-2xl md:rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-sm">
+      <div className="flex items-center gap-3 mb-4 md:mb-6">
         <div className="p-2 bg-blue-50 rounded-xl">
           <CalendarIcon size={20} className="text-blue-600" />
         </div>
-        <h3 className="text-xl font-black text-navy-dark">Randevularım</h3>
-        <Badge className="bg-blue-50 text-blue-600 border-blue-100 ml-auto">{consultations.length}</Badge>
+        <h3 className="text-lg md:text-xl font-black text-navy-dark">Randevularım</h3>
+        {upcoming.length > 0 && (
+          <Badge className="bg-blue-50 text-blue-600 border-blue-100 ml-auto text-xs">{upcoming.length}</Badge>
+        )}
       </div>
-      <div className="space-y-3">
-        {consultations.map((c) => {
-          const cfg = statusConfig[c.status] || statusConfig.pending;
-          const StatusIcon = cfg.icon;
-          const startDate = new Date(c.start_time);
-          const isPast = startDate < new Date();
 
-          return (
-            <div
-              key={c.id}
-              className={`flex items-center justify-between p-4 rounded-xl border border-slate-100 ${isPast ? "opacity-60" : ""}`}
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-slate-50 flex flex-col items-center justify-center text-center">
-                  <span className="text-xs font-black text-slate-500 uppercase leading-none">
-                    {format(startDate, "MMM", { locale: tr })}
-                  </span>
-                  <span className="text-lg font-black text-navy-dark leading-none">
-                    {format(startDate, "d")}
-                  </span>
-                </div>
-                <div>
-                  <p className="font-bold text-navy-dark">{c.advisor_name}</p>
-                  <p className="text-xs text-slate-400 font-medium">
-                    {format(startDate, "HH:mm")} - {format(new Date(c.end_time), "HH:mm")}
-                  </p>
-                </div>
-              </div>
-              <Badge className={`${cfg.color} border font-bold py-1.5 px-3 flex items-center gap-1.5`}>
-                <StatusIcon size={14} /> {cfg.label}
-              </Badge>
+      {/* Upcoming */}
+      {upcoming.length > 0 ? (
+        <div className="space-y-2 md:space-y-3">
+          {upcoming.map((c) => renderItem(c))}
+        </div>
+      ) : (
+        <p className="text-sm text-slate-400 font-medium text-center py-4">Yaklaşan randevunuz yok.</p>
+      )}
+
+      {/* Past Consultations - Collapsible */}
+      {past.length > 0 && (
+        <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-slate-100">
+          <button
+            onClick={() => setShowPast(!showPast)}
+            className="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors w-full"
+          >
+            <ChevronDown size={14} className={`transition-transform ${showPast ? "rotate-180" : ""}`} />
+            Geçmiş Randevular ({past.length})
+          </button>
+          {showPast && (
+            <div className="space-y-2 mt-3 animate-in fade-in slide-in-from-top-2 duration-300">
+              {past.map((c) => renderItem(c, true))}
             </div>
-          );
-        })}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -294,43 +294,45 @@ export default function Dashboard() {
       noPadding={activeTab === 'messages' || activeTab === 'ai-assistant'}
     >
       {activeTab === 'overview' && (
-        <div className="space-y-8 animate-in fade-in duration-500 w-full mb-10">
-          <header className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-6 md:space-y-8 animate-in fade-in duration-500 w-full mb-10">
+          <header className="bg-white p-5 md:p-8 rounded-2xl md:rounded-[2rem] shadow-sm border border-slate-100 mb-4 md:mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 md:gap-4">
               <div>
-                <h1 className="text-3xl font-black text-navy-dark tracking-tight mb-2">Hoş geldin, {displayName} 👋</h1>
-                <p className="text-slate-500 font-medium text-lg">Vize süreçlerin kontrol altında.</p>
+                <h1 className="text-xl md:text-3xl font-black text-navy-dark tracking-tight mb-1 md:mb-2">Hoş geldin, {displayName} 👋</h1>
+                <p className="text-slate-500 font-medium text-sm md:text-lg">Vize süreçlerin kontrol altında.</p>
               </div>
             </div>
           </header>
 
           {/* Dashboard Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
             {/* Left Column: Stats & Recent Apps & AI Summary */}
-            <div className="lg:col-span-2 space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6 hover:shadow-md transition-all">
-                  <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner">
-                    <FileText size={32} />
+            <div className="lg:col-span-2 space-y-6 md:space-y-8">
+              <div className="grid grid-cols-2 gap-3 md:gap-6">
+                <div className="bg-white p-4 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-3 md:gap-6 hover:shadow-md transition-all">
+                  <div className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner shrink-0">
+                    <FileText size={20} className="md:hidden" />
+                    <FileText size={32} className="hidden md:block" />
                   </div>
                   <div>
-                    <p className="text-4xl font-black text-navy-dark tracking-tighter">{applications.length}</p>
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">Toplam Başvuru</p>
+                    <p className="text-2xl md:text-4xl font-black text-navy-dark tracking-tighter">{applications.length}</p>
+                    <p className="text-[9px] md:text-xs font-black text-slate-400 uppercase tracking-widest mt-0.5 md:mt-1">Toplam Başvuru</p>
                   </div>
                 </div>
-                <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6 hover:shadow-md transition-all">
-                  <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shadow-inner">
-                    <AlertCircle size={32} />
+                <div className="bg-white p-4 md:p-8 rounded-2xl md:rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-3 md:gap-6 hover:shadow-md transition-all">
+                  <div className="w-10 h-10 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center shadow-inner shrink-0">
+                    <AlertCircle size={20} className="md:hidden" />
+                    <AlertCircle size={32} className="hidden md:block" />
                   </div>
                   <div>
-                    <p className="text-4xl font-black text-navy-dark tracking-tighter">
+                    <p className="text-2xl md:text-4xl font-black text-navy-dark tracking-tighter">
                       {applications.filter(a =>
                         a.status === 'İşlem Gerekli' ||
                         a.status === 'Belge Bekliyor' ||
                         Object.keys(appDocuments[a.id] || {}).length === 0
                       ).length}
                     </p>
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-1">İşlem Bekleyen</p>
+                    <p className="text-[9px] md:text-xs font-black text-slate-400 uppercase tracking-widest mt-0.5 md:mt-1">İşlem Bekleyen</p>
                   </div>
                 </div>
               </div>
@@ -356,14 +358,14 @@ export default function Dashboard() {
               )}
 
               {applications.length > 0 && (
-                <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm">
-                  <div className="flex justify-between items-center mb-8">
-                    <h3 className="text-2xl font-black text-navy-dark tracking-tight">Son Başvurular</h3>
-                    <Button variant="ghost" className="text-emerald-600 font-black hover:bg-emerald-50 rounded-xl px-4 py-2" onClick={() => setActiveTab('applications')}>
-                      Tümünü Gör <ArrowRight className="ml-2 w-4 h-4" />
+                <div className="bg-white rounded-2xl md:rounded-[2.5rem] p-5 md:p-10 border border-slate-100 shadow-sm">
+                  <div className="flex justify-between items-center mb-4 md:mb-8">
+                    <h3 className="text-lg md:text-2xl font-black text-navy-dark tracking-tight">Son Başvurular</h3>
+                    <Button variant="ghost" className="text-emerald-600 font-black hover:bg-emerald-50 rounded-xl px-3 md:px-4 py-2 text-xs md:text-sm" onClick={() => setActiveTab('applications')}>
+                      Tümünü Gör <ArrowRight className="ml-1 md:ml-2 w-4 h-4" />
                     </Button>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     {applications.slice(0, 3).map((app) => {
                       const StatusIcon = statusIcons[app.status] || Clock;
                       const countryData = destinations.find(d => d.key === app.destination.toLowerCase());
@@ -372,20 +374,20 @@ export default function Dashboard() {
                       const turkishVisaType = translations.tr[`visa_type.${app.visa_type.toLowerCase()}`] || app.visa_type;
 
                       return (
-                        <div key={app.id} className="flex items-center justify-between p-6 rounded-2xl border border-slate-50 hover:border-emerald-100 hover:bg-emerald-50/20 hover:shadow-sm transition-all cursor-pointer group" onClick={() => { setActiveTab('applications'); setSelectedApp(app); }}>
-                          <div className="flex items-center gap-5">
-                            <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-slate-100">
-                              <span className="text-3xl">{countryFlag}</span>
+                        <div key={app.id} className="flex items-center justify-between p-3 md:p-6 rounded-xl md:rounded-2xl border border-slate-50 hover:border-emerald-100 hover:bg-emerald-50/20 hover:shadow-sm transition-all cursor-pointer group" onClick={() => { setActiveTab('applications'); setSelectedApp(app); }}>
+                          <div className="flex items-center gap-3 md:gap-5 min-w-0">
+                            <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-slate-100 shrink-0">
+                              <span className="text-xl md:text-3xl">{countryFlag}</span>
                             </div>
-                            <div>
-                              <p className="font-black text-navy-dark text-xl group-hover:text-emerald-600 transition-colors tracking-tight">{turkishCountryName}</p>
-                              <p className="text-sm text-slate-400 font-bold uppercase tracking-wider">{turkishVisaType}</p>
+                            <div className="min-w-0">
+                              <p className="font-black text-navy-dark text-sm md:text-xl group-hover:text-emerald-600 transition-colors tracking-tight truncate">{turkishCountryName}</p>
+                              <p className="text-[10px] md:text-sm text-slate-400 font-bold uppercase tracking-wider truncate">{turkishVisaType}</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <Badge className={`${statusColors[app.status] || "bg-slate-50 text-slate-600"} border-none font-black py-2 px-4 rounded-xl flex items-center gap-2 text-xs shadow-sm`}><StatusIcon size={14} />{app.status}</Badge>
-                            <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                              <ArrowRight size={18} />
+                          <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                            <Badge className={`${statusColors[app.status] || "bg-slate-50 text-slate-600"} border-none font-black py-1.5 md:py-2 px-2.5 md:px-4 rounded-lg md:rounded-xl flex items-center gap-1.5 md:gap-2 text-[9px] md:text-xs shadow-sm`}><StatusIcon size={12} /><span className="hidden sm:inline">{app.status}</span></Badge>
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-emerald-500 group-hover:text-white transition-all hidden sm:flex">
+                              <ArrowRight size={16} />
                             </div>
                           </div>
                         </div>

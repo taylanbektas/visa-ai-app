@@ -336,7 +336,7 @@ export default function AdvisorPanel() {
       if (customerUserIds.length > 0) {
         const { data: appsByUsers } = await supabase
           .from('applications')
-          .select('*, profiles(id, full_name, phone, active_package)')
+          .select('*')
           .in('user_id', customerUserIds);
         if (appsByUsers) combinedApps = [...appsByUsers];
       }
@@ -349,25 +349,32 @@ export default function AdvisorPanel() {
         if (missingIds.length > 0) {
           const { data: appsByExplicit } = await supabase
             .from('applications')
-            .select('*, profiles(id, full_name, phone, active_package)')
+            .select('*')
             .in('id', missingIds);
           if (appsByExplicit) combinedApps = [...combinedApps, ...appsByExplicit];
         }
       }
 
-      const mappedApps: Application[] = combinedApps.map((app: any) => ({
-        id: app.id,
-        applicant_name: app.profiles?.full_name || 'İsimsiz',
-        passport_type: '-',
-        destination_country: app.destination,
-        visa_type: app.visa_type,
-        status: app.status || 'Alındı',
-        created_at: app.created_at,
-        user_id: app.user_id,
-        profile_id: app.profiles?.id || "",
-        phone: app.profiles?.phone,
-        plan: app.plan || app.profiles?.active_package || '-'
-      }));
+      // Build a profile map from already-fetched profileCustomers
+      const profileByUserId = new Map<string, any>();
+      profileCustomers?.forEach((p: any) => profileByUserId.set(p.user_id, p));
+
+      const mappedApps: Application[] = combinedApps.map((app: any) => {
+        const prof = profileByUserId.get(app.user_id);
+        return {
+          id: app.id,
+          applicant_name: prof?.full_name || 'İsimsiz',
+          passport_type: '-',
+          destination_country: app.destination,
+          visa_type: app.visa_type,
+          status: app.status || 'Alındı',
+          created_at: app.created_at,
+          user_id: app.user_id,
+          profile_id: prof?.id || "",
+          phone: prof?.phone,
+          plan: app.plan || prof?.active_package || '-'
+        };
+      });
 
       const appIds = combinedApps.map(a => a.id);
 
@@ -893,6 +900,7 @@ export default function AdvisorPanel() {
               <Button
                 variant="outline"
                 className="w-full mt-6 h-12 rounded-xl border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-all active:scale-[0.98]"
+                onClick={() => setActiveTab('financials')}
               >
                 Performans Detayları
               </Button>
@@ -1102,7 +1110,13 @@ export default function AdvisorPanel() {
                             <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest">SON ETKİLEŞİM</p>
                             <p className="text-xs font-bold text-slate-500">Bugün, 14:30</p>
                           </div>
-                          <Button className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                          <Button
+                            className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                            onClick={() => {
+                              setSelectedChatUser({ id: customer.user_id, name: customer.applicant_name });
+                              setActiveTab('messages');
+                            }}
+                          >
                             <MessageSquare size={20} />
                           </Button>
                         </div>
