@@ -942,22 +942,20 @@ export default function AdvisorPanel() {
 
                 <div className="flex items-center gap-2 bg-slate-50/50 p-2 rounded-2xl border border-slate-100">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-3 mr-2">FİLTRE:</span>
-                  <div className="relative">
-                    <ChevronDown className="absolute right-4 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
-                    <select
-                      className="bg-white border border-slate-100 text-navy-dark px-5 py-2 rounded-xl font-bold text-sm h-11 focus:outline-none focus:ring-2 focus:ring-blue-500/10 min-w-[200px] appearance-none cursor-pointer hover:border-slate-300 transition-all shadow-sm"
-                      value={appStatusFilter}
-                      onChange={(e) => setAppStatusFilter(e.target.value)}
-                    >
-                      <option value="all">Tüm Başvurular</option>
-                      <option value="Alındı">Yeni Başvurular</option>
-                      <option value="İnceleniyor">İncelenenler</option>
-                      <option value="İşlem Gerekli">Eksik Evraklı</option>
-                      <option value="Gönderildi">Konsolosluğa Verildi</option>
-                      <option value="Onaylandı">Vizesi Çıkanlar</option>
-                      <option value="Reddedildi">Red Gelenler</option>
-                    </select>
-                  </div>
+                  <Select value={appStatusFilter} onValueChange={setAppStatusFilter}>
+                    <SelectTrigger className="bg-white border-slate-100 text-navy-dark font-bold text-sm h-11 min-w-[200px] rounded-xl shadow-sm">
+                      <SelectValue placeholder="Tüm Başvurular" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tüm Başvurular</SelectItem>
+                      <SelectItem value="Alındı">Yeni Başvurular</SelectItem>
+                      <SelectItem value="İnceleniyor">İncelenenler</SelectItem>
+                      <SelectItem value="İşlem Gerekli">Eksik Evraklı</SelectItem>
+                      <SelectItem value="Gönderildi">Konsolosluğa Verildi</SelectItem>
+                      <SelectItem value="Onaylandı">Vizesi Çıkanlar</SelectItem>
+                      <SelectItem value="Reddedildi">Red Gelenler</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <Button variant="outline" className="h-14 rounded-2xl font-black border-slate-200 text-slate-600 px-8 hover:bg-white hover:border-blue-500 hover:text-blue-500 active:scale-95 transition-all text-xs tracking-[0.2em] uppercase shadow-sm" onClick={handleExportAppsCSV}>
