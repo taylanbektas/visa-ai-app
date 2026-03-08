@@ -146,7 +146,7 @@ export default function ApplicationDetail() {
 
         const { error } = await supabase
             .from('profiles')
-            .update({ notes: customerNotes })
+            .update({ notes: customerNotes } as any)
             .eq('id', profile.id);
 
         if (error) {

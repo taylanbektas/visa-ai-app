@@ -146,7 +146,7 @@ export default function AgencyApplicationDetail() {
   const handleSaveNotes = async () => {
     if (!profile) return;
     setSavingNotes(true);
-    const { error } = await supabase.from("profiles").update({ notes: customerNotes }).eq("id", profile.id);
+    const { error } = await supabase.from("profiles").update({ notes: customerNotes } as any).eq("id", profile.id);
     if (error) toast({ title: "Hata", description: error.message, variant: "destructive" });
     else {
       toast({ title: "Notlar kaydedildi." });
