@@ -27,6 +27,11 @@ export type AIDashboardChatContext = {
   applications?: ApplicationContextItem[];
   summary?: string;
   nextSteps?: { action: string; priority: string; icon: string }[];
+  // Advisor-specific context
+  role?: 'customer' | 'advisor';
+  customerName?: string;
+  documentsUploaded?: number;
+  plan?: string;
 };
 
 interface AIDashboardChatProps {

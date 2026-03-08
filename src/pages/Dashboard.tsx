@@ -1,6 +1,7 @@
 
 import { useEffect, useState, useRef } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import Apply from "./Apply";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -279,6 +280,7 @@ export default function Dashboard() {
   const navItems: SidebarItem[] = [
     { id: 'overview', label: 'Hızlı Bakış', icon: LayoutDashboard },
     { id: 'applications', label: 'Başvurularım', icon: FileText },
+    { id: 'apply', label: 'Yeni Başvuru', icon: Plus },
     { id: 'pricing', label: 'Paketler', icon: Package },
     { id: 'messages', label: 'Mesajlar', icon: MessageSquare, badgeCount: applications.some(a => a.status === 'İşlem Gerekli') ? 1 : undefined },
     { id: 'ai-assistant', label: 'AI Asistan', icon: Bot },
@@ -623,14 +625,14 @@ export default function Dashboard() {
           )}
 
           {!selectedApp && (
-            <Link to="/apply" className="block mt-12">
+            <div className="block mt-12 cursor-pointer" onClick={() => setActiveTab('apply')}>
               <div className="border-2 border-dashed border-slate-200 rounded-[2rem] p-12 text-center hover:border-emerald-300 hover:bg-emerald-50/30 transition-all group">
                 <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-emerald-100 transition-colors">
                   <Plus className="text-slate-400 group-hover:text-emerald-500" size={32} />
                 </div>
                 <p className="text-lg font-black text-slate-500 group-hover:text-emerald-600">Yeni Başvuru Oluştur</p>
               </div>
-            </Link>
+            </div>
           )}
         </div>
       )}
@@ -869,7 +871,11 @@ export default function Dashboard() {
                   ))}
                 </ul>
                 <Button
-                  onClick={() => navigate("/apply", { state: { plan: plan.id } })}
+                  onClick={() => {
+                    setActiveTab('apply');
+                    // Pass plan via searchParams so Apply can pick it up
+                    setSearchParams({ tab: 'apply', plan: plan.id });
+                  }}
                   className={`w-full font-bold h-12 rounded-xl transition-all ${
                     plan.popular
                       ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-200/50"
@@ -881,6 +887,19 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {activeTab === 'apply' && (
+        <div className="animate-in fade-in duration-500">
+          <Apply
+            embedded
+            preselectedPlan={searchParams.get('plan') || undefined}
+            onComplete={() => {
+              fetchApplications();
+              setActiveTab('applications');
+            }}
+          />
         </div>
       )}
       <BookingCalendar
