@@ -827,16 +827,17 @@ export default function AdvisorPanel() {
                 </div>
                 <div className="flex gap-3 items-center">
                   <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 px-4 py-1.5 rounded-full text-xs font-black shadow-sm tracking-wider uppercase hidden sm:flex">Yüksek Performans</Badge>
-                  <select
-                    className="bg-slate-50 border border-slate-200 text-slate-600 px-4 py-1.5 rounded-xl font-bold text-xs h-8 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all hover:bg-slate-100 cursor-pointer"
-                    value={timeFilter}
-                    onChange={(e) => setTimeFilter(e.target.value)}
-                  >
-                    <option value="3months">Son 3 Ay</option>
-                    <option value="6months">Son 6 Ay</option>
-                    <option value="year">Son 1 Yıl</option>
-                    <option value="all">Tüm Zamanlar</option>
-                  </select>
+                  <Select value={timeFilter} onValueChange={setTimeFilter}>
+                    <SelectTrigger className="bg-slate-50 border-slate-200 text-slate-600 rounded-xl font-bold text-xs h-8 w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3months">Son 3 Ay</SelectItem>
+                      <SelectItem value="6months">Son 6 Ay</SelectItem>
+                      <SelectItem value="year">Son 1 Yıl</SelectItem>
+                      <SelectItem value="all">Tüm Zamanlar</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="flex-1 w-full min-h-[250px]">
