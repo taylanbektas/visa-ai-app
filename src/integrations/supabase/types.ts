@@ -460,6 +460,7 @@ export type Database = {
           id: string
           is_suspended: boolean | null
           last_seen: string | null
+          notes: string | null
           package_assigned_at: string | null
           phone: string | null
           updated_at: string
@@ -475,6 +476,7 @@ export type Database = {
           id?: string
           is_suspended?: boolean | null
           last_seen?: string | null
+          notes?: string | null
           package_assigned_at?: string | null
           phone?: string | null
           updated_at?: string
@@ -490,6 +492,7 @@ export type Database = {
           id?: string
           is_suspended?: boolean | null
           last_seen?: string | null
+          notes?: string | null
           package_assigned_at?: string | null
           phone?: string | null
           updated_at?: string
