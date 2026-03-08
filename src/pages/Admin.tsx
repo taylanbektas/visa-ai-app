@@ -815,9 +815,6 @@ export default function Admin() {
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Toplam Başvuru</h3>
               <div className="flex items-end gap-2">
                 <p className="text-4xl font-black text-navy-dark">{stats.totalApplications}</p>
-                <span className="text-xs text-emerald-500 font-bold mb-1 flex items-center bg-emerald-50 px-2 py-0.5 rounded-lg">
-                  +%12 geçen aya göre
-                </span>
               </div>
             </div>
 
